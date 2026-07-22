@@ -1,0 +1,46 @@
+---
+import { Image } from 'astro:assets';
+import type { WhatWeDoCard } from '../lib/types';
+import { resolveImage } from '../lib/images';
+interface Props { cards: WhatWeDoCard[]; }
+const { cards } = Astro.props;
+const colorClass = { teal: 'wd-teal', coral: 'wd-coral', ink: 'wd-ink' } as const;
+const isRemote = (s: string) => /^https?:\/\//.test(s);
+---
+<section class="wwd" id="wwd" style="padding: 80px 0px 103px">
+  <div class="wwd-head rv" style="font-weight: 600">
+    <h2 class="h2" style="color: #373d42; font-size: 38px; font-weight: 500; margin: 0px; text-align: left">
+      <span style="color: #373d42">what we do</span>
+    </h2>
+  </div>
+  <div class="wd-grid" id="wwdRows">
+    {cards.map((c) => {
+      const local = c.image && !isRemote(c.image) ? resolveImage(c.image) : undefined;
+      const remote = c.image && isRemote(c.image) ? c.image : undefined;
+      return (
+      <a class={`wd-card ${colorClass[c.color]}`} href={c.href}>
+        <div class="wd-inner" style="border-radius: 5px">
+          <div class="wd-front">
+            {local ? (
+              <Image src={local} alt={c.eyebrow} width={360} densities={[1, 2]} format="webp" style="border-radius: 5px; object-fit: cover" />
+            ) : remote ? (
+              <img src={remote} alt={c.eyebrow} style="border-radius: 5px; object-fit: cover" loading="lazy" decoding="async" />
+            ) : c.image ? (
+              <img src={c.image} alt={c.eyebrow} style="border-radius: 5px; object-fit: cover" loading="lazy" decoding="async" />
+            ) : null}
+            <span class="wd-cap">
+              <span class="wd-lead">{c.lead}</span>
+              <span class="wd-sub">{c.sub}</span>
+            </span>
+          </div>
+          <div class="wd-back" style="border-radius: 5px; gap: 14px">
+            <span class="wd-back-eyebrow">{c.eyebrow}</span>
+            <p class="wd-back-text">{c.text}</p>
+            <span class="wd-back-cta" aria-label="Explore"><span class="cta-arrow" aria-hidden="true"></span></span>
+          </div>
+        </div>
+      </a>
+      );
+    })}
+  </div>
+</section>

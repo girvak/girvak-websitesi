@@ -1,0 +1,193 @@
+/* ============================================================
+   GİRVAK — Entrepreneurship Foundation of Türkiye
+   Editorial platform site. Poppins + turquoise base with
+   program-color accents. Tokens grounded in the GİRVAK system.
+   ============================================================ */
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+img, picture, svg, video { display: block; max-width: 100%; }
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+:root {
+  /* ---- Core brand ---- */
+  --turquoise:        #19BAD1;
+  --turquoise-600:    #14A1B6;
+  --turquoise-400:    #4FCEDF;
+  --turquoise-200:    #A9E6EF;
+  --turquoise-100:    #DEF5F8;
+  --turquoise-050:    #F2FBFC;
+
+  /* ---- Program / supporting colors (from brand brief) ---- */
+  --alumni:      #281858;   /* deep indigo */
+  --challenger:  #F7BE10;   /* gold */
+  --fellow:      #BA1818;   /* signal red */
+  --deep-teal:   #0F6D8E;   /* pantone 7469 */
+  --sand:        #BDB3A6;   /* pantone 7528 */
+
+  /* ---- Secondary accent palette (borders, highlights, micro-interactions) ---- */
+  --teal:   #057F8F;
+  --coral:  #F76B52;
+  --yellow: #F4A81F;
+  --mint:   #12C29C;
+  --navy:   #275B7C;
+
+  /* ---- Ink / neutrals ---- */
+  --ink:        #1B1F22;
+  --ink-800:    #373D42;
+  --ink-700:    #525960;
+  --ink-500:    #7B8189;
+  --ink-300:    #BFC3C7;
+  --ink-200:    #E2E4E7;
+  --ink-100:    #F3F4F5;
+  --ink-050:    #FAFBFB;
+  --white:      #FFFFFF;
+
+  /* ---- Semantic (driven by tweaks) ---- */
+  --accent:        var(--turquoise);
+  --accent-deep:   var(--deep-teal);
+  --accent-press:  var(--turquoise-600);
+  --accent-soft:   var(--turquoise-100);
+  --accent-wash:   var(--turquoise-050);
+
+  --fg-1: var(--ink);
+  --fg-2: var(--ink-700);
+  --fg-3: var(--ink-500);
+  --bg:   var(--white);
+
+  --border: var(--ink-200);
+
+  /* ---- Type ---- */
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---- Radius (scaled live by Tweaks via --r-scale) ---- */
+  --r-scale: 1;
+  --r-xs: calc(6px  * var(--r-scale));
+  --r-sm: calc(12px * var(--r-scale));
+  --r-md: calc(18px * var(--r-scale));
+  --r-lg: calc(28px * var(--r-scale));
+  --r-xl: calc(40px * var(--r-scale));
+  --r-pill: 999px;
+
+  /* ---- Shadows ---- */
+  --shadow-1: 0 1px 2px rgba(27,31,34,.06), 0 1px 1px rgba(27,31,34,.04);
+  --shadow-2: 0 8px 24px rgba(27,31,34,.08), 0 2px 6px rgba(27,31,34,.04);
+  --shadow-3: 0 24px 60px rgba(27,31,34,.14), 0 8px 18px rgba(27,31,34,.06);
+  --shadow-brand: 0 16px 40px rgba(25,186,209,.30);
+
+  /* ---- Motion (intensity scaled live by Tweaks) ---- */
+  --motion: 1;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+
+  --maxw: 1240px;
+  --gutter: clamp(20px, 5vw, 64px);
+}
+
+html, body {
+  font-family: var(--font);
+  color: var(--fg-1);
+  background: var(--bg);
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- Type scale ---------- */
+.display {
+  font-weight: 700;
+  font-size: clamp(48px, 7.2vw, 104px);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  margin: 0;
+  text-wrap: balance;
+}
+.h1 { font-weight: 700; font-size: clamp(38px, 5vw, 68px); line-height: 1.02; letter-spacing: -0.03em; margin: 0; text-wrap: balance; }
+.h2 { font-weight: 700; font-size: clamp(30px, 3.6vw, 50px); line-height: 1.05; letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
+.h3 { font-weight: 600; font-size: clamp(22px, 2.2vw, 32px); line-height: 1.12; letter-spacing: -0.02em; margin: 0; }
+.h4 { font-weight: 600; font-size: clamp(19px, 1.6vw, 23px); line-height: 1.2; letter-spacing: -0.01em; margin: 0; }
+.lead { font-size: clamp(18px, 1.7vw, 23px); line-height: 1.55; color: var(--fg-2); font-weight: 400; }
+.body { font-size: 17px; line-height: 1.65; color: var(--fg-2); }
+.small { font-size: 14.5px; line-height: 1.55; color: var(--fg-3); }
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 26px; height: 2px;
+  background: currentColor;
+  display: inline-block;
+}
+.eyebrow.no-rule::before { display: none; }
+/* AI-style overline labels removed site-wide per brand direction */
+.eyebrow { display: none; }
+
+/* ---------- Layout ---------- */
+.wrap { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+.section { padding-block: clamp(72px, 11vw, 150px); position: relative; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font); font-weight: 600; font-size: 16px;
+  padding: 15px 26px; border-radius: var(--r-sm);
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: transform var(--dur,200ms) var(--ease-out),
+              background var(--dur,200ms) var(--ease-out),
+              box-shadow var(--dur,200ms) var(--ease-out),
+              color var(--dur,200ms) var(--ease-out);
+  text-decoration: none; line-height: 1; white-space: nowrap;
+}
+.btn .ico { transition: transform var(--dur,200ms) var(--ease-out); }
+.btn:hover .ico { transform: translateX(4px); }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-brand); }
+.btn-primary:hover { background: var(--accent-press); transform: translateY(calc(-2px * var(--motion))); }
+.btn-dark { background: var(--ink); color: #fff; }
+.btn-dark:hover { background: #000; transform: translateY(calc(-2px * var(--motion))); }
+.btn-ghost { background: transparent; color: var(--fg-1); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--fg-1); background: var(--ink-050); }
+.btn-inverse { background: #fff; color: var(--accent-press); }
+.btn-inverse:hover { transform: translateY(calc(-2px * var(--motion))); box-shadow: var(--shadow-3); }
+.btn-lg { padding: 18px 32px; font-size: 17px; }
+
+/* ---------- Chips / tags ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 7px 14px; border-radius: var(--r-pill);
+  background: var(--accent-soft); color: var(--accent-press);
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* ---------- Reveal animation ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(calc(34px * var(--motion)));
+  transition: transform .85s var(--ease-soft);
+  transition-delay: var(--delay, 0ms);
+  will-change: transform;
+}
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ---------- Misc ---------- */
+.divider { height: 1px; background: var(--border); border: 0; }
+::selection { background: var(--turquoise-200); color: var(--ink); }
+:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(25,186,209,.4); border-radius: var(--r-xs); }

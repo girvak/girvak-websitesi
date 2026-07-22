@@ -1,0 +1,6 @@
+# Local dev tunnels (authtoken lives in ~/Library/Application Support/ngrok/ngrok.yml)
+version: "3"
+tunnels:
+  frontend:
+    addr: 4321
+    proto: http

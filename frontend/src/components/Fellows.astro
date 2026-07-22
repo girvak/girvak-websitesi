@@ -1,0 +1,43 @@
+---
+import { Image } from 'astro:assets';
+import type { Fellow } from '../lib/types';
+import { resolveImage } from '../lib/images';
+interface Props { fellows: Fellow[]; }
+const { fellows } = Astro.props;
+const colorClass = { teal: 'fc-teal', coral: 'fc-coral', ink: 'fc-ink' } as const;
+---
+<section class="fellows" id="fellows">
+  <div class="fellows-head rv" style="font-weight: 600">
+    <div>
+      <h2 class="h2" style="font-size: 38px; color: #373d42; font-weight: 500"><span style="color: #373d42">meet our fellows</span></h2>
+    </div>
+    <a href="/fellow-program#fellows" class="h3btn" style="font-size: 22px; gap: 16px"><span>see all fellows</span><span class="cta-arrow" aria-hidden="true"></span></a>
+  </div>
+  <div class="fellows-belt" aria-label="Meet our fellows">
+    <div class="fellows-track" id="belt" data-spotlight-fetch="true">
+      {fellows.map((f) => (
+        <figure class={`fcard ${colorClass[f.color]}`} tabindex="0">
+          <div class="fcard-inner">
+            <div class="fcard-front">
+              {f.year ? <span class="fcard-year">{f.year}</span> : null}
+              {resolveImage(f.image) ? (
+                <Image src={resolveImage(f.image)!} alt={f.name} width={280} densities={[1, 2]} format="webp" />
+              ) : (
+                <img src={f.image} alt={f.name} loading="lazy" decoding="async" />
+              )}
+              <div class="fcard-band"><span class="fcard-frontname">{f.name}</span></div>
+            </div>
+            <div class="fcard-back">
+              {f.year ? <span class="fcard-back-year">{f.year}</span> : null}
+              <div class="fcard-back-meta">
+                <span class="fcard-name">{f.name}</span>
+                {f.university ? <span class="fcard-uni">{f.university}</span> : null}
+                {f.department ? <span class="fcard-dept">{f.department}</span> : null}
+              </div>
+            </div>
+          </div>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>

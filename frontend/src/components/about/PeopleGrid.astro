@@ -1,0 +1,60 @@
+---
+// Board / Trustee / Team grid — the layered gradient-reveal card (`.bcard`).
+// A person with a resolvable photo renders the portrait; otherwise the card
+// falls back to coloured initials (the design's own graceful default).
+import { Image } from 'astro:assets';
+import { resolveImage } from '../../lib/images';
+import type { Person } from '../../lib/types';
+
+interface Props {
+  id: string;
+  people: Person[];
+  forceColor?: string;
+  /** Softer hover — name stays put, details fade in (no band colour roll). */
+  calm?: boolean;
+  teamTone?: boolean;
+}
+const { id, people, forceColor, calm = false, teamTone = false } = Astro.props;
+
+const BOARD_COLORS = ['#19BAD1', '#F76C53', '#373D42'];
+const initials = (p: Person) =>
+  ((p.first || '').charAt(0) + (p.last || '').charAt(0)).toUpperCase();
+const isRemote = (s?: string) => !!s && /^https?:\/\//.test(s);
+---
+<div class:list={['people-grid', calm && 'people-grid--calm', teamTone && 'people-grid--team']} id={id}>
+  {people.map((p, i) => {
+    // A local bundled asset → optimizable <Image>; a remote Airtable URL →
+    // plain <img>; nothing resolvable → coloured initials.
+    const meta = p.photo && !isRemote(p.photo) ? resolveImage(p.photo) : undefined;
+    const remote = isRemote(p.photo) ? p.photo : undefined;
+    const hasPhoto = !!meta || !!remote;
+    // Photo cards keep the colour baked into the portrait; initials cards take
+    // the section's uniform brand colour first.
+    const col = hasPhoto
+      ? (p.color || forceColor || BOARD_COLORS[i % BOARD_COLORS.length])
+      : (forceColor || p.color || BOARD_COLORS[i % BOARD_COLORS.length]);
+    const name = `${p.first} ${p.last ?? ''}`.trim();
+    return (
+      <a
+        class="bcard"
+        href={p.linkedin || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={`--bc:${col}`}
+      >
+        {meta ? (
+          <Image class="bcard-photo" src={meta} alt={name} width={260} height={278} />
+        ) : remote ? (
+          <img class="bcard-photo" src={remote} alt={name} width={260} height={278} loading="lazy" decoding="async" />
+        ) : (
+          <span class="bcard-initials">{initials(p)}</span>
+        )}
+        <div class="bcard-band">
+          <span class="bcard-name">{name}</span>
+          {p.company && <span class="bcard-company">{p.company}</span>}
+          {p.position && <span class="bcard-position">{p.position}</span>}
+        </div>
+      </a>
+    );
+  })}
+</div>

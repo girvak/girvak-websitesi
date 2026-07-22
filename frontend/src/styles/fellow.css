@@ -1,0 +1,477 @@
+/* ============================================================
+   GİRVAK — Fellow Program page
+   Minimal editorial. White ground, fellow-red highlights.
+   Pinned hero that crossfades between two states on scroll.
+   ============================================================ */
+.fp { background: #fff; --edge: clamp(20px, 5vw, 80px); --htop: clamp(160px, 32vh, 290px); }
+.fp .hl { color: var(--fellow); font-style: italic; font-weight: inherit; }
+
+/* ---------- PINNED HERO ---------- */
+/* The track is taller than the viewport; the inner panel pins (sticky) and
+   stays fixed while the user scrolls the track, then releases naturally. */
+.fhero-track { position: relative; height: 200vh; }
+.fhero-pin {
+  position: sticky; top: 0; height: 100vh; min-height: 600px;
+  overflow: hidden; background: #fff;
+}
+
+/* group photo — spans from the headline top to the page bottom, anchored
+   right; identical & static across both states */
+.fhero-media {
+  position: absolute; right: clamp(0px, 1.5vw, 24px);
+  top: var(--htop); bottom: 0; z-index: 1; pointer-events: none;
+}
+.fhero-photo {
+  display: block; height: 100%; width: auto; margin-left: auto;
+  object-fit: contain; object-position: bottom right;
+  transform: scale(1.155); transform-origin: bottom right;
+}
+
+/* left content column — both states stacked in the same place, top-aligned
+   to the photo's top edge */
+.fhero-left {
+  position: absolute; left: var(--edge); top: 0; bottom: 0;
+  width: min(44%, 560px); z-index: 2;
+}
+.fhero-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  padding-top: var(--htop);
+  will-change: opacity;
+}
+/* Binary cross-fade: only ever fully on or fully off — never a resting
+   fractional/ghosted state. JS toggles .on / .off on each layer.
+   The layer fading IN flips visibility immediately; the layer fading OUT
+   delays visibility:hidden until the opacity fade completes, so nothing
+   is clickable or readable during the swap. */
+.fhero-state.on {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: opacity 0.4s ease-in-out;
+}
+.fhero-state.off {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s ease-in-out, visibility 0s linear 0.4s;
+}
+
+.fhero-h1 {
+  font-size: clamp(34px, 4.5vw, 63px); font-weight: 500; line-height: 1.08;
+  letter-spacing: -0.035em; color: #373d42; margin: 0 0 0 -5px; text-wrap: balance;
+}
+.fhero-h1 .hl { white-space: nowrap; }
+/* per-letter hover colour swap */
+.fhero-h1 .ch, .fhero-h1 .hl .ch-inv { transition: color 0.2s ease; }
+.fhero-h1 .ch:hover { color: var(--fellow); }
+.fhero-h1 .hl .ch-inv:hover { color: #373d42; }
+
+.fhero-links {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: clamp(14px, 2.2vh, 26px); margin-top: clamp(56px, 11vh, 132px);
+}
+.fhero-link {
+  display: inline-flex; align-items: center; gap: clamp(16px, 2.1vw, 30px);
+  font-size: clamp(20px, 2.15vw, 29px); font-weight: 500; color: #373d42;
+  letter-spacing: -0.01em; line-height: 1;
+}
+.fhero-link .arr {
+  flex: none; display: block;
+  width: clamp(56px, 5.2vw, 84px); height: clamp(16px, 1.7vw, 25px);
+  background-color: currentColor;
+  -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain;
+          mask: url(/images/cta-arrow.png) no-repeat center / contain;
+  transition: transform .35s var(--ease-out), background-color .25s var(--ease-out);
+}
+.fhero-link:hover { color: var(--fellow); }
+.fhero-link:hover .arr { transform: translateX(10px); }
+
+.fhero-copy {
+  font-size: clamp(19px, 2.05vw, 27px); font-weight: 500; line-height: 1.42;
+  letter-spacing: -0.02em; color: #373d42; margin: 0; max-width: 100%;
+  text-wrap: pretty;
+}
+.fhero-copy .hl { font-style: normal; }
+
+/* ---------- "HOW TO" EDITORIAL ROWS ---------- */
+.fhow { background: var(--fellow); padding: clamp(28px, 5vw, 66px) 0 clamp(48px, 7vw, 102px); }
+.fhow-row {
+  display: grid; grid-template-columns: minmax(240px, 0.5fr) 1fr;
+  gap: clamp(20px, 4vw, 76px); align-items: center;
+  padding: clamp(28px, 4vw, 54px) var(--edge);
+}
+.fhow-label {
+  font-size: clamp(16px, 1.7vw, 22px); font-weight: 400; letter-spacing: -0.01em;
+  color: rgba(255,255,255,0.75); margin: 0;
+}
+.fhow-body { display: flex; flex-direction: column; gap: clamp(12px, 1.6vw, 21px); }
+.fhow-body p {
+  margin: 0; font-size: clamp(14px, 1.4vw, 19px); font-weight: 400; line-height: 1.6;
+  letter-spacing: -0.015em; color: #fff; max-width: 58ch; text-wrap: pretty;
+}
+.fhow-body p .hl { color: #fff; font-style: italic; font-weight: 600; }
+
+/* ---------- WHAT TO EXPECT ---------- */
+.fwte {
+  background: #fff;
+  padding: clamp(56px, 8vw, 112px) var(--edge) clamp(64px, 10vw, 128px);
+}
+.fwte-title {
+  font-size: clamp(28px, 3.6vw, 52px); font-weight: 500;
+  letter-spacing: -0.03em; color: #373d42; margin: 0 0 clamp(28px, 4vw, 52px);
+  line-height: 1;
+}
+.fwte-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(10px, 1.4vw, 18px);
+}
+.fwte-card {
+  position: relative; border-radius: 5px; overflow: hidden;
+  aspect-ratio: 3 / 4;
+  box-shadow: 0 14px 32px rgba(55,61,66,.13);
+  cursor: default;
+  transform: translateZ(0);
+  transition: transform .42s cubic-bezier(0.25,1,0.5,1),
+              box-shadow .42s cubic-bezier(0.25,1,0.5,1);
+}
+.fwte-card:hover {
+  transform: scale(1.028) translateZ(0);
+  box-shadow: 0 22px 48px rgba(55,61,66,.22);
+  z-index: 2;
+}
+.fwte-card img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .52s cubic-bezier(0.25,1,0.5,1);
+}
+.fwte-card:hover img { transform: scale(1.04); }
+/* readability scrim — direction follows caption position */
+.fwte-card::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+}
+.cap-bottom::before {
+  background: linear-gradient(to top,
+    rgba(15,15,17,.86) 0%, rgba(15,15,17,.45) 30%, rgba(15,15,17,0) 58%);
+}
+.cap-top::before {
+  background: linear-gradient(to bottom,
+    rgba(15,15,17,.86) 0%, rgba(15,15,17,.45) 30%, rgba(15,15,17,0) 58%);
+}
+.fwte-cap {
+  position: absolute; left: 0; right: 0; z-index: 2;
+  padding: clamp(18px, 2vw, 28px);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.cap-bottom .fwte-cap { bottom: 0; top: auto; }
+.cap-top .fwte-cap    { top: 0; bottom: auto; }
+.cap-left .fwte-cap   { text-align: left; align-items: flex-start; }
+.cap-right .fwte-cap  { text-align: right; align-items: flex-end; }
+.cap-center .fwte-cap { text-align: center; align-items: center; }
+.fwte-name {
+  margin: 0; color: #fff;
+  font-size: clamp(15px, 1.35vw, 20px); font-weight: 700;
+  line-height: 1.15; letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(0,0,0,.45);
+}
+.fwte-desc {
+  margin: 0; color: rgba(255,255,255,.92);
+  font-size: clamp(12px, 1vw, 15px); font-weight: 400;
+  line-height: 1.45; letter-spacing: -0.005em; max-width: 30ch;
+  text-wrap: pretty;
+  text-shadow: 0 1px 8px rgba(0,0,0,.5);
+}
+.cap-right .fwte-desc  { margin-left: auto; }
+.cap-center .fwte-desc { margin-left: auto; margin-right: auto; }
+
+@media (max-width: 720px) {
+  .fwte-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .fwte-grid { grid-template-columns: 1fr; }
+  .fwte-card { aspect-ratio: 4 / 3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fwte-card, .fwte-card img { transition: none; }
+}
+
+
+@media (max-width: 900px) {
+  .fhero-track { height: auto; }
+  .fhero-pin { position: static; height: auto; min-height: 0; padding: 132px 0 0; }
+  .fhero-media {
+    position: relative; right: auto; top: auto; bottom: auto; margin: 24px auto 0;
+    width: min(92vw, 560px);
+  }
+  .fhero-photo { height: auto; width: 100%; }
+  .fhero-left { position: relative; left: auto; width: auto; padding: 0 var(--edge); }
+  .fhero-state { position: relative; inset: auto; padding-top: 0; opacity: 1 !important; visibility: visible !important; transform: none !important; }
+  .fhero-1 { padding-bottom: 0; }
+  .fhero-2 { margin-top: 40px; }
+  .fhero-links { margin-top: 40px; }
+  .fhero-cue { display: none; }
+  .fhow-row { grid-template-columns: 1fr; gap: 16px; }
+}
+
+/* ---------- FELLOWS MARQUEE (mirrors homepage belt) ---------- */
+.ffellows { padding: clamp(56px, 8vw, 104px) 0 clamp(48px, 6vw, 80px); background: #fff; overflow: hidden; }
+.ffellows .fellows-head {
+  margin: 0; padding: 0 var(--edge);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px;
+}
+.ffellows-h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 52px); font-weight: 500;
+  letter-spacing: -0.03em; line-height: 1; color: #373d42;
+}
+.ffellows-seeall {
+  color: #373d42;
+  font-size: clamp(18px, 1.9vw, 25px);
+  gap: clamp(14px, 1.8vw, 28px);
+}
+.ffellows-seeall:hover,
+.ffellows-seeall:focus-visible { color: var(--fellow); }
+/* the see-all arrow turns fellow-red on hover too */
+.ffellows-seeall:hover .cta-arrow,
+.ffellows-seeall:focus-visible .cta-arrow { transform: translateX(7px); }
+
+/* red card variant — front + back + band all fellow-red */
+.fc-fellow .fcard-front, .fc-fellow .fcard-back { background: var(--fellow); }
+.fc-fellow .fcard-band {
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--fellow) 88%, transparent) 40%, transparent);
+}
+
+/* Fellow-card year treatment (design parity — Fellow Program.html).
+   The shared homepage belt (home.css .fcard) was retuned with a *bold* year and
+   a dimmed, in-flow back-year. The design wants the year as a thin numeral
+   ("ince" — weight 300), top-right on both faces. Scoped to .fp so the homepage
+   keeps its own tuning. Photos keep home.css's object-fit:cover — these cards
+   render real full-frame fellow portraits, not cutouts, so they fill the card.
+   The year only appears when the fellows' data provides one (data-driven). */
+.fp .fcard-year { font-weight: 300; }
+.fp .fcard-back-year {
+  position: absolute; top: 14px; right: 18px; z-index: 2;
+  font-weight: 300; font-size: clamp(30px, 2.6vw, 42px); line-height: 1;
+  letter-spacing: -0.01em; opacity: 1; margin: 0;
+}
+/* Card back: name · university · department (shared markup with homepage belt) */
+.fp .fcard-back-meta {
+  padding: clamp(10px, 2vw, 18px) 0 clamp(4px, 1vw, 8px);
+  max-width: 90%;
+}
+.fp .fcard-dept {
+  font-size: clamp(11px, 0.9vw, 12.5px);
+  opacity: 0.8;
+}
+
+.fc-alumni .fcard-front, .fc-alumni .fcard-back { background: var(--alumni); }
+.fc-alumni .fcard-band {
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--alumni) 88%, transparent) 40%, transparent);
+}
+
+/* ---------- ONCE A FELLOW / ALUMNI ---------- */
+.falum {
+  background: #fff;
+  padding: clamp(48px, 7vw, 96px) var(--edge) clamp(64px, 9vw, 120px);
+}
+.falum-h2 {
+  margin: 0 0 clamp(20px, 2.6vw, 34px);
+  font-size: clamp(34px, 4.5vw, 63px); font-weight: 500; line-height: 1.08;
+  letter-spacing: -0.035em; color: #373d42; text-wrap: balance;
+}
+.falum-em { font-style: italic; color: var(--fellow); }
+.falum-intro {
+  margin: 0 0 clamp(40px, 6vw, 80px);
+  font-size: clamp(19px, 2.05vw, 27px); font-weight: 500; line-height: 1.42;
+  letter-spacing: -0.02em; color: #373d42; max-width: none; text-wrap: pretty;
+}
+.falum-row {
+  display: grid; grid-template-columns: minmax(200px, 0.42fr) 1fr;
+  gap: clamp(20px, 4vw, 76px); align-items: center;
+}
+.falum-label {
+  margin: 0; font-size: clamp(16px, 1.7vw, 22px); font-weight: 500;
+  letter-spacing: -0.01em; color: #373d42;
+}
+.falum-body { display: flex; flex-direction: column; gap: clamp(8px, 1vw, 14px); }
+.falum-body p {
+  margin: 0; font-size: clamp(14px, 1.4vw, 19px); font-weight: 400; line-height: 1.5;
+  letter-spacing: -0.015em; color: #373d42; max-width: 62ch; text-wrap: pretty;
+}
+.falum-foot {
+  margin-top: clamp(48px, 7vw, 96px);
+  display: flex; justify-content: flex-end;
+}
+.falum-cta { font-size: clamp(18px, 1.9vw, 25px); }
+.falum-belt { margin-top: clamp(36px, 5vw, 56px); }
+
+@media (max-width: 900px) {
+  .falum-row { grid-template-columns: 1fr; gap: 16px; }
+  .falum-foot { justify-content: flex-start; }
+}
+
+/* ---------- IMPACT / BECAUSE ---------- */
+.fbecause { padding: 0; background: var(--fellow); }
+.fbecause-inner {
+  background: var(--fellow); border-radius: 0;
+  padding: clamp(48px, 7vw, 104px) var(--edge) clamp(48px, 7vw, 92px);
+  display: grid; grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(28px, 5vw, 80px); align-items: end; min-height: clamp(420px, 46vw, 560px);
+}
+.fbecause-h2 {
+  margin: 0; align-self: start;
+  color: #fff; font-weight: 500; line-height: 1.04;
+  font-size: clamp(40px, 5.4vw, 78px); letter-spacing: -0.035em;
+}
+.fbecause-em { font-style: italic; }
+.fbecause-copy {
+  align-self: end; text-align: right;
+  display: flex; flex-direction: column; gap: clamp(18px, 2vw, 28px);
+  color: #fff;
+}
+.fbecause-copy p {
+  margin: 0; font-size: clamp(14px, 1.25vw, 18px); font-weight: 400;
+  line-height: 1.5; letter-spacing: -0.01em; margin-left: auto; max-width: 46ch;
+}
+.fbecause-lead { font-weight: 500; }
+/* report line: single line, whole sentence clickable, white arrow inline */
+.fbecause-report {
+  display: block; white-space: nowrap; max-width: none;
+  margin-left: auto; text-align: right;
+  color: #fff; text-decoration: none;
+  font-size: clamp(14px, 1.25vw, 18px); font-weight: 400;
+  line-height: 1.5; letter-spacing: -0.01em;
+}
+.fbecause-report .arr {
+  display: inline-block; vertical-align: middle;
+  width: clamp(36px, 3vw, 54px); height: clamp(11px, 1.2vw, 16px);
+  background-color: #fff;
+  -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain;
+          mask: url(/images/cta-arrow.png) no-repeat center / contain;
+  transition: transform .25s var(--ease-out);
+}
+.fbecause-report:hover { opacity: .85; }
+.fbecause-report:hover .arr { transform: translateX(6px); }
+
+@media (max-width: 760px) {
+  .fbecause-inner { grid-template-columns: 1fr; gap: 40px; align-items: start; }
+  .fbecause-copy { text-align: left; align-self: start; }
+  .fbecause-copy p { margin-left: 0; }
+}
+
+/* ---------- CHALLENGER PROGRAM ---------- */
+.fchal { --chal: #F2A81D; background: #fff; padding: clamp(48px, 7vw, 96px) var(--edge) clamp(64px, 9vw, 120px); }
+.fchal-h2 {
+  margin: 0 0 clamp(40px, 6vw, 88px);
+  font-size: 75px; font-weight: 500; line-height: 1.08;
+  letter-spacing: -0.035em; color: #373d42; text-wrap: balance; max-width: none;
+}
+.fchal-em { color: var(--chal); }
+.fchal-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 5vw, 80px); align-items: start;
+}
+/* left photo placeholder — empty for now */
+.fchal-media {
+  aspect-ratio: 4 / 5; border-radius: 5px;
+  overflow: hidden; background: var(--girvak-ink-100, #F3F4F5);
+}
+.fchal-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fchal-content { display: flex; flex-direction: column; gap: clamp(36px, 5vw, 72px); }
+/* links — right aligned, arrow follows text */
+.fchal-links { display: flex; flex-direction: column; align-items: flex-end; gap: clamp(14px, 2vh, 24px); }
+.fchal-link { justify-content: flex-end; }
+.fchal-link:hover { color: var(--chal); }
+/* copy — right aligned, amber highlights */
+.fchal-copy { display: flex; flex-direction: column; gap: clamp(18px, 2vw, 28px); text-align: right; }
+.fchal-copy p {
+  margin: 0 0 0 auto; max-width: 42ch;
+  font-size: clamp(15px, 1.5vw, 21px); font-weight: 500; line-height: 1.5;
+  letter-spacing: -0.015em; color: #373d42; text-wrap: pretty;
+}
+.fchal-copy .chl { color: var(--chal); }
+
+@media (max-width: 760px) {
+  .fchal-row { grid-template-columns: 1fr; gap: 36px; }
+  .fchal-links { align-items: flex-start; }
+  .fchal-link { justify-content: flex-start; }
+  .fchal-copy { text-align: left; }
+  .fchal-copy p { margin-left: 0; }
+}
+
+/* ---------- CHALLENGER — APPLY & SELECT (amber variant of fhow) ---------- */
+.fchow { background: #F3C00C; padding: clamp(28px, 5vw, 66px) 0 clamp(48px, 7vw, 102px); }
+.fchow .fhow-label { color: #373d42; }
+.fchow .fhow-body p { color: #373d42; }
+.fchow .fhow-body p.kicker { color: #fff; font-style: italic; font-weight: 700; }
+.fchow .fhow-body p .hl { color: #fff; font-style: italic; font-weight: 600; }
+.fchow sup { font-size: 0.62em; vertical-align: super; }
+
+/* ---------- CHALLENGER — WHAT YOU'LL DO ---------- */
+.fwyd { background: #fff; padding: clamp(48px, 7vw, 92px) var(--edge) clamp(56px, 8vw, 104px); }
+.fwyd-title {
+  margin: 0 0 clamp(40px, 6vw, 84px);
+  font-size: clamp(30px, 3.6vw, 52px); font-weight: 500;
+  letter-spacing: -0.03em; line-height: 1; color: #373d42;
+}
+.fwyd-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: clamp(16px, 2.4vw, 40px); align-items: start;
+}
+.fwyd-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: clamp(16px, 1.8vw, 26px); }
+.fwyd-item img {
+  width: clamp(129px, 12.6vw, 196px); height: clamp(129px, 12.6vw, 196px);
+  object-fit: contain;
+}
+.fwyd-item p {
+  margin: 0; max-width: 22ch;
+  font-size: clamp(13px, 1.15vw, 16px); font-weight: 500; line-height: 1.35;
+  letter-spacing: -0.01em; color: #373d42; text-wrap: pretty;
+}
+@media (max-width: 760px) {
+  .fwyd-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
+}
+@media (max-width: 420px) {
+  .fwyd-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- MEET THE CHALLENGERS (amber single-face cards) ---------- */
+.fchallengers .ffellows-seeall { color: #373d42; }
+.fchallengers .ffellows-seeall:hover { color: #F2A81D; }
+.cchcard {
+  flex: none; position: relative; margin: 0;
+  width: clamp(186px, 18.4vw, 232px); aspect-ratio: 1 / 1.07;
+  border-radius: 5px; background: #F3C00C; color: #fff;
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(30px, 4vw, 44px) 16px clamp(22px, 3vw, 32px);
+  box-shadow: 0 12px 30px rgba(27,31,34,.14);
+  transition: transform .3s var(--ease-out), opacity .3s var(--ease-out);
+}
+/* hovered card lifts, siblings dim — same focus feel, no flip */
+.fchallengers .fellows-belt:hover .cchcard { transform: scale(0.92); opacity: .55; }
+.fchallengers .fellows-belt:hover .cchcard:hover { transform: scale(1.06); opacity: 1; z-index: 5; }
+.cchcard-year {
+  position: absolute; top: 14px; right: 18px;
+  font-weight: 300; font-size: clamp(30px,2.6vw,42px); line-height: 1; letter-spacing: -0.01em;
+}
+.cchcard-name {
+  margin-top: clamp(34px, 5vw, 56px); text-align: center;
+  font-weight: 600; font-size: clamp(16px,1.3vw,19px); line-height: 1.2; letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cchcard-uni {
+  margin-top: auto; text-align: center; font-style: italic;
+  font-weight: 500; font-size: clamp(12px,1vw,14px); line-height: 1.35; opacity: .9;
+}
+/* ---------- TEXT SELECTION HIGHLIGHT ---------- */
+/* Solid (opaque) tints so overlapping line boxes never stack into darker bands */
+/* Fellow sections: soft red tint, dark readable text */
+.fp ::selection { background: #e9b5b5; color: #373d42; }
+.fp ::-moz-selection { background: #e9b5b5; color: #373d42; }
+/* Challenger sections: soft amber tint, dark readable text */
+.fp .fchal ::selection, .fp .fchow ::selection, .fp .fwyd ::selection, .fp .fchallengers ::selection { background: #fae7a3; color: #373d42; }
+.fp .fchal ::-moz-selection, .fp .fchow ::-moz-selection, .fp .fwyd ::-moz-selection, .fp .fchallengers ::-moz-selection { background: #fae7a3; color: #373d42; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fchallengers .fellows-belt:hover .cchcard,
+  .fchallengers .fellows-belt:hover .cchcard:hover { transform: none; opacity: 1; }
+}

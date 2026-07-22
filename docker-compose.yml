@@ -1,0 +1,12 @@
+# Optional convenience: run backend (and a static preview of the built frontend)
+# together. For day-to-day dev, prefer running each app directly (see README).
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - CORS_ORIGINS=http://localhost:4321,http://localhost:8080
+      - CONTENT_SOURCE=seed
+    volumes:
+      - ./backend:/app

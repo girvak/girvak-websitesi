@@ -1,0 +1,33 @@
+---
+// Original GİRVAK homepage (design index.html) — the canonical site root.
+// The alternative program-first homepage now lives at /alt.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Hero from '../components/Hero.astro';
+import ImpactMosaic from '../components/ImpactMosaic.astro';
+import WhatWeDo from '../components/WhatWeDo.astro';
+import Fellows from '../components/Fellows.astro';
+import Partners from '../components/Partners.astro';
+import Footer from '../components/Footer.astro';
+import { getHomeContent } from '../lib/content';
+
+const content = await getHomeContent();
+const { seo, hero, impact, impact_image, what_we_do, fellows, partners, footer } = content;
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+---
+
+<BaseLayout title={seo.title} description={seo.description}>
+  <Nav />
+  <NavMenu />
+  <Hero hero={hero} />
+  <ImpactMosaic impact={impact} impactImage={impact_image ?? '/images/impact-photo.jpg'} />
+  <WhatWeDo cards={what_we_do} />
+  <Fellows fellows={fellows} />
+  <Partners partners={partners} />
+  <Footer footer={footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+</script>

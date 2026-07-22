@@ -1,0 +1,56 @@
+---
+import { Image } from 'astro:assets';
+import type { Hero } from '../lib/types';
+import { resolveImage } from '../lib/images';
+interface Props { hero: Hero; }
+const { hero } = Astro.props;
+---
+<section class="hero3" id="top" style="background-color: rgb(255, 255, 255)">
+  <div class="hero3-head">
+    <h1 class="hero3-title rv">
+      <span class="hero-headline">
+        <span class="hero-base" id="heroBase">{hero.base_text}</span><span
+          class="hero-rotator word-rotator-container"
+          id="heroRotator"
+          data-words={JSON.stringify(hero.rotator_words)}
+        ></span>
+      </span>
+    </h1>
+  </div>
+
+  <div class="hero3-belt-wrap">
+    <div class="hero3-belt" id="belt3">
+      <div class="belt3-track" style="padding: 60px 9px 0px 2px">
+        {hero.images.map((src, i) => {
+          const meta = resolveImage(src);
+          return (
+            <figure class="b3card wide">
+              {meta ? (
+                <Image src={meta} alt="" width={1200} densities={[1, 2]} loading={i < 2 ? 'eager' : 'lazy'} format="webp" />
+              ) : (
+                <img src={src} alt="" loading="lazy" decoding="async" />
+              )}
+            </figure>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+
+  <div class="hero3-foot" style="max-width: none; margin: 0; padding: 0 clamp(20px,5vw,80px)">
+    <p
+      class="hero3-sub rv"
+      style="font-weight: 500; width: 100%; max-width: none; margin: 0; letter-spacing: -0.6px; line-height: 1.16; font-size: 24px; text-align: left"
+    >
+      {hero.subhead_pre}<span style="color:#f76b52">{hero.subhead_highlight}</span>
+      <span style="color: rgb(55, 61, 66); letter-spacing: -0.6px; font-size: 24px">{hero.subhead_post}</span>
+    </p>
+    <div class="hero3-actions rv">
+      {hero.ctas.map((cta) => (
+        <a href={cta.href} class="h3btn" style="letter-spacing: -0.6px; font-size: 22px">
+          {cta.label}<span class="cta-arrow" aria-hidden="true"></span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

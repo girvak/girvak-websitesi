@@ -1,0 +1,44 @@
+---
+import { Image } from 'astro:assets';
+import type { ImpactTile } from '../lib/types';
+import { resolveImage } from '../lib/images';
+interface Props { impact: ImpactTile[]; impactImage: string; }
+const { impact, impactImage } = Astro.props;
+const colorClass = { teal: 'm-teal', coral: 'm-coral', ink: 'm-ink' } as const;
+const isRemote = (s: string) => /^https?:\/\//.test(s);
+const photoLocal = impactImage && !isRemote(impactImage) ? resolveImage(impactImage) : undefined;
+const photoRemote = impactImage && isRemote(impactImage) ? impactImage : undefined;
+const photoFallback = impactImage && !photoLocal && !photoRemote ? impactImage : '/images/impact-photo.jpg';
+---
+<section class="nums" id="numbers">
+  <div class="impact-head rv" style="font-weight: 700">
+    <h2 class="impact-title" style="font-size: 38px; color: rgb(55, 61, 66); font-family: Poppins; font-weight: 500; text-align: left">what we've built</h2>
+  </div>
+  <div class="impact-wrap">
+    <figure class="impact-photo rv">
+      {photoLocal ? (
+        <Image src={photoLocal} alt="GİRVAK fellows at an event" width={560} densities={[1, 2]} format="webp" style="border-radius: 5px" />
+      ) : photoRemote ? (
+        <img src={photoRemote} alt="GİRVAK fellows at an event" style="border-radius: 5px" loading="lazy" decoding="async" />
+      ) : (
+        <img src={photoFallback} alt="GİRVAK fellows at an event" style="border-radius: 5px" loading="lazy" decoding="async" />
+      )}
+    </figure>
+    <div class="impact-mosaic rv">
+      {impact.map((t) => (
+        <div class={`mtile ${colorClass[t.color]} r${t.row} c${t.col}`}>
+          <div class="mtile-num">
+            <span
+              data-count={t.count}
+              data-dec={t.decimals ?? 0}
+              data-pre={t.prefix ?? ''}
+              data-suf={t.suffix ?? ''}
+            >0</span>
+          </div>
+          <div class="mtile-label">{t.label}</div>
+          <div class="mtile-desc">{t.desc}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

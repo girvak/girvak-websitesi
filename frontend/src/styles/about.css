@@ -1,0 +1,287 @@
+/* ============================================================
+   GİRVAK — About page (editorial, accent colors, photo bands)
+   ============================================================ */
+.ab { background: #fff; --edge: clamp(20px,5vw,80px); }
+
+/* hero header */
+.ab-hero { position: relative; background: #fafbfc; padding: clamp(130px,15vw,180px) 0 clamp(48px,6vw,70px); overflow: hidden; }
+.ab-hero::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(54% 60% at 90% 0%, var(--turquoise-050), transparent 62%), radial-gradient(40% 50% at 2% 100%, rgba(247,107,82,.08), transparent 66%); }
+.ab-hero-in { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 0 var(--gutter); }
+.ab-kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--turquoise); }
+.ab-hero h1 { font-size: clamp(40px,6vw,82px); font-weight: 500; letter-spacing: -0.04em; line-height: 1.04; color: var(--fg-1); margin: 16px 0 0; max-width: 16ch; }
+.ab-hero h1 em { font-style: italic; color: var(--turquoise); }
+
+/* About hero — matched exactly to the homepage hero: pure white edge-to-edge,
+   same Montserrat weight/size/tracking/ink, per-letter teal hover. */
+.ab-hero--home { background: #fff; }
+/* About header: no bottom hairline/shadow, matching the homepage header */
+.hm-nav.ab-nav.scrolled { box-shadow: none; border-bottom: 0; }
+.ab-hero--home::before { display: none; }
+.ab-hero--home .ab-hero-in {
+  max-width: none; margin: 0; padding-left: var(--edge); padding-right: var(--edge);
+}
+.ab-hero--home .ab-hero-title {
+  font-weight: 500; font-size: 75px; line-height: 1.08; letter-spacing: -0.035em;
+  color: #373d42; margin: 0 0 0 -5px; max-width: none; text-align: left; text-wrap: balance;
+}
+.ab-hero--home .ab-hero-title .ch { transition: color .3s var(--ease-out); }
+.ab-hero--home .ab-hero-title .ch:hover { color: var(--turquoise); }
+.ab-hero--home .ab-hero-title .ab-accent { color: var(--turquoise); font-style: italic; }
+.ab-hero--home .ab-hero-title .ab-accent .ch-inv { transition: color .3s var(--ease-out); }
+.ab-hero--home .ab-hero-title .ab-accent .ch-inv:hover { color: #373d42; }
+.ab-hero--home .ab-hero-title .ab-dot { color: var(--turquoise); transition: color .3s var(--ease-out); }
+.ab-hero--home .ab-hero-title .ab-dot:hover { color: #373d42; }
+.ab-hero--compact { padding: clamp(120px,14vw,160px) 0 clamp(32px,4vw,48px); }
+.ab-hero--compact .ab-hero-in { padding: 0 var(--edge); }
+.ab-hero-title--page { font-size: clamp(36px,5vw,56px); max-width: 20ch; }
+.ab-hero-sub { margin: 12px 0 0; font-size: clamp(16px,1.5vw,20px); color: var(--fg-3); }
+.ab-back { display: inline-block; margin-bottom: 20px; font-size: 15px; font-weight: 500; color: var(--fg-3); text-decoration: none; }
+.ab-back:hover { color: var(--turquoise); }
+
+/* editorial intro block */
+.ab-block { max-width: 1180px; margin: 0 auto; padding: clamp(48px,6vw,86px) var(--gutter); display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(28px,5vw,72px); align-items: start; }
+.ab-block.line { border-top: 1px solid var(--border); }
+.ab-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--c, var(--turquoise)); display: inline-flex; align-items: center; gap: 10px; }
+.ab-eyebrow::before { content: ""; width: 26px; height: 2px; background: currentColor; }
+.ab-block h2 { font-size: clamp(28px,3.4vw,46px); font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin: 0; }
+.ab-block .ab-body { font-size: clamp(16px,1.4vw,19px); line-height: 1.65; color: var(--fg-2); }
+.ab-block .ab-body p { margin: 0 0 18px; }
+.ab-block .ab-body p:last-child { margin-bottom: 0; }
+.ab-block .ab-body strong { color: var(--turquoise); font-weight: 600; }
+/* #aboutus heading removed — body full-bleed left, matching homepage hero (72px) */
+#aboutus { display: block; max-width: none; margin: 0; padding-left: var(--edge); padding-right: var(--edge); }
+#aboutus .ab-body { max-width: none; }
+
+/* full-bleed photo band */
+.ab-photo { position: relative; min-height: clamp(420px,52vw,640px); display: flex; align-items: flex-end; overflow: hidden; }
+.ab-photo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 32%; z-index: 0; display: block; }
+.ab-photo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(15,109,142,.12) 0%, rgba(8,40,52,.18) 45%, rgba(8,40,52,.82) 100%); }
+.ab-photo-in { position: relative; z-index: 2; max-width: none; width: 100%; margin: 0; padding: clamp(40px,6vw,72px) var(--edge); color: #fff; }
+.ab-photo .ab-pk { font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,.85); }
+.ab-photo h2 { font-size: clamp(28px,4vw,56px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; margin: 14px 0 0; max-width: 22ch; color: #fff; }
+.ab-photo h2 em { font-style: italic; color: var(--turquoise-200); }
+.ab-credit { position: absolute; right: var(--gutter); top: 20px; z-index: 3; font-size: 11.5px; font-weight: 500; letter-spacing: .04em; color: rgba(255,255,255,.7); background: rgba(0,0,0,.22); padding: 6px 12px; border-radius: var(--r-pill); backdrop-filter: blur(4px); }
+
+/* photo stat strip overlapping the band */
+.ab-photo-stats { position: relative; z-index: 2; max-width: none; margin: -54px 0 0; padding: 0 var(--edge); display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.ab-stat { background: #fff; border-radius: var(--r-md, 18px); padding: 22px 24px; box-shadow: var(--shadow-2); border-bottom: 4px solid var(--c, var(--turquoise)); }
+.ab-stat b { display: block; font-size: clamp(28px,3vw,42px); font-weight: 700; letter-spacing: -0.04em; color: var(--ink); line-height: 1; }
+.ab-stat span { display: block; margin-top: 7px; font-size: 13.5px; color: var(--fg-3); font-weight: 500; }
+
+/* story section with accent solution cards */
+.ab-story { max-width: none; margin: 0; padding: clamp(56px,7vw,96px) var(--edge); }
+.ab-story-head { max-width: 760px; }
+.ab-photo-spacer { height: clamp(48px,6vw,80px); }
+.ab-story-head h2 { font-size: clamp(28px,3.4vw,46px); font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin: 0; }
+.ab-story-body { max-width: none; margin-top: 22px; font-size: clamp(16px,1.4vw,18.5px); line-height: 1.68; color: var(--fg-2); }
+.ab-story-body p { margin: 0 0 18px; }
+.ab-story-body strong { color: var(--ink); font-weight: 600; }
+.ab-solutions { margin-top: clamp(34px,4vw,52px); display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+.ab-sol { border-radius: var(--r-lg, 22px); padding: 28px 26px 30px; color: #fff; background: var(--c); position: relative; overflow: hidden; min-height: 210px; display: flex; flex-direction: column; }
+.ab-sol .ab-sol-k { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: .9; }
+.ab-sol h3 { font-size: clamp(19px,1.8vw,23px); font-weight: 600; letter-spacing: -0.015em; margin: 12px 0 10px; }
+.ab-sol p { font-size: 14.5px; line-height: 1.5; margin: 0; color: rgba(255,255,255,.92); }
+.ab-sol.ink { color: var(--ink); } .ab-sol.ink p { color: rgba(27,31,34,.75); }
+.ab-sol-no { position: absolute; right: 18px; bottom: 10px; font-size: 90px; font-weight: 800; line-height: 1; color: rgba(255,255,255,.14); letter-spacing: -0.05em; }
+.ab-sol.ink .ab-sol-no { color: rgba(27,31,34,.1); }
+
+/* work with us CTA band */
+.ab-work { background: #fff; border-top: 1px solid var(--border); }
+.ab-work-in { max-width: none; margin: 0; padding: clamp(44px,5.5vw,76px) var(--edge); display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
+.ab-work-copy h2 { font-size: clamp(26px,3vw,42px); font-weight: 600; letter-spacing: -0.03em; color: var(--ink); margin: 0; }
+.ab-work-copy p { font-size: clamp(16px,1.5vw,19px); color: var(--fg-2); margin: 8px 0 0; }
+
+/* people section */
+.people { padding: clamp(56px,7vw,96px) 0; }
+.people.alt { background: #fff; }
+.people.tint { background: #fff; }
+.people-head { max-width: none; margin: 0 0 clamp(28px,3.5vw,44px); padding: 0 var(--edge); }
+.people-head h2 { font-size: clamp(28px,3.4vw,46px); font-weight: 500; letter-spacing: -0.03em; color: var(--ink); margin: 0; }
+.people-head p { font-size: clamp(15px,1.4vw,18px); color: var(--fg-3); margin: 8px 0 0; }
+
+.people-grid { max-width: none; margin: 0; padding: 0 var(--edge); display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(18px,2.4vw,36px) clamp(12px,2vw,28px); }
+.pcard { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; transition: transform .3s var(--ease-out); }
+.pcard:hover { transform: translateY(-5px); }
+.pcap { position: relative; width: clamp(96px,11vw,150px); height: clamp(96px,11vw,150px); border-radius: 50%; overflow: hidden; box-shadow: var(--shadow-1); }
+.pcap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pcap.ph { display: grid; place-items: center; color: #fff; font-weight: 600; font-size: clamp(26px,3vw,40px); letter-spacing: 0.01em; }
+.pcap::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(27,31,34,.06); }
+.pcap .li { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(25,186,209,.86); opacity: 0; transition: opacity .3s var(--ease-out); }
+.pcap .li svg { width: 34%; height: 34%; fill: #fff; }
+.pcard:hover .pcap .li { opacity: 1; }
+.pname { font-size: clamp(14px,1.3vw,16px); font-weight: 600; color: var(--ink); margin-top: 14px; line-height: 1.2; }
+.pcompany { font-size: clamp(12px,1.1vw,13.5px); font-weight: 500; color: var(--turquoise); margin-top: 5px; line-height: 1.25; }
+.ptitle { font-size: clamp(11px,1vw,12.5px); color: var(--fg-3); margin-top: 3px; line-height: 1.3; }
+
+/* ===== Board / Trustee cards — layered gradient reveal =====
+   Layer 1: solid colour square wrapper (--bc).
+   Layer 2: full photo (colour backdrop baked in) OR centred initials.
+   Layer 3: bottom gradient band in the SAME colour, above the photo (z-index:2),
+            masking the lower torso and fading to transparent upward.
+   Layer 4: name (always shown) + company + position (reveal on hover).
+   On hover the band rolls up like a curtain and the extra lines unfold. */
+.bcard { position: relative; display: block; width: clamp(186px,18.4vw,232px); aspect-ratio: 1 / 1.07; max-width: 100%;
+  background: var(--bc); border-radius: 5px; overflow: hidden;
+  text-decoration: none; box-shadow: var(--shadow-1);
+  transition: transform .5s cubic-bezier(0.25,1,0.5,1), box-shadow .5s cubic-bezier(0.25,1,0.5,1); }
+.bcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-2); }
+
+/* board/trustee/team grids: cards match the homepage fellow cards in size
+   (clamp(186px,18.4vw,232px), aspect 1/1.07) and spread evenly across the full
+   content width — left card flush to the page edge, right flush to the right. */
+#directors-grid, #trustees-grid, #team-grid, #trustees-grid-full { grid-template-columns: repeat(5, clamp(186px,18.4vw,232px)); justify-content: space-between; column-gap: clamp(8px,1.2vw,16px); row-gap: clamp(28px,3vw,44px); }
+@media (max-width: 1180px){ #directors-grid, #trustees-grid, #team-grid, #trustees-grid-full { grid-template-columns: repeat(4, clamp(170px,21vw,232px)); } }
+@media (max-width: 940px){ #directors-grid, #trustees-grid, #team-grid, #trustees-grid-full { grid-template-columns: repeat(3, clamp(170px,28vw,232px)); } }
+@media (max-width: 700px){ #directors-grid, #trustees-grid, #team-grid, #trustees-grid-full { grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 16px; } }
+@media (max-width: 480px){ #directors-grid, #trustees-grid, #team-grid, #trustees-grid-full { grid-template-columns: minmax(0,1fr); justify-content: start; } }
+
+.bcard-photo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+  object-fit: cover; object-position: center 22%; display: block;
+  transform: scale(1.02); transform-origin: center center; }
+.people-grid--calm .bcard-photo {
+  transform: none;
+  object-fit: cover;
+  object-position: center 20%;
+  width: 100%;
+  height: 100%;
+}
+.people-grid--calm .bcard {
+  transition: transform .4s var(--ease-out), box-shadow .4s var(--ease-out);
+}
+.people-grid--calm .bcard-band {
+  height: 40%;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bc) 90%, transparent) 42%, transparent);
+  transition: opacity .35s ease;
+}
+.people-grid--calm .bcard:hover .bcard-band { height: 40%; }
+.people-grid--calm .bcard-company,
+.people-grid--calm .bcard-position {
+  transform: none;
+  transition: max-height .35s ease, opacity .35s ease, margin .35s ease;
+}
+.people-grid--calm .bcard:hover .bcard-company,
+.people-grid--calm .bcard:hover .bcard-position { transition-delay: 0s; }
+.people-grid--calm .bcard-name { white-space: normal; text-wrap: balance; }
+/* team portraits: black & white */
+#team-grid .bcard-photo,
+.people-grid--team .bcard-photo { filter: grayscale(1) contrast(1.02); transition: filter .45s ease; }
+.people-grid--team .bcard:hover .bcard-photo { filter: grayscale(0.35) contrast(1.02); }
+.bcard-initials { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center;
+  color: rgba(255,255,255,.92); font-weight: 700; font-size: clamp(40px,5vw,64px); letter-spacing: .02em; }
+
+.bcard-band { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 42%;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 0 clamp(10px,1vw,16px) clamp(18px,1.9vw,26px); text-align: center;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bc) 88%, transparent) 38%, transparent);
+  transition: height .5s cubic-bezier(0.25,1,0.5,1); }
+.bcard:hover .bcard-band { height: 66%; }
+
+.bcard-name { color: #fff; font-weight: 500; font-size: clamp(14px,1.15vw,17px); line-height: 1.2;
+  white-space: nowrap; text-shadow: 0 1px 12px rgba(0,0,0,.24); }
+.bcard-company, .bcard-position { color: rgba(255,255,255,.92); line-height: 1.3; text-shadow: 0 1px 8px rgba(0,0,0,.2);
+  max-height: 0; opacity: 0; transform: translateY(8px); overflow: hidden;
+  transition: max-height .5s cubic-bezier(0.25,1,0.5,1), opacity .42s ease,
+              transform .5s cubic-bezier(0.25,1,0.5,1), margin .5s cubic-bezier(0.25,1,0.5,1); }
+.bcard-company { font-size: clamp(11.5px,0.95vw,13px); font-weight: 600; }
+.bcard-position { font-size: clamp(10.5px,0.9vw,12px); font-weight: 500; color: rgba(255,255,255,.84); }
+.bcard:hover .bcard-company { max-height: 2.6em; opacity: 1; transform: translateY(0); margin-top: 7px; }
+.bcard:hover .bcard-position { max-height: 3.6em; opacity: 1; transform: translateY(0); margin-top: 3px; transition-delay: .05s; }
+
+@media (prefers-reduced-motion: reduce){
+  .bcard, .bcard-band, .bcard-company, .bcard-position { transition-duration: .15s; }
+}
+
+.people-cta { max-width: none; margin: clamp(34px,4vw,52px) 0 0; padding: 0 var(--edge); display: flex; justify-content: flex-end; }
+.viewall { display: inline-flex; align-items: center; gap: 12px; background: var(--turquoise); color: #fff; font-weight: 600; font-size: clamp(15px,1.4vw,17px); padding: 15px 34px; border-radius: var(--r-pill); text-decoration: none; box-shadow: 0 12px 30px rgba(25,186,209,.35); transition: transform .25s var(--ease-out), background .25s var(--ease-out); }
+.viewall:hover { transform: translateY(-2px); background: var(--turquoise-600); }
+.viewall .ic-arrow { width: 1.3em; height: 0.8em; }
+
+/* ===== what we solve — three full-width photo strips stacked vertically.
+   Each strip matches the width of the "what we solve" heading (the .wwd-head
+   override in home.css uses padding 0 clamp(20px,5vw,80px), max-width:none),
+   so we mirror that exact horizontal inset here. Photo fills edge-to-edge;
+   on hover a colored overlay + white text fades in. ===== */
+.wss-strips {
+  margin: clamp(34px,4vw,52px) 0 0;
+  padding: 0 clamp(20px,5vw,80px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.wss-strip {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: clamp(150px,17vw,210px);
+  border-radius: 5px;
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: var(--shadow-1);
+}
+/* dark scrim from the top so the always-visible label stays readable on any photo */
+.wss-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,.46) 0%, rgba(0,0,0,.14) 30%, transparent 52%);
+}
+.wss-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  display: block;
+}
+.wss-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  /* anchor the text block to the same top-left point on every strip:
+     left/right/bottom share one inset; top clears the always-visible label
+     so the headline starts at the same Y regardless of description length. */
+  padding: clamp(50px,6.4vw,78px) clamp(22px,3vw,46px) clamp(22px,3vw,46px);
+  background: var(--ov, #19BAD1);
+  opacity: 0;
+  transition: opacity .4s var(--ease-out);
+}
+.wss-strip:hover .wss-overlay,
+.wss-strip:focus-visible .wss-overlay { opacity: 1; }
+/* uppercase label — always visible, pinned top-left above photo and overlay */
+.wss-label {
+  position: absolute;
+  top: clamp(18px,2.4vw,28px);
+  left: clamp(22px,3vw,46px);
+  z-index: 3;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: lowercase; color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.wss-headline {
+  font-size: clamp(21px,2.3vw,30px); font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.12; color: #fff;
+}
+.wss-desc {
+  font-size: clamp(14px,1.25vw,16.5px); line-height: 1.5;
+  color: rgba(255,255,255,.92); max-width: 64ch;
+}
+
+@media (max-width: 980px){
+  .ab-block { grid-template-columns: 1fr; gap: 16px; }
+  .ab-photo-stats { grid-template-columns: repeat(2,1fr); }
+  .ab-solutions { grid-template-columns: 1fr; }
+  .people-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px){
+  .ab-photo-stats { grid-template-columns: 1fr; }
+  .people-grid { grid-template-columns: repeat(2, 1fr); }
+}

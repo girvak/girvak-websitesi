@@ -1,0 +1,167 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import PeopleGrid from '../components/about/PeopleGrid.astro';
+import { resolveImage } from '../lib/images';
+import { getAboutContent, getHomeContent, getPeople } from '../lib/content';
+import { trustees, directors, team } from '../lib/aboutPeople';
+import '../styles/about.css';
+
+const TRUSTEES_PREVIEW = 10; // 2 rows × 5 columns on desktop
+
+const content = await getHomeContent();
+const about = await getAboutContent();
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+
+const livePeople = await getPeople();
+const trusteesAll = livePeople?.trustees.length ? livePeople.trustees : trustees;
+const directorsData = livePeople?.directors.length ? livePeople.directors : directors;
+const teamData = livePeople?.team.length ? livePeople.team : team;
+const trusteesPreview = trusteesAll.slice(0, TRUSTEES_PREVIEW);
+
+const isRemote = (s: string) => /^https?:\/\//.test(s);
+const missionLocal = about.mission.image && !isRemote(about.mission.image)
+  ? resolveImage(about.mission.image)
+  : undefined;
+const missionRemote = about.mission.image && isRemote(about.mission.image) ? about.mission.image : undefined;
+---
+
+<BaseLayout title={about.seo_title} description={about.seo_description} bodyClass="hm ab">
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="ab-hero ab-hero--home" style="padding: 172px 0px 39px">
+      <div class="ab-hero-in" style="padding: 80px var(--edge) 0px">
+        <h1 class="ab-hero-title" set:html={about.hero_html} />
+      </div>
+    </section>
+
+    <section class="ab-block" id="aboutus" style="padding: 50px var(--edge) 70px 58px">
+      <div class="ab-body">
+        {about.about_paragraphs.map((p) => (
+          <p style="width: auto; color: rgb(55, 61, 66)">{p}</p>
+        ))}
+      </div>
+    </section>
+
+    <section class="ab-photo" id="mission">
+      {missionLocal ? (
+        <Image class="ab-photo-img" src={missionLocal} alt="" widths={[960, 1600, 2048]} sizes="100vw" />
+      ) : missionRemote ? (
+        <img class="ab-photo-img" src={missionRemote} alt="" loading="eager" decoding="async" />
+      ) : (
+        <img class="ab-photo-img" src="/images/about-audience.jpg" alt="" />
+      )}
+      <div class="ab-photo-in">
+        <div class="ab-pk">{about.mission.kicker}</div>
+        <h2>{about.mission.headline}</h2>
+      </div>
+    </section>
+    <div class="ab-photo-spacer"></div>
+
+    <section class="ab-story" id="story" style="padding: 20px var(--edge) 81px 58px">
+      <div class="ab-story-head">
+        <h2 style="font-weight: 500; font-size: 38px; color: rgb(55, 61, 66)">{about.story_headline}</h2>
+      </div>
+      <div class="ab-story-body">
+        {about.story_paragraphs.map((p) => (
+          <p style="width: auto; color: rgb(55, 61, 66)" set:html={p} />
+        ))}
+      </div>
+    </section>
+
+    <section class="wwd wws" id="wws" style="padding: 2px 0px 104px">
+      <div class="wwd-head" style="font-weight: 600">
+        <h2 class="h2" style="color: #373d42; font-size: 38px; font-weight: 500; margin: 0px; text-align: left">
+          <span style="color: #373d42">{about.what_we_solve_headline}</span>
+        </h2>
+      </div>
+      <div class="wss-strips" id="wwsRows">
+        {about.what_we_solve_strips.map((strip) => {
+          const local = strip.image && !isRemote(strip.image) ? resolveImage(strip.image) : undefined;
+          const remote = strip.image && isRemote(strip.image) ? strip.image : undefined;
+          return (
+            <a class="wss-strip" style={`--ov:${strip.overlay_color}`} href="#">
+              {local ? (
+                <Image class="wss-photo" src={local} alt="" widths={[800, 1400]} sizes="100vw" />
+              ) : remote ? (
+                <img class="wss-photo" src={remote} alt="" loading="lazy" decoding="async" />
+              ) : (
+                <img class="wss-photo" src={strip.image} alt="" loading="lazy" decoding="async" />
+              )}
+              <span class="wss-label">{strip.label}</span>
+              <div class="wss-overlay" style={`background-color: ${strip.overlay_color}`}>
+                <span class="wss-headline">{strip.headline}</span>
+                <span class="wss-desc">{strip.desc}</span>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="people tint" id="trustees">
+      <div class="people-head">
+        <h2 style="font-size: 30px; color: rgb(55, 61, 66)">{about.trustees.headline}</h2>
+        <p>{about.trustees.subheadline}</p>
+      </div>
+      <PeopleGrid id="trustees-grid" people={trusteesPreview} forceColor="#373D42" calm />
+      <div class="people-cta">
+        <a class="h3btn" href="/board-of-trustees" style="font-size: 22px">
+          view full board of trustees<span class="cta-arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="people alt" id="directors">
+      <div class="people-head">
+        <h2 style="color: rgb(55, 61, 66); font-size: 30px">{about.directors.headline}</h2>
+        <p>{about.directors.subheadline}</p>
+      </div>
+      <PeopleGrid id="directors-grid" people={directorsData} forceColor="#F76C53" calm />
+    </section>
+
+    <section class="people" id="team">
+      <div class="people-head">
+        <h2 style="font-size: 30px; color: rgb(55, 61, 66)">{about.team.headline}</h2>
+        <p>{about.team.subheadline}</p>
+      </div>
+      <PeopleGrid id="team-grid" people={teamData} forceColor="#19BAD1" calm teamTone />
+    </section>
+
+    <section class="ab-work" id="reports">
+      <div class="ab-work-in">
+        <div class="ab-work-copy">
+          <h2 style="font-weight: 500; font-size: 27px">{about.reports.headline}</h2>
+          <p>{about.reports.text}</p>
+        </div>
+        <a class="h3btn" href={about.reports.cta_href} style="font-size: 22px">
+          {about.reports.cta_label}<span class="cta-arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="ab-work" id="work">
+      <div class="ab-work-in">
+        <div class="ab-work-copy">
+          <h2 style="font-weight: 500; font-size: 27px">{about.work_with_us.headline}</h2>
+          <p>{about.work_with_us.text}</p>
+        </div>
+        <a class="h3btn" href={about.work_with_us.cta_href} style="font-size: 22px">
+          {about.work_with_us.cta_label}<span class="cta-arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <Footer footer={content.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+  import '../scripts/about.js';
+</script>

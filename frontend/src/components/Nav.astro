@@ -1,0 +1,38 @@
+---
+// Fixed header — locked logo + a single menu/close toggle that swaps state.
+// `scrolled` locks the header into its light/dark state (for pages whose hero
+// is white from the top, e.g. About); `home.js` skips its scroll toggle when
+// the `ab-nav` class is present. `logoHref` points the logo at the right place.
+interface Props {
+  logoHref?: string;
+  scrolled?: boolean;
+}
+const { logoHref = '#top', scrolled = false } = Astro.props;
+---
+<header class:list={['hm-nav', scrolled && 'scrolled', scrolled && 'ab-nav']}>
+  <div class="hm-nav-in" style="color: #373d42">
+    <a href={logoHref} class="hm-logo" aria-label="GİRVAK">
+      <img class="logo-white" src="/assets/logo-white.png" alt="GİRVAK" />
+      <img
+        class="logo-turq"
+        src="/assets/logo-primary-turquoise.png"
+        alt=""
+        aria-hidden="true"
+        style="width: 150px; height: 35px"
+      />
+    </a>
+    <button class="hm-menu-btn" id="menuOpen" aria-label="Toggle menu" aria-expanded="false">
+      <span class="hm-state hm-state-menu">
+        <svg class="hm-menu-ico" viewBox="0 0 200 70" fill="none" aria-hidden="true">
+          <path d="M9 30 C55 21 120 19 191 25" stroke="currentColor" stroke-width="11" stroke-linecap="round" />
+          <path d="M9 52 C48 45 105 44 150 48" stroke="currentColor" stroke-width="11" stroke-linecap="round" />
+        </svg>
+        <span class="hm-menu-label">menu</span>
+      </span>
+      <span class="hm-state hm-state-close">
+        <span class="hm-menu-label">close</span>
+        <span class="hm-menu-x-ico" aria-hidden="true"></span>
+      </span>
+    </button>
+  </div>
+</header>

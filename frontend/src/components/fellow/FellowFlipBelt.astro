@@ -1,0 +1,53 @@
+---
+import { Image } from 'astro:assets';
+import type { Person } from '../../lib/types';
+import { isRemotePhoto, personName } from '../../lib/programPeople';
+import { resolveImage } from '../../lib/images';
+
+interface Props {
+  trackId: string;
+  people: Person[];
+  cardClass: string;
+  ariaLabel: string;
+}
+
+const { trackId, people, cardClass, ariaLabel } = Astro.props;
+---
+<div class="fellows-belt" aria-label={ariaLabel}>
+  <div class="fellows-track" id={trackId}>
+    {
+      people.map((p) => {
+        const name = personName(p);
+        const photo = p.photo || '';
+        const local = photo && !isRemotePhoto(photo) ? resolveImage(photo) : null;
+        return (
+          <figure class={`fcard ${cardClass}`} tabindex="0">
+            <div class="fcard-inner">
+              <div class="fcard-front">
+                {p.year ? <span class="fcard-year">{p.year}</span> : null}
+                {local ? (
+                  <Image src={local} alt={name} width={232} height={248} />
+                ) : photo ? (
+                  <img src={photo} alt={name} loading="lazy" decoding="async" />
+                ) : null}
+                <div class="fcard-band">
+                  <span class="fcard-frontname">{name}</span>
+                </div>
+              </div>
+              <div class="fcard-back">
+                {p.year ? <span class="fcard-back-year">{p.year}</span> : null}
+                <div class="fcard-back-meta">
+                  <span class="fcard-name">{name}</span>
+                  {(p.university || p.company) ? (
+                    <span class="fcard-uni">{p.university || p.company}</span>
+                  ) : null}
+                  {p.department ? <span class="fcard-dept">{p.department}</span> : null}
+                </div>
+              </div>
+            </div>
+          </figure>
+        );
+      })
+    }
+  </div>
+</div>
