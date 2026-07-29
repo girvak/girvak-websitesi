@@ -1,0 +1,90 @@
+{
+  "hero_image": "",
+  "hero_headline": "A community that backs you. For life.",
+  "hero_headline_html": "A community that backs you.<br /><span class=\"hl\">For life.</span>",
+  "hero_cta_primary": { "label": "become a fellow", "href": "#" },
+  "hero_cta_secondary": { "label": "program guide", "href": "#" },
+  "about_html": "The <span class=\"hl\">GİRVAK Fellow Program</span> is designed to equip young people with an <span class=\"hl\">entrepreneurial mindset</span>, empowering them to drive transformation in their communities and beyond. While fellows <span class=\"hl\">don't need to be entrepreneurs</span>, we believe that thinking like one, being <span class=\"hl\">proactive, solution-oriented, and resilient</span> is essential to creating meaningful change.",
+  "application": {
+    "label": "application criteria",
+    "paragraphs": [
+      "Be a university student in Türkiye and currently in your 3rd year or above",
+      "Be between the ages of 17 and 24"
+    ],
+    "kicker": "That's it. Really."
+  },
+  "selection": {
+    "label": "how we select",
+    "paragraphs": [
+      "Our selection process is unlike any other. It's not a test you pass, <span class=\"hl\">it's a journey</span> in itself.",
+      "As you move through it, you learn by doing, and you come out <span class=\"hl\">knowing yourself</span> a little better.",
+      "We don't look at your business idea. We don't look at your grades. We look at <span class=\"hl\">who you are.</span>"
+    ],
+    "kicker": ""
+  },
+  "what_to_expect_headline": "what to expect",
+  "what_to_expect": [
+    { "name": "Two years to grow", "desc": "a learning journey centered on self-discovery and purpose", "image": "/images/wte-two-years.jpg", "cap": "cap-top cap-left" },
+    { "name": "Backed all the way", "desc": "a scholarship that supports you throughout the program, so potential leads the way", "image": "/images/wte-backed.jpg", "cap": "cap-bottom cap-right" },
+    { "name": "Every month", "desc": "FellowUp events built to spark confidence, clarity, and curiosity.", "image": "/images/wte-every-month.jpg", "cap": "cap-top cap-left" },
+    { "name": "People who've been there", "desc": "mentorship from leading entrepreneurs, investors, creatives, and changemakers", "image": "/images/wte-people.jpg", "cap": "cap-bottom cap-right" },
+    { "name": "Beyond one path", "desc": "exposure to diverse career paths, from entrepreneurship to impact-driven work", "image": "/images/wte-beyond.jpg", "cap": "cap-top cap-left" },
+    { "name": "The whole ecosystem", "desc": "access to Türkiye's innovation ecosystem and a powerful alumni network", "image": "/images/wte-ecosystem.jpg", "cap": "cap-bottom cap-right" }
+  ],
+  "fellows_headline": "meet the fellows",
+  "fellows_cta": { "label": "see all", "href": "/fellow-program#fellows" },
+  "alumni_headline": "once a fellow, always a fellow",
+  "alumni_headline_html": "once a fellow, <span class=\"falum-em\">always</span> a fellow.",
+  "alumni_intro": "Becoming a fellow isn't a two-year chapter. It's the start of a select, lifelong network of people who get you, grow with you, and have your back, always.",
+  "alumni_label": "alumni network",
+  "alumni_bullets": [
+    "Instant, lifelong access to a community of 450+ alumni",
+    "Direct connection to extensive network of mentors, industry leaders, and ecosystem partners",
+    "Access to annual events and meet-ups held across Türkiye and the EU",
+    "Direct fast-track nominations to major national and international awards",
+    "Free event tickets and corporate tech perks",
+    "Visibility and curated access to high-level conferences, acceleration programs, and funding opportunities"
+  ],
+  "alumni_cta": { "label": "meet our alumni", "href": "/fellow-program#alumni" },
+  "giveback_headline": "because when one gives back, everyone moves forward.",
+  "giveback_headline_html": "because when one gives back, everyone moves <span class=\"fbecause-em\">forward.</span>",
+  "giveback_lead": "1 ₺ invested, the program generates 21 ₺ of social value.",
+  "giveback_body": "For over a decade, GİRVAK has been nurturing Türkiye's most driven young talents, not by funding startups, but by investing in potential. A generation that leads with curiosity, courage.",
+  "giveback_cta": { "label": "You can access the full Fellow Program Impact Report here.", "href": "#" },
+  "challenger_hero_image": "",
+  "challenger_hero_headline": "Your first step into the entrepreneurial world",
+  "challenger_hero_headline_html": "<span style=\"color: #f2a81d\">Your first step</span><br /><span style=\"color: #373d42\">into the entrepreneurial world</span>",
+  "challenger_paragraphs": [
+    "The <span class=\"chl\">Challenger Program</span> introduces <span class=\"chl\">first and second-year university students</span> to the wide horizon of opportunities that life, careers, and entrepreneurship have to offer.",
+    "Designed as an <span class=\"chl\">early discovery track</span>, the program inspires young talents to explore different paths, gain foundational entrepreneurial skills, and start shaping their own future."
+  ],
+  "challenger_cta_primary": { "label": "become a challenger", "href": "#" },
+  "challenger_cta_secondary": { "label": "program guide", "href": "#" },
+  "challenger_application": {
+    "label": "application criteria",
+    "paragraphs": [
+      "Be a university student in Türkiye and currently in your preparatory, 1<sup>st</sup> or 2<sup>nd</sup> year",
+      "Be between the ages of 17 and 24"
+    ],
+    "kicker": "That's it. Really."
+  },
+  "challenger_selection": {
+    "label": "how we select",
+    "paragraphs": [
+      "Our selection process is unlike any other. It's not a test you pass, <span class=\"hl\">it's a journey</span> in itself.",
+      "As you move through it, you learn by doing, and you come out <span class=\"hl\">knowing yourself</span> a little better.",
+      "We don't look at your business idea. We don't look at your grades. We look at <span class=\"hl\">who you are.</span>"
+    ],
+    "kicker": ""
+  },
+  "what_youll_do_headline": "what you'll do",
+  "what_youll_do": [
+    { "text": "Get equipped with the core principles of entrepreneurship", "image": "/images/chal-1-key.png" },
+    { "text": "Join regular online workshops", "image": "/images/chal-2-workshop.png" },
+    { "text": "Take part in open conversations on real-world challenges", "image": "/images/chal-3-talk.png" },
+    { "text": "Meet inspiring entrepreneurs from our alumni network", "image": "/images/chal-4-heads.png" },
+    { "text": "Grow curiosity, creativity, and critical thinking skills", "image": "/images/chal-5-spark.png" }
+  ],
+  "challengers_headline": "meet the challengers",
+  "challengers_cta": { "label": "see all", "href": "/fellow-program#challengers" }
+}

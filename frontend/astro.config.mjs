@@ -14,10 +14,10 @@ export default defineConfig({
   vite: {
     server: {
       // Allow ngrok / Cloudflare tunnel hostnames in dev.
-      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io'],
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', '.trycloudflare.com'],
       proxy: {
         // Same-origin /api in dev (newsletter + refresh) — works through ngrok.
-        '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+        '/api': { target: 'http://127.0.0.1:8001', changeOrigin: true },
       },
     },
   },

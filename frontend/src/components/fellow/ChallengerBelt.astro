@@ -1,0 +1,31 @@
+---
+// Challenger belt — single-face amber cards, straight from the design
+// (`Fellow Program.html` + `fellow.css` in the Claude Design project).
+// Unlike the fellow / alumni belts these cards never flip and carry no photo:
+// year top-right, name, then the university only — the design also printed the
+// department under it, dropped on request. The marquee itself is the
+// shared `.fellows-belt` / `.fellows-track` machinery, so home.js duplicates the
+// track and derives the scroll duration exactly as it does for the other belts.
+import type { Person } from '../../lib/types';
+import { personName } from '../../lib/programPeople';
+
+interface Props {
+  trackId: string;
+  people: Person[];
+  ariaLabel: string;
+}
+const { trackId, people, ariaLabel } = Astro.props;
+---
+<div class="fellows-belt" aria-label={ariaLabel}>
+  <div class="fellows-track" id={trackId}>
+    {
+      people.map((p) => (
+        <figure class="cchcard">
+          {p.year ? <span class="cchcard-year">{p.year}</span> : null}
+          <span class="cchcard-name">{personName(p)}</span>
+          {p.university ? <span class="cchcard-uni">{p.university}</span> : null}
+        </figure>
+      ))
+    }
+  </div>
+</div>

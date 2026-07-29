@@ -1,6 +1,7 @@
-import type { AboutContent, HomeContent, PeopleContent } from './types';
+import type { AboutContent, FellowContent, HomeContent, PeopleContent } from './types';
 import fallback from '../data/home_content.json';
 import aboutFallback from '../data/about_content.json';
+import fellowFallback from '../data/fellow_content.json';
 
 // Fetched at BUILD time (SSG). The FastAPI backend is the source of truth;
 // if it's unreachable during a build, we fall back to the bundled snapshot so
@@ -53,5 +54,18 @@ export async function getAboutContent(): Promise<AboutContent> {
       `[content] Could not reach ${API_BASE}/api/content/about — using bundled fallback. (${err})`,
     );
     return aboutFallback as AboutContent;
+  }
+}
+
+export async function getFellowContent(): Promise<FellowContent> {
+  try {
+    const res = await fetch(`${API_BASE}/api/content/fellow`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as FellowContent;
+  } catch (err) {
+    console.warn(
+      `[content] Could not reach ${API_BASE}/api/content/fellow — using bundled fallback. (${err})`,
+    );
+    return fellowFallback as FellowContent;
   }
 }

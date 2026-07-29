@@ -41,26 +41,50 @@ function closeMenu() {
   navmenu.setAttribute('aria-hidden', 'true');
   if (menuOpen) menuOpen.setAttribute('aria-expanded', 'false');
   document.body.classList.remove('menu-open');
+  navmenu.querySelectorAll('.nm-item.is-open').forEach((o) => o.classList.remove('is-open'));
 }
 if (menuOpen) menuOpen.addEventListener('click', () => { navmenu && navmenu.classList.contains('open') ? closeMenu() : openMenu(); });
 if (menuClose) menuClose.addEventListener('click', closeMenu);
-if (navmenu) navmenu.querySelectorAll('.nm-head, .nm-sub a, .navmenu-apply').forEach((a) => {
-  a.addEventListener('click', (e) => {
-    // Let in-page anchors navigate; placeholder "#" links just close the menu.
-    closeMenu();
+if (navmenu) {
+  navmenu.querySelectorAll('.nm-sub a, .navmenu-apply, .nm-item-apply > .nm-head').forEach((a) => {
+    a.addEventListener('click', () => { closeMenu(); });
   });
-});
+}
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && navmenu && navmenu.classList.contains('open')) closeMenu();
 });
 if (navmenu) {
   navmenu.querySelectorAll('.nm-item').forEach((item) => {
     if (!item.querySelector('.nm-sub')) return;
+    const head = item.querySelector('.nm-head');
     item.addEventListener('mouseenter', () => {
+      if (!canHover) return;
       navmenu.querySelectorAll('.nm-item.is-open').forEach((o) => { if (o !== item) o.classList.remove('is-open'); });
       item.classList.add('is-open');
     });
-    item.addEventListener('mouseleave', () => { item.classList.remove('is-open'); });
+    item.addEventListener('mouseleave', () => {
+      if (!canHover) return;
+      item.classList.remove('is-open');
+    });
+    if (head) {
+      head.addEventListener('click', (e) => {
+        if (canHover) {
+          // Desktop: follow the head link and close the overlay.
+          closeMenu();
+          return;
+        }
+        // Touch: first tap opens accordion; second tap (already open) navigates.
+        if (!item.classList.contains('is-open')) {
+          e.preventDefault();
+          navmenu.querySelectorAll('.nm-item.is-open').forEach((o) => {
+            if (o !== item) o.classList.remove('is-open');
+          });
+          item.classList.add('is-open');
+          return;
+        }
+        closeMenu();
+      });
+    }
   });
   navmenu.addEventListener('click', (e) => {
     if (!e.target.closest('a, button')) closeMenu();
@@ -331,5 +355,44 @@ if (form) {
       if (lbl) lbl.textContent = 'Try again';
       console.error('[newsletter]', err);
     }
+  });
+}
+
+// ---------- Touch: fellow flip cards + people curtain cards ----------
+if (!canHover) {
+  document.querySelectorAll('.fcard').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      const open = card.classList.contains('is-flipped');
+      document.querySelectorAll('.fcard.is-flipped').forEach((o) => {
+        if (o !== card) o.classList.remove('is-flipped');
+      });
+      card.classList.toggle('is-flipped', !open);
+    });
+  });
+
+  document.querySelectorAll('.bcard').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      const isLink = card.tagName === 'A';
+      const open = card.classList.contains('is-open');
+      if (!open) {
+        // First tap reveals details; second tap follows LinkedIn (if any).
+        e.preventDefault();
+        document.querySelectorAll('.bcard.is-open').forEach((o) => {
+          if (o !== card) o.classList.remove('is-open');
+        });
+        card.classList.add('is-open');
+        return;
+      }
+      if (!isLink) e.preventDefault();
+    });
+  });
+
+  // Tap empty belt chrome to pause/resume marquees (cards handle their own taps).
+  document.querySelectorAll('.fellows-belt, .hero3-belt-wrap').forEach((belt) => {
+    belt.addEventListener('click', (e) => {
+      if (e.target.closest('.fcard, .b3card, a, button')) return;
+      belt.classList.toggle('is-paused');
+    });
   });
 }

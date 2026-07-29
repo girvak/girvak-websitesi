@@ -5,71 +5,67 @@ import Nav from '../components/Nav.astro';
 import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
 import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
+import ChallengerBelt from '../components/fellow/ChallengerBelt.astro';
 import { resolveImage } from '../lib/images';
-import { getHomeContent, getPeople } from '../lib/content';
-import { personName } from '../lib/programPeople';
-import type { Person } from '../lib/types';
+import { getFellowContent, getHomeContent, getPeople } from '../lib/content';
+import { sortPeopleAlpha } from '../lib/aboutPeople';
 import '../styles/fellow.css';
 
 const content = await getHomeContent();
 const peopleApi = await getPeople();
+// Page copy + section media: Airtable `fellow` table (tag families).
+// People belts: Airtable `people` table (tags fellow / alumni / challenger).
+const fp = await getFellowContent();
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
 const seo = {
   title: 'Fellow Program · GİRVAK',
   description:
+    fp.about_html?.replace(/<[^>]+>/g, '').slice(0, 160) ||
     'A community that backs you. For life. The GİRVAK Fellow Program equips young people with an entrepreneurial mindset to drive change.',
 };
 
-function fallbackFellows(): Person[] {
-  return [
-    { first: 'Deniz Hale', last: 'Durakbaşı', university: 'Boğaziçi Üniversitesi', department: 'Mühendislik', year: "'25", photo: '/images/fellow-cutout.png' },
-    { first: 'Batuhan', last: 'Aysan', university: 'İTÜ', department: 'Bilgisayar Mühendisliği', year: "'25", photo: '/images/fellow-b.png' },
-    { first: 'İpek', last: 'Şahin', university: 'ODTÜ', department: 'İşletme', year: "'25", photo: '/images/fellow-c.png' },
-  ];
-}
+// Airtable returns records in table order — sort like the about / trustees
+// grids so every people list on the site reads alphabetically (Turkish locale).
+const fellowPeople = sortPeopleAlpha(peopleApi?.fellows?.length ? peopleApi.fellows : []);
+const alumniPeople = sortPeopleAlpha(peopleApi?.alumni?.length ? peopleApi.alumni : []);
+const challengerPeople = sortPeopleAlpha(peopleApi?.challengers?.length ? peopleApi.challengers : []);
 
-function fallbackChallengers(): Person[] {
-  return Array.from({ length: 5 }, () => ({
-    first: 'Deniz Hale',
-    last: 'Durakbaşı',
-    university: 'Boğaziçi Üniversitesi',
-    department: 'Tarih',
-    year: "'25",
-  }));
-}
+const isRemote = (s: string) => /^https?:\/\//.test(s);
 
-const fellowPeople = peopleApi?.fellows?.length ? peopleApi.fellows : fallbackFellows();
-const alumniPeople = peopleApi?.alumni?.length ? peopleApi.alumni : [];
-const challengerPeople = peopleApi?.challengers?.length ? peopleApi.challengers : fallbackChallengers();
-// Hero group photo — falls back to an existing fellow portrait until
-// `fellow-group.png` is added to src/assets/images.
-const heroPhoto =
-  resolveImage('/images/fellow-group.png') ?? resolveImage('/images/fellow-cutout.png');
+const heroRemote = fp.hero_image && isRemote(fp.hero_image) ? fp.hero_image : '';
+const heroLocal =
+  (!heroRemote && fp.hero_image ? resolveImage(fp.hero_image) : undefined) ??
+  resolveImage('/images/fellow-group.png') ??
+  resolveImage('/images/fellow-cutout.png');
 
-// What to expect — 6 photo cards. `img` is the design's intended asset; `fb`
-// is an existing repo photo used as a stand-in until the real ones are added.
-const wte = [
-  { img: '/images/wte-two-years.jpg', fb: '/images/hero-1.jpg', name: 'Two years to grow', desc: 'a learning journey centered on self-discovery and purpose', cap: 'cap-top cap-left' },
-  { img: '/images/wte-backed.jpg', fb: '/images/hero-2.jpg', name: 'Backed all the way', desc: 'a scholarship that supports you throughout the program, so potential leads the way', cap: 'cap-bottom cap-right' },
-  { img: '/images/wte-every-month.jpg', fb: '/images/hero-3.jpg', name: 'Every month', desc: 'FellowUp events built to spark confidence, clarity, and curiosity.', cap: 'cap-top cap-left' },
-  { img: '/images/wte-people.jpg', fb: '/images/hero-4.jpg', name: "People who've been there", desc: 'mentorship from leading entrepreneurs, investors, creatives, and changemakers', cap: 'cap-bottom cap-right' },
-  { img: '/images/wte-beyond.jpg', fb: '/images/impact-photo.jpg', name: 'Beyond one path', desc: 'exposure to diverse career paths, from entrepreneurship to impact-driven work', cap: 'cap-top cap-left' },
-  { img: '/images/wte-ecosystem.jpg', fb: '/images/wd-development.jpg', name: 'The whole ecosystem', desc: "access to Türkiye's innovation ecosystem and a powerful alumni network", cap: 'cap-bottom cap-right' },
-].map((c) => ({ ...c, meta: resolveImage(c.img) ?? resolveImage(c.fb) }));
+const wte = fp.what_to_expect.map((c) => {
+  const remote = c.image && isRemote(c.image) ? c.image : '';
+  const meta = !remote && c.image ? resolveImage(c.image) : undefined;
+  return { ...c, remote, meta };
+});
 
-// Challenger — left photo (stand-in until chal-program.jpg is added).
+const chalRemote = fp.challenger_hero_image && isRemote(fp.challenger_hero_image) ? fp.challenger_hero_image : '';
 const chalPhoto =
-  resolveImage('/images/chal-program.jpg') ?? resolveImage('/images/wd-development.jpg');
+  (!chalRemote && fp.challenger_hero_image ? resolveImage(fp.challenger_hero_image) : undefined) ??
+  resolveImage('/images/chal-program.jpg') ??
+  resolveImage('/images/wd-development.jpg');
 
-// Challenger — what you'll do (illustration icons; rendered only when present).
-const fwyd = [
-  { img: '/images/chal-1-key.png', text: 'Get equipped with the core principles of entrepreneurship' },
-  { img: '/images/chal-2-workshop.png', text: 'Join regular online workshops' },
-  { img: '/images/chal-3-talk.png', text: 'Take part in open conversations on real-world challenges' },
-  { img: '/images/chal-4-heads.png', text: 'Meet inspiring entrepreneurs from our alumni network' },
-  { img: '/images/chal-5-spark.png', text: 'Grow curiosity, creativity, and critical thinking skills' },
-].map((i) => ({ ...i, meta: resolveImage(i.img) }));
+// Airtable's challenger "how we select" rows carry no **_highlight_** markers,
+// so the phrases arrive as plain text and render dark on the amber panel. The
+// copy is identical to the fellow rows, which do carry them — borrow the
+// marked-up variant when the plain text matches, otherwise render as-is.
+const stripTags = (s: string) => s.replace(/<[^>]+>/g, '');
+const markedSelection = new Map(fp.selection.paragraphs.map((p) => [stripTags(p), p]));
+const chalSelectionParagraphs = fp.challenger_selection.paragraphs.map(
+  (p) => markedSelection.get(stripTags(p)) ?? p,
+);
+
+const fwyd = fp.what_youll_do.map((i) => ({
+  ...i,
+  meta: i.image && !isRemote(i.image) ? resolveImage(i.image) : undefined,
+  remote: i.image && isRemote(i.image) ? i.image : '',
+}));
 ---
 
 <BaseLayout title={seo.title} description={seo.description} bodyClass="hm fp">
@@ -81,26 +77,26 @@ const fwyd = [
     <section class="fhero-track">
       <div class="fhero-pin">
         <div class="fhero-media">
-          {heroPhoto ? (
-            <Image class="fhero-photo" src={heroPhoto} alt="GİRVAK Fellows" widths={[560, 1120]} sizes="(max-width: 900px) 92vw, 44vw" />
+          {heroRemote ? (
+            <img class="fhero-photo" src={heroRemote} alt="GİRVAK Fellows" loading="eager" decoding="async" />
+          ) : heroLocal ? (
+            <Image class="fhero-photo" src={heroLocal} alt="GİRVAK Fellows" widths={[560, 1120]} sizes="(max-width: 900px) 92vw, 44vw" />
           ) : (
             <img class="fhero-photo" src="/images/fellow-group.png" alt="GİRVAK Fellows" />
           )}
         </div>
 
         <div class="fhero-left">
-          <!-- STATE 1 -->
           <div class="fhero-state fhero-1 on">
-            <h1 class="fhero-h1" style="font-size: 75px">A community that backs you.<br /><span class="hl">For life.</span></h1>
+            <h1 class="fhero-h1" set:html={fp.hero_headline_html || fp.hero_headline} />
             <div class="fhero-links">
-              <a class="fhero-link" href="#">become a fellow<span class="arr" aria-hidden="true"></span></a>
-              <a class="fhero-link" href="#">program guide<span class="arr" aria-hidden="true"></span></a>
+              <a class="fhero-link" href={fp.hero_cta_primary.href}><span class="fhero-link-label">{fp.hero_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
+              <a class="fhero-link" href={fp.hero_cta_secondary.href}><span class="fhero-link-label">{fp.hero_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
             </div>
           </div>
 
-          <!-- STATE 2 -->
           <div class="fhero-state fhero-2 off">
-            <p class="fhero-copy" style="font-size: 23px; font-weight: 500; line-height: 1.6">The <span class="hl">GİRVAK Fellow Program</span> is designed to equip young people with an <span class="hl">entrepreneurial mindset</span>, empowering them to drive transformation in their communities and beyond. While fellows <span class="hl">don't need to be entrepreneurs</span>, we believe that thinking like one, being <span class="hl">proactive, solution-oriented, and resilient</span> is essential to creating meaningful change.</p>
+            <p class="fhero-copy" set:html={fp.about_html} />
           </div>
         </div>
       </div>
@@ -109,34 +105,34 @@ const fwyd = [
     <!-- APPLICATION CRITERIA & SELECTION -->
     <section class="fhow">
       <div class="fhow-row">
-        <p class="fhow-label" style="font-weight: 400; color: rgb(255, 255, 255)">application criteria</p>
+        <p class="fhow-label" style="font-weight: 400; color: rgb(255, 255, 255)">{fp.application.label}</p>
         <div class="fhow-body">
-          <p>Be a university student in Türkiye and currently in your 3rd year or above</p>
-          <p>Be between the ages of 17 and 24</p>
-          <p class="kicker" style="font-weight: 700">That's it. Really.</p>
+          {fp.application.paragraphs.map((p) => <p set:html={p} />)}
+          {fp.application.kicker && <p class="kicker" style="font-weight: 700">{fp.application.kicker}</p>}
         </div>
       </div>
       <div class="fhow-row">
-        <p class="fhow-label" style="font-weight: 400; color: rgb(255, 255, 255)">how we select</p>
+        <p class="fhow-label" style="font-weight: 400; color: rgb(255, 255, 255)">{fp.selection.label}</p>
         <div class="fhow-body">
-          <p>Our selection process is unlike any other. It's not a test you pass, <span class="hl">it's a journey</span> in itself.</p>
-          <p>As you move through it, you learn by doing, and you come out <span class="hl">knowing yourself</span> a little better.</p>
-          <p>We don't look at your business idea. We don't look at your grades. We look at <span class="hl">who you are.</span></p>
+          {fp.selection.paragraphs.map((p) => <p set:html={p} />)}
+          {fp.selection.kicker && <p class="kicker">{fp.selection.kicker}</p>}
         </div>
       </div>
     </section>
 
     <!-- WHAT TO EXPECT -->
     <section class="fwte">
-      <h2 class="fwte-title" style="font-size: 38px">what to expect</h2>
+      <h2 class="fwte-title">{fp.what_to_expect_headline}</h2>
       <div class="fwte-grid">
         {wte.map((c) => (
           <div class={`fwte-card ${c.cap}`}>
-            {c.meta ? (
+            {c.remote ? (
+              <img src={c.remote} alt={c.name} loading="lazy" decoding="async" />
+            ) : c.meta ? (
               <Image src={c.meta} alt={c.name} widths={[400, 800]} sizes="(max-width: 720px) 50vw, 33vw" />
-            ) : (
-              <img src={c.img} alt={c.name} />
-            )}
+            ) : c.image ? (
+              <img src={c.image} alt={c.name} loading="lazy" decoding="async" />
+            ) : null}
             <div class="fwte-cap">
               <p class="fwte-name">{c.name}</p>
               <p class="fwte-desc">{c.desc}</p>
@@ -149,71 +145,76 @@ const fwyd = [
     <!-- FELLOWS MARQUEE -->
     <section class="fellows ffellows" id="fellows">
       <div class="fellows-head">
-        <h2 class="ffellows-h2" style="font-size: 38px">meet the fellows</h2>
-        <a href="/fellow-program#fellows" class="h3btn ffellows-seeall"><span>see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
+        <h2 class="ffellows-h2">{fp.fellows_headline}</h2>
+        <a href={fp.fellows_cta.href} class="h3btn ffellows-seeall"><span class="h3btn-label">{fp.fellows_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
       </div>
 
-      <FellowFlipBelt
-        trackId="belt"
-        people={fellowPeople}
-        cardClass="fc-fellow"
-        ariaLabel="Meet the fellows"
-      />
+      {
+        fellowPeople.length > 0 ? (
+          <FellowFlipBelt
+            trackId="belt"
+            people={fellowPeople}
+            cardClass="fc-fellow"
+            ariaLabel={fp.fellows_headline || 'Meet the fellows'}
+          />
+        ) : (
+          <p class="fchallengers-empty">Fellow profiles coming soon.</p>
+        )
+      }
     </section>
 
     <!-- ONCE A FELLOW / ALUMNI -->
     <section class="falum" id="alumni">
-      <h2 class="falum-h2" style="font-size: 45px">once a fellow, <span class="falum-em">always</span> a fellow.</h2>
-      <p class="falum-intro" style="margin: 0px 0px 66px; padding: 50px 0px 0px">Becoming a fellow isn't a two-year chapter. It's the start of a select, lifelong network of people who get you, grow with you, and have your back, always.</p>
+      <h2 class="falum-h2" set:html={fp.alumni_headline_html || fp.alumni_headline} />
+      <p class="falum-intro">{fp.alumni_intro}</p>
       <div class="falum-row">
-        <p class="falum-label">alumni network</p>
+        <p class="falum-label">{fp.alumni_label}</p>
         <div class="falum-body">
-          <p>Instant, lifelong access to a community of 450+ alumni</p>
-          <p>Direct connection to extensive network of mentors, industry leaders, and ecosystem partners</p>
-          <p>Access to annual events and meet-ups held across Türkiye and the EU</p>
-          <p>Direct fast-track nominations to major national and international awards</p>
-          <p>Free event tickets and corporate tech perks</p>
-          <p>Visibility and curated access to high-level conferences, acceleration programs, and funding opportunities</p>
+          {fp.alumni_bullets.map((b) => <p>{b}</p>)}
         </div>
       </div>
       {
-        alumniPeople.length > 0 && (
+        alumniPeople.length > 0 ? (
           <section class="fellows ffellows falum-belt">
             <div class="fellows-head">
-              <h2 class="ffellows-h2" style="font-size: 38px">meet our alumni</h2>
+              <h2 class="ffellows-h2">{fp.alumni_cta.label}</h2>
+              <a href={fp.alumni_cta.href} class="h3btn ffellows-seeall falum-seeall"><span class="h3btn-label">see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
             </div>
             <FellowFlipBelt
               trackId="abelt"
               people={alumniPeople}
               cardClass="fc-alumni"
-              ariaLabel="Meet our alumni"
+              ariaLabel={fp.alumni_cta.label}
             />
           </section>
+        ) : (
+          <div class="falum-foot">
+            <a href={fp.alumni_cta.href} class="fhero-link falum-cta"><span class="fhero-link-label">{fp.alumni_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
+          </div>
         )
       }
-      <div class="falum-foot">
-        <a href="/fellow-program#alumni" class="fhero-link falum-cta">meet our alumni<span class="arr" aria-hidden="true"></span></a>
-      </div>
     </section>
 
     <!-- IMPACT / BECAUSE -->
     <section class="fbecause">
       <div class="fbecause-inner">
-        <h2 class="fbecause-h2" style="font-weight: 400; letter-spacing: -2.9px">because when one gives back, everyone moves <span class="fbecause-em">forward.</span></h2>
+        <h2 class="fbecause-h2" set:html={fp.giveback_headline_html || fp.giveback_headline} />
         <div class="fbecause-copy">
-          <p class="fbecause-lead">1 ₺ invested, the program generates 21 ₺ of social value.</p>
-          <p>For over a decade, GİRVAK has been nurturing Türkiye's most driven young talents, not by funding startups, but by investing in potential. A generation that leads with curiosity, courage.</p>
-          <a class="fbecause-report" href="#">You can access the full Fellow Program Impact Report here. <span class="arr" aria-hidden="true"></span></a>
+          <p class="fbecause-lead">{fp.giveback_lead}</p>
+          <p>{fp.giveback_body}</p>
+          <a class="fbecause-report" href={fp.giveback_cta.href}><span class="fbecause-report-label">{fp.giveback_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
         </div>
       </div>
     </section>
 
     <!-- CHALLENGER PROGRAM -->
     <section class="fchal">
-      <h2 class="fchal-h2" style="margin: 0px -30px 66px 0px; max-width: none; padding: 20px; font-size: 70px"><span style="color: #f2a81d">Your first step</span><br /><span style="color: #373d42">into the entrepreneurial world</span></h2>
-      <div class="fchal-row" style="font-size: 17px">
+      <h2 class="fchal-h2" set:html={fp.challenger_hero_headline_html || fp.challenger_hero_headline} />
+      <div class="fchal-row">
         <div class="fchal-media">
-          {chalPhoto ? (
+          {chalRemote ? (
+            <img src={chalRemote} alt="Challenger Program students" loading="lazy" decoding="async" />
+          ) : chalPhoto ? (
             <Image src={chalPhoto} alt="Challenger Program students" widths={[500, 1000]} sizes="(max-width: 760px) 100vw, 50vw" />
           ) : (
             <img src="/images/chal-program.jpg" alt="Challenger Program students" />
@@ -221,12 +222,13 @@ const fwyd = [
         </div>
         <div class="fchal-content">
           <div class="fchal-copy">
-            <p style="height: 2px; margin: 100px 0px 0px 23px">The <span class="chl">Challenger Program</span> introduces <span class="chl">first and second-year university students</span> to the wide horizon of opportunities that life, careers, and entrepreneurship have to offer.</p>
-            <p style="height: 50px; margin: 150px 0px 0px 23px">Designed as an <span class="chl">early discovery track</span>, the program inspires young talents to explore different paths, gain foundational entrepreneurial skills, and start shaping their own future.</p>
+            {fp.challenger_paragraphs.map((p) => (
+              <p set:html={p} />
+            ))}
           </div>
-          <div class="fchal-links" style="height: 62px; padding: 150px 0px 0px">
-            <a class="fhero-link fchal-link" href="#">become a challenger<span class="arr" aria-hidden="true"></span></a>
-            <a class="fhero-link fchal-link" href="#">program guide<span class="arr" aria-hidden="true"></span></a>
+          <div class="fchal-links">
+            <a class="fhero-link fchal-link" href={fp.challenger_cta_primary.href}><span class="fhero-link-label">{fp.challenger_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
+            <a class="fhero-link fchal-link" href={fp.challenger_cta_secondary.href}><span class="fhero-link-label">{fp.challenger_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
           </div>
         </div>
       </div>
@@ -235,30 +237,36 @@ const fwyd = [
     <!-- CHALLENGER — APPLY & SELECT -->
     <section class="fchow">
       <div class="fhow-row">
-        <p class="fhow-label">application criteria</p>
+        <p class="fhow-label">{fp.challenger_application.label}</p>
         <div class="fhow-body">
-          <p>Be a university student in Türkiye and currently in your preparatory, 1<sup>st</sup> or 2<sup>nd</sup> year</p>
-          <p>Be between the ages of 17 and 24</p>
-          <p class="kicker">That's it. Really.</p>
+          {fp.challenger_application.paragraphs.map((p) => <p set:html={p} />)}
+          {fp.challenger_application.kicker && <p class="kicker">{fp.challenger_application.kicker}</p>}
         </div>
       </div>
       <div class="fhow-row">
-        <p class="fhow-label">how we select</p>
+        <p class="fhow-label">{fp.challenger_selection.label}</p>
         <div class="fhow-body">
-          <p style="padding: 0px">Our selection process is unlike any other. It's not a test you pass, <span class="hl">it's a journey</span> in itself.</p>
-          <p>As you move through it, you learn by doing, and you come out <span class="hl">knowing yourself</span> a little better.</p>
-          <p>We don't look at your business idea. We don't look at your grades. We look at <span class="hl">who you are.</span></p>
+          {chalSelectionParagraphs.map((p) => (
+            <p set:html={p} />
+          ))}
+          {fp.challenger_selection.kicker && <p class="kicker">{fp.challenger_selection.kicker}</p>}
         </div>
       </div>
     </section>
 
     <!-- CHALLENGER — WHAT YOU'LL DO -->
     <section class="fwyd">
-      <h2 class="fwyd-title" style="font-size: 38px">what you'll do</h2>
+      <h2 class="fwyd-title">{fp.what_youll_do_headline}</h2>
       <div class="fwyd-grid">
         {fwyd.map((i) => (
           <div class="fwyd-item">
-            {i.meta && <Image src={i.meta} alt="" width={196} height={196} />}
+            {i.remote ? (
+              <img src={i.remote} alt="" width="196" height="196" loading="lazy" decoding="async" />
+            ) : i.meta ? (
+              <Image src={i.meta} alt="" width={196} height={196} />
+            ) : i.image ? (
+              <img src={i.image} alt="" width="196" height="196" loading="lazy" decoding="async" />
+            ) : null}
             <p>{i.text}</p>
           </div>
         ))}
@@ -268,23 +276,20 @@ const fwyd = [
     <!-- MEET THE CHALLENGERS -->
     <section class="fchallengers ffellows" id="challengers">
       <div class="fellows-head">
-        <h2 class="ffellows-h2" style="font-size: 38px">meet the challengers</h2>
-        <a href="/fellow-program#challengers" class="h3btn ffellows-seeall fchal-seeall"><span>see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
+        <h2 class="ffellows-h2">{fp.challengers_headline}</h2>
+        <a href={fp.challengers_cta.href} class="h3btn ffellows-seeall fchal-seeall"><span class="h3btn-label">{fp.challengers_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
       </div>
-      <div class="fellows-belt" aria-label="Meet the challengers">
-        <div class="fellows-track" id="cbelt">
-          {challengerPeople.map((c) => (
-            <figure class="cchcard">
-              {c.year ? <span class="cchcard-year">{c.year}</span> : null}
-              <span class="cchcard-name">{personName(c)}</span>
-              <span class="cchcard-uni">
-                {c.university}
-                {c.department ? <><br />{c.department}</> : null}
-              </span>
-            </figure>
-          ))}
-        </div>
-      </div>
+      {
+        challengerPeople.length > 0 ? (
+          <ChallengerBelt
+            trackId="cbelt"
+            people={challengerPeople}
+            ariaLabel="Meet the challengers"
+          />
+        ) : (
+          <p class="fchallengers-empty">Challenger profiles coming soon.</p>
+        )
+      }
     </section>
   </main>
 

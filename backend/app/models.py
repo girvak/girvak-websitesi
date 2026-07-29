@@ -183,6 +183,79 @@ class AboutContent(BaseModel):
     work_with_us: AboutCtaBand
 
 
+# --- Fellow program page (Airtable `fellow` table) ---
+
+class FellowCta(BaseModel):
+    label: str = ""
+    href: str = "#"
+
+
+class FellowHowBlock(BaseModel):
+    label: str = ""
+    paragraphs: list[str] = []  # may include safe inline HTML (hl spans)
+    kicker: str = ""
+
+
+class FellowExpectCard(BaseModel):
+    name: str = ""
+    desc: str = ""
+    image: str = ""
+    cap: str = ""
+
+
+class FellowWydItem(BaseModel):
+    text: str = ""
+    image: str = ""
+
+
+class FellowContent(BaseModel):
+    """Fellow + Challenger program page — maps Airtable `fellow` fragments."""
+
+    hero_image: str = ""
+    hero_headline: str = ""
+    hero_headline_html: str = ""
+    hero_cta_primary: FellowCta = FellowCta()
+    hero_cta_secondary: FellowCta = FellowCta()
+    about_html: str = ""
+
+    application: FellowHowBlock = FellowHowBlock()
+    selection: FellowHowBlock = FellowHowBlock()
+
+    what_to_expect_headline: str = ""
+    what_to_expect: list[FellowExpectCard] = []
+
+    fellows_headline: str = ""
+    fellows_cta: FellowCta = FellowCta()
+
+    alumni_headline: str = ""
+    alumni_headline_html: str = ""
+    alumni_intro: str = ""
+    alumni_label: str = ""
+    alumni_bullets: list[str] = []
+    alumni_cta: FellowCta = FellowCta()
+
+    giveback_headline: str = ""
+    giveback_headline_html: str = ""
+    giveback_lead: str = ""
+    giveback_body: str = ""
+    giveback_cta: FellowCta = FellowCta()
+
+    challenger_hero_image: str = ""
+    challenger_hero_headline: str = ""
+    challenger_hero_headline_html: str = ""
+    challenger_paragraphs: list[str] = []
+    challenger_cta_primary: FellowCta = FellowCta()
+    challenger_cta_secondary: FellowCta = FellowCta()
+    challenger_application: FellowHowBlock = FellowHowBlock()
+    challenger_selection: FellowHowBlock = FellowHowBlock()
+
+    what_youll_do_headline: str = ""
+    what_youll_do: list[FellowWydItem] = []
+
+    challengers_headline: str = ""
+    challengers_cta: FellowCta = FellowCta()
+
+
 # --- Newsletter ---
 
 class NewsletterRequest(BaseModel):

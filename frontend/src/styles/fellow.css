@@ -3,8 +3,25 @@
    Minimal editorial. White ground, fellow-red highlights.
    Pinned hero that crossfades between two states on scroll.
    ============================================================ */
-.fp { background: #fff; --edge: clamp(20px, 5vw, 80px); --htop: clamp(160px, 32vh, 290px); }
+.fp {
+  background: #fff;
+  --edge: clamp(20px, 5vw, 80px);
+  --htop: clamp(160px, 32vh, 290px);
+  --navh: 112px; /* header height: 52px top pad + 35px logo + 22px bottom pad */
+}
 .fp .hl { color: var(--fellow); font-style: italic; font-weight: inherit; }
+
+/* ---------- HEADER → PAGE (no seam) ----------
+   This page locks the header into its `.scrolled` state (white hero from the
+   top), which normally paints a 1px rule, a drop shadow and a blurred box.
+   Here it is a plain opaque white box instead: no rule, no shadow, no glow,
+   no backdrop blur — nothing that draws an edge across the page. */
+.fp .hm-nav.scrolled {
+  background: #fff;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 
 /* ---------- PINNED HERO ---------- */
 /* The track is taller than the viewport; the inner panel pins (sticky) and
@@ -17,14 +34,26 @@
 
 /* group photo — spans from the headline top to the page bottom, anchored
    right; identical & static across both states */
+/* As large as the layout physically allows. The photo is height-driven (width
+   follows the 3:2 ratio), so its ceiling is the header: any taller and the
+   group's heads disappear behind the opaque nav. Starting the box right at the
+   header edge hits that ceiling exactly — no `scale()` needed, and no width cap
+   either, both of which only ever made it smaller than this.
+   Consequence, accepted deliberately: under ~1700px wide the cut-out reaches
+   into the copy column, so the description is drawn over the left of the group. */
 .fhero-media {
-  position: absolute; right: clamp(0px, 1.5vw, 24px);
-  top: var(--htop); bottom: 0; z-index: 1; pointer-events: none;
+  /* Nudged past the right edge. The cut-out carries ~5.2% empty canvas on its
+     right (measured from the alpha bounds), which scales with the photo, so
+     this bleed only ever pushes that transparent margin off-screen — the group
+     itself is never clipped. */
+  position: absolute; right: clamp(-56px, -3.5vh, -20px);
+  top: var(--navh); bottom: 0; z-index: 1; pointer-events: none;
 }
 .fhero-photo {
   display: block; height: 100%; width: auto; margin-left: auto;
   object-fit: contain; object-position: bottom right;
-  transform: scale(1.155); transform-origin: bottom right;
+  /* no scale(): the box above is already the maximum height the header allows,
+     so scaling up would only push the heads behind the nav */
 }
 
 /* left content column — both states stacked in the same place, top-aligned
@@ -54,26 +83,32 @@
 }
 
 .fhero-h1 {
-  font-size: clamp(34px, 4.5vw, 63px); font-weight: 500; line-height: 1.08;
+  font-size: clamp(38px, 5.1vw, 71px); font-weight: 500; line-height: 1.08;
   letter-spacing: -0.035em; color: #373d42; margin: 0 0 0 -5px; text-wrap: balance;
 }
 .fhero-h1 .hl { white-space: nowrap; }
+@media (max-width: 480px) {
+  .fhero-h1 .hl { white-space: normal; }
+}
 /* per-letter hover colour swap */
 .fhero-h1 .ch, .fhero-h1 .hl .ch-inv { transition: color 0.2s ease; }
-.fhero-h1 .ch:hover { color: var(--fellow); }
-.fhero-h1 .hl .ch-inv:hover { color: #373d42; }
+@media (hover: hover) {
+  .fhero-h1 .ch:hover { color: var(--fellow); }
+  .fhero-h1 .hl .ch-inv:hover { color: #373d42; }
+}
 
 .fhero-links {
   display: flex; flex-direction: column; align-items: flex-start;
-  gap: clamp(14px, 2.2vh, 26px); margin-top: clamp(56px, 11vh, 132px);
+  gap: clamp(14px, 2.2vh, 26px); margin-top: clamp(76px, 15vh, 176px);
 }
 .fhero-link {
   display: inline-flex; align-items: center; gap: clamp(16px, 2.1vw, 30px);
   font-size: clamp(20px, 2.15vw, 29px); font-weight: 500; color: #373d42;
-  letter-spacing: -0.01em; line-height: 1;
+  letter-spacing: -0.01em; line-height: 1; text-decoration: none;
 }
+.fhero-link-label { line-height: 1.15; }
 .fhero-link .arr {
-  flex: none; display: block;
+  flex: none; flex-shrink: 0; align-self: center; display: block;
   width: clamp(56px, 5.2vw, 84px); height: clamp(16px, 1.7vw, 25px);
   background-color: currentColor;
   -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain;
@@ -84,9 +119,12 @@
 .fhero-link:hover .arr { transform: translateX(10px); }
 
 .fhero-copy {
-  font-size: clamp(19px, 2.05vw, 27px); font-weight: 500; line-height: 1.42;
-  letter-spacing: -0.02em; color: #373d42; margin: 0; max-width: 100%;
+  font-size: clamp(16px, 1.75vw, 23px); font-weight: 500; line-height: 1.5;
+  letter-spacing: -0.015em; color: #373d42; max-width: 100%;
   text-wrap: pretty;
+  /* pulled left of the copy column. Scales with the viewport and stops at
+     -12px, so it never eats into the small-screen --edge padding. */
+  margin: 0 0 0 clamp(-36px, -2vw, -12px);
 }
 .fhero-copy .hl { font-style: normal; }
 
@@ -107,6 +145,7 @@
   letter-spacing: -0.015em; color: #fff; max-width: 58ch; text-wrap: pretty;
 }
 .fhow-body p .hl { color: #fff; font-style: italic; font-weight: 600; }
+.fhow-body p.kicker { font-weight: 700; font-style: italic; }
 
 /* ---------- WHAT TO EXPECT ---------- */
 .fwte {
@@ -125,24 +164,26 @@
 }
 .fwte-card {
   position: relative; border-radius: 5px; overflow: hidden;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 2 / 3; /* taller than the shared 3/4 — bigger photo per card */
   box-shadow: 0 14px 32px rgba(55,61,66,.13);
   cursor: default;
   transform: translateZ(0);
   transition: transform .42s cubic-bezier(0.25,1,0.5,1),
               box-shadow .42s cubic-bezier(0.25,1,0.5,1);
 }
-.fwte-card:hover {
-  transform: scale(1.028) translateZ(0);
-  box-shadow: 0 22px 48px rgba(55,61,66,.22);
-  z-index: 2;
-}
 .fwte-card img {
   position: absolute; inset: 0;
   width: 100%; height: 100%; object-fit: cover;
   transition: transform .52s cubic-bezier(0.25,1,0.5,1);
 }
-.fwte-card:hover img { transform: scale(1.04); }
+@media (hover: hover) {
+  .fwte-card:hover {
+    transform: scale(1.028) translateZ(0);
+    box-shadow: 0 22px 48px rgba(55,61,66,.22);
+    z-index: 2;
+  }
+  .fwte-card:hover img { transform: scale(1.04); }
+}
 /* readability scrim — direction follows caption position */
 .fwte-card::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
@@ -181,7 +222,7 @@
 .cap-right .fwte-desc  { margin-left: auto; }
 .cap-center .fwte-desc { margin-left: auto; margin-right: auto; }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .fwte-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 480px) {
@@ -193,29 +234,38 @@
 }
 
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .fhero-track { height: auto; }
   .fhero-pin { position: static; height: auto; min-height: 0; padding: 132px 0 0; }
   .fhero-media {
     position: relative; right: auto; top: auto; bottom: auto; margin: 24px auto 0;
-    width: min(92vw, 560px);
+    width: min(92vw, 560px); /* stacked: no header ceiling, no text column to clear */
   }
   .fhero-photo { height: auto; width: 100%; }
   .fhero-left { position: relative; left: auto; width: auto; padding: 0 var(--edge); }
   .fhero-state { position: relative; inset: auto; padding-top: 0; opacity: 1 !important; visibility: visible !important; transform: none !important; }
   .fhero-1 { padding-bottom: 0; }
   .fhero-2 { margin-top: 40px; }
-  .fhero-links { margin-top: 40px; }
+  /* stacked layout: the copy lines up with the headline, no left pull */
+  .fhero-copy { margin-left: 0; }
+  .fhero-links { margin-top: 40px; width: 100%; align-items: stretch; }
+  .fhero-link { width: 100%; justify-content: space-between; }
   .fhero-cue { display: none; }
   .fhow-row { grid-template-columns: 1fr; gap: 16px; }
 }
 
 /* ---------- FELLOWS MARQUEE (mirrors homepage belt) ---------- */
 .ffellows { padding: clamp(56px, 8vw, 104px) 0 clamp(48px, 6vw, 80px); background: #fff; overflow: hidden; }
+/* All three belt heads — fellows, alumni, challengers — sit on the page edges:
+   heading flush left at var(--edge), "see all" flush right. Never inherit the
+   homepage's centred `.fellows-head` container (max-width + margin auto), which
+   pulls both toward the middle. */
 .ffellows .fellows-head {
-  margin: 0; padding: 0 var(--edge);
+  max-width: none; margin: 0; padding: 0 var(--edge);
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px;
 }
+.ffellows .fellows-head > .ffellows-h2 { margin-right: auto; text-align: left; }
+.ffellows .fellows-head > .ffellows-seeall { margin-left: auto; }
 .ffellows-h2 {
   margin: 0;
   font-size: clamp(30px, 3.6vw, 52px); font-weight: 500;
@@ -225,6 +275,7 @@
   color: #373d42;
   font-size: clamp(18px, 1.9vw, 25px);
   gap: clamp(14px, 1.8vw, 28px);
+  align-items: center;
 }
 .ffellows-seeall:hover,
 .ffellows-seeall:focus-visible { color: var(--fellow); }
@@ -239,20 +290,20 @@
     color-mix(in srgb, var(--fellow) 88%, transparent) 40%, transparent);
 }
 
-/* Fellow-card year treatment (design parity — Fellow Program.html).
-   The shared homepage belt (home.css .fcard) was retuned with a *bold* year and
-   a dimmed, in-flow back-year. The design wants the year as a thin numeral
-   ("ince" — weight 300), top-right on both faces. Scoped to .fp so the homepage
-   keeps its own tuning. Photos keep home.css's object-fit:cover — these cards
-   render real full-frame fellow portraits, not cutouts, so they fill the card.
-   The year only appears when the fellows' data provides one (data-driven). */
-.fp .fcard-year { font-weight: 300; }
+/* Belt cards run larger here than on the homepage. The marquee derives its
+   duration from the track's real scrollWidth (home.js), so the scroll speed
+   stays the same — the loop just takes longer. */
+.fp .fcard { width: clamp(206px, 21vw, 272px); }
+
+/* Keep fellow-program cards visually aligned with the homepage belt
+   (shared .fcard rules in home.css). Back-year stays top-right on both.
+   Year weight comes from home.css (300) — kept here too since this rule
+   re-declares the whole back-year block. */
 .fp .fcard-back-year {
   position: absolute; top: 14px; right: 18px; z-index: 2;
   font-weight: 300; font-size: clamp(30px, 2.6vw, 42px); line-height: 1;
   letter-spacing: -0.01em; opacity: 1; margin: 0;
 }
-/* Card back: name · university · department (shared markup with homepage belt) */
 .fp .fcard-back-meta {
   padding: clamp(10px, 2vw, 18px) 0 clamp(4px, 1vw, 8px);
   max-width: 90%;
@@ -267,6 +318,10 @@
   background: linear-gradient(to top,
     color-mix(in srgb, var(--alumni) 88%, transparent) 40%, transparent);
 }
+/* alumni "see all" — sits on the same line as the heading, pinned far right */
+.falum-seeall { color: #373d42; margin-left: auto; }
+.falum-seeall:hover, .falum-seeall:focus-visible { color: var(--alumni); }
+.falum-seeall:hover .cta-arrow, .falum-seeall:focus-visible .cta-arrow { transform: translateX(7px); }
 
 /* ---------- ONCE A FELLOW / ALUMNI ---------- */
 .falum {
@@ -302,11 +357,18 @@
   display: flex; justify-content: flex-end;
 }
 .falum-cta { font-size: clamp(18px, 1.9vw, 25px); }
-.falum-belt { margin-top: clamp(36px, 5vw, 56px); }
+/* The alumni belt is nested inside .falum, which already pads by var(--edge).
+   Pull it back to full-bleed so its head and cards line up with the fellows
+   belt above instead of sitting one edge further in. */
+.falum-belt {
+  margin-top: clamp(36px, 5vw, 56px);
+  margin-inline: calc(-1 * var(--edge));
+}
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .falum-row { grid-template-columns: 1fr; gap: 16px; }
-  .falum-foot { justify-content: flex-start; }
+  .falum-foot { justify-content: stretch; width: 100%; }
+  .falum-foot .fhero-link { width: 100%; }
 }
 
 /* ---------- IMPACT / BECAUSE ---------- */
@@ -326,23 +388,26 @@
 .fbecause-copy {
   align-self: end; text-align: right;
   display: flex; flex-direction: column; gap: clamp(18px, 2vw, 28px);
-  color: #fff;
+  color: #fff; min-width: 0;
 }
 .fbecause-copy p {
   margin: 0; font-size: clamp(14px, 1.25vw, 18px); font-weight: 400;
   line-height: 1.5; letter-spacing: -0.01em; margin-left: auto; max-width: 46ch;
 }
 .fbecause-lead { font-weight: 500; }
-/* report line: single line, whole sentence clickable, white arrow inline */
+/* report line: text + arrow on one row */
 .fbecause-report {
-  display: block; white-space: nowrap; max-width: none;
-  margin-left: auto; text-align: right;
+  display: inline-flex; align-items: center; justify-content: flex-end;
+  gap: clamp(12px, 1.5vw, 20px); flex-wrap: nowrap;
+  max-width: none; width: max-content; margin-left: auto; text-align: right;
   color: #fff; text-decoration: none;
   font-size: clamp(14px, 1.25vw, 18px); font-weight: 400;
   line-height: 1.5; letter-spacing: -0.01em;
 }
+.fbecause-report-label { line-height: 1.35; white-space: nowrap; }
 .fbecause-report .arr {
-  display: inline-block; vertical-align: middle;
+  flex: none; flex-shrink: 0; align-self: center;
+  display: block;
   width: clamp(36px, 3vw, 54px); height: clamp(11px, 1.2vw, 16px);
   background-color: #fff;
   -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain;
@@ -352,37 +417,51 @@
 .fbecause-report:hover { opacity: .85; }
 .fbecause-report:hover .arr { transform: translateX(6px); }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .fbecause-inner { grid-template-columns: 1fr; gap: 40px; align-items: start; }
-  .fbecause-copy { text-align: left; align-self: start; }
+  .fbecause-copy { text-align: left; align-self: start; width: 100%; }
   .fbecause-copy p { margin-left: 0; }
+  .fbecause-report {
+    margin-left: 0; width: 100%; max-width: none;
+    justify-content: space-between; text-align: left; flex-wrap: nowrap;
+  }
+  .fbecause-report-label { white-space: normal; }
 }
 
 /* ---------- CHALLENGER PROGRAM ---------- */
 .fchal { --chal: #F2A81D; background: #fff; padding: clamp(48px, 7vw, 96px) var(--edge) clamp(64px, 9vw, 120px); }
 .fchal-h2 {
   margin: 0 0 clamp(40px, 6vw, 88px);
-  font-size: 75px; font-weight: 500; line-height: 1.08;
+  font-size: clamp(36px, 7vw, 75px); font-weight: 500; line-height: 1.08;
   letter-spacing: -0.035em; color: #373d42; text-wrap: balance; max-width: none;
 }
 .fchal-em { color: var(--chal); }
 .fchal-row {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: clamp(32px, 5vw, 80px); align-items: start;
+  gap: clamp(32px, 5vw, 80px); align-items: stretch;
 }
-/* left photo placeholder — empty for now */
 .fchal-media {
-  aspect-ratio: 4 / 5; border-radius: 5px;
+  aspect-ratio: 3 / 4; border-radius: 5px;
   overflow: hidden; background: var(--girvak-ink-100, #F3F4F5);
 }
 .fchal-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.fchal-content { display: flex; flex-direction: column; gap: clamp(36px, 5vw, 72px); }
-/* links — right aligned, arrow follows text */
-.fchal-links { display: flex; flex-direction: column; align-items: flex-end; gap: clamp(14px, 2vh, 24px); }
+/* Copy first, CTAs underneath — the pair centred vertically against the photo
+   column rather than stretched to its top and bottom edges. */
+.fchal-content {
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(36px, 5vw, 72px); min-height: 100%; padding-top: 0;
+}
+.fchal-links {
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: clamp(14px, 2vh, 24px); margin-top: 0;
+}
 .fchal-link { justify-content: flex-end; }
 .fchal-link:hover { color: var(--chal); }
-/* copy — right aligned, amber highlights */
-.fchal-copy { display: flex; flex-direction: column; gap: clamp(18px, 2vw, 28px); text-align: right; }
+.fchal-link:hover .arr { background-color: currentColor; }
+.fchal-copy {
+  display: flex; flex-direction: column; gap: clamp(18px, 2vw, 28px);
+  text-align: right; margin-top: 0;
+}
 .fchal-copy p {
   margin: 0 0 0 auto; max-width: 42ch;
   font-size: clamp(15px, 1.5vw, 21px); font-weight: 500; line-height: 1.5;
@@ -390,12 +469,13 @@
 }
 .fchal-copy .chl { color: var(--chal); }
 
-@media (max-width: 760px) {
-  .fchal-row { grid-template-columns: 1fr; gap: 36px; }
-  .fchal-links { align-items: flex-start; }
-  .fchal-link { justify-content: flex-start; }
-  .fchal-copy { text-align: left; }
+@media (max-width: 768px) {
+  .fchal-row { grid-template-columns: 1fr; gap: 36px; align-items: start; }
+  .fchal-content { min-height: 0; gap: 28px; justify-content: flex-start; }
+  .fchal-copy { text-align: left; gap: 18px; margin-top: 0; }
   .fchal-copy p { margin-left: 0; }
+  .fchal-links { align-items: stretch; width: 100%; }
+  .fchal-link { width: 100%; justify-content: space-between; }
 }
 
 /* ---------- CHALLENGER — APPLY & SELECT (amber variant of fhow) ---------- */
@@ -419,7 +499,7 @@
 }
 .fwyd-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: clamp(16px, 1.8vw, 26px); }
 .fwyd-item img {
-  width: clamp(129px, 12.6vw, 196px); height: clamp(129px, 12.6vw, 196px);
+  width: clamp(152px, 14.9vw, 232px); height: clamp(152px, 14.9vw, 232px);
   object-fit: contain;
 }
 .fwyd-item p {
@@ -427,40 +507,70 @@
   font-size: clamp(13px, 1.15vw, 16px); font-weight: 500; line-height: 1.35;
   letter-spacing: -0.01em; color: #373d42; text-wrap: pretty;
 }
-@media (max-width: 760px) {
-  .fwyd-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 20px; }
+@media (max-width: 1024px) {
+  .fwyd-grid { grid-template-columns: repeat(3, 1fr); gap: 28px 18px; }
+  .fwyd-item img {
+    width: clamp(114px, 21vw, 166px); height: clamp(114px, 21vw, 166px);
+  }
 }
-@media (max-width: 420px) {
+@media (max-width: 768px) {
+  .fwyd-grid { grid-template-columns: repeat(2, 1fr); gap: 28px 16px; }
+  .fwyd-item img {
+    width: clamp(104px, 33vw, 142px); height: clamp(104px, 33vw, 142px);
+  }
+}
+@media (max-width: 480px) {
   .fwyd-grid { grid-template-columns: 1fr; }
 }
 
-/* ---------- MEET THE CHALLENGERS (amber single-face cards) ---------- */
-.fchallengers .ffellows-seeall { color: #373d42; }
-.fchallengers .ffellows-seeall:hover { color: #F2A81D; }
+/* ---------- MEET THE CHALLENGERS (amber single-face cards) ----------
+   Per the design (`Fellow Program.html` / `fellow.css`): these cards never flip
+   and carry no photo — year top-right, name, university + department. The belt
+   still auto-scrolls; hovering lifts one card and dims its siblings, the same
+   focus feel as the flip belts without the rotation. */
+.fchallengers .ffellows-seeall { color: #373d42; margin-left: auto; }
+.fchallengers .ffellows-seeall:hover,
+.fchallengers .ffellows-seeall:focus-visible { color: #F2A81D; }
 .cchcard {
   flex: none; position: relative; margin: 0;
   width: clamp(186px, 18.4vw, 232px); aspect-ratio: 1 / 1.07;
   border-radius: 5px; background: #F3C00C; color: #fff;
-  display: flex; flex-direction: column; align-items: center;
+  /* The design pinned the university to the bottom edge; here it is centred in
+     the space between the name and the bottom padding instead (see the auto
+     margins on .cchcard-uni), which is why the column starts at the top. */
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   padding: clamp(30px, 4vw, 44px) 16px clamp(22px, 3vw, 32px);
   box-shadow: 0 12px 30px rgba(27,31,34,.14);
   transition: transform .3s var(--ease-out), opacity .3s var(--ease-out);
 }
-/* hovered card lifts, siblings dim — same focus feel, no flip */
-.fchallengers .fellows-belt:hover .cchcard { transform: scale(0.92); opacity: .55; }
-.fchallengers .fellows-belt:hover .cchcard:hover { transform: scale(1.06); opacity: 1; z-index: 5; }
+@media (hover: hover) {
+  .fchallengers .fellows-belt:hover .cchcard { transform: scale(0.92); opacity: .55; }
+  .fchallengers .fellows-belt:hover .cchcard:hover { transform: scale(1.06); opacity: 1; z-index: 5; }
+}
 .cchcard-year {
   position: absolute; top: 14px; right: 18px;
-  font-weight: 300; font-size: clamp(30px,2.6vw,42px); line-height: 1; letter-spacing: -0.01em;
+  font-weight: 300; font-size: clamp(30px, 2.6vw, 42px); line-height: 1; letter-spacing: -0.01em;
 }
 .cchcard-name {
+  /* clears the year, which is absolutely positioned in the top-right corner */
   margin-top: clamp(34px, 5vw, 56px); text-align: center;
-  font-weight: 600; font-size: clamp(16px,1.3vw,19px); line-height: 1.2; letter-spacing: -0.01em;
+  font-weight: 600; font-size: clamp(16px, 1.3vw, 19px); line-height: 1.2; letter-spacing: -0.01em;
   text-wrap: balance;
 }
 .cchcard-uni {
-  margin-top: auto; text-align: center; font-style: italic;
-  font-weight: 500; font-size: clamp(12px,1vw,14px); line-height: 1.35; opacity: .9;
+  /* equal auto margins → sits exactly halfway between the name and the bottom,
+     whatever height the name wraps to */
+  margin-top: auto; margin-bottom: auto;
+  text-align: center; font-style: italic;
+  font-weight: 500; font-size: clamp(12px, 1vw, 14px); line-height: 1.35; opacity: .9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fchallengers .fellows-belt:hover .cchcard,
+  .fchallengers .fellows-belt:hover .cchcard:hover { transform: none; opacity: 1; }
+}
+.fchallengers-empty {
+  margin: clamp(28px, 4vw, 48px) var(--edge) 0;
+  color: var(--fg-3); font-size: clamp(15px, 1.3vw, 18px);
 }
 /* ---------- TEXT SELECTION HIGHLIGHT ---------- */
 /* Solid (opaque) tints so overlapping line boxes never stack into darker bands */
@@ -470,8 +580,3 @@
 /* Challenger sections: soft amber tint, dark readable text */
 .fp .fchal ::selection, .fp .fchow ::selection, .fp .fwyd ::selection, .fp .fchallengers ::selection { background: #fae7a3; color: #373d42; }
 .fp .fchal ::-moz-selection, .fp .fchow ::-moz-selection, .fp .fwyd ::-moz-selection, .fp .fchallengers ::-moz-selection { background: #fae7a3; color: #373d42; }
-
-@media (prefers-reduced-motion: reduce) {
-  .fchallengers .fellows-belt:hover .cchcard,
-  .fchallengers .fellows-belt:hover .cchcard:hover { transform: none; opacity: 1; }
-}

@@ -36,6 +36,11 @@ from ..models import (
     AboutWwsStrip,
     CTA,
     Fellow,
+    FellowContent,
+    FellowCta,
+    FellowExpectCard,
+    FellowHowBlock,
+    FellowWydItem,
     HomeContent,
     ImpactTile,
     Partner,
@@ -94,7 +99,11 @@ def _enc(table: str) -> str:
 def _safe(table: str) -> List[Dict[str, Any]]:
     try:
         return _fetch_table(table)
-    except httpx.HTTPError:
+    except httpx.HTTPError as exc:
+        print(f"[content] Airtable fetch failed for {table!r}: {exc}")
+        return []
+    except Exception as exc:
+        print(f"[content] Airtable fetch error for {table!r}: {exc}")
         return []
 
 
@@ -115,6 +124,25 @@ def txt(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _normalize_linkedin(value: Any) -> str:
+    """First usable LinkedIn profile URL; empty if missing / homepage-only."""
+    raw = txt(value)
+    if not raw:
+        return ""
+    for part in re.split(r"\s+", raw):
+        part = part.strip().rstrip(".,;")
+        if not part:
+            continue
+        if "linkedin.com" not in part.lower() and not part.startswith("http"):
+            continue
+        if not re.match(r"^https?://", part, re.I):
+            part = "https://" + part.lstrip("/")
+        # Require /in/… profile path — bare linkedin.com is useless.
+        if re.search(r"linkedin\.com/in/", part, re.I):
+            return part
+    return ""
 
 
 def _att_url(att: Dict[str, Any], prefer: Optional[str]) -> str:
@@ -212,6 +240,11 @@ def _row_dynamic(fields: Dict[str, Any], dynamic_key: str) -> bool:
     return pick(fields, dynamic_key) is True
 
 
+def _partner_approved(fields: Dict[str, Any]) -> bool:
+    """Partner table `onay` checkbox — only approved rows appear on the site."""
+    return pick(fields, "onay", "approved", "approval") is True
+
+
 def _records_by_name(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     out: Dict[str, Dict[str, Any]] = {}
     for r in records:
@@ -286,6 +319,8 @@ def _partner_used_ids(records: List[Dict[str, Any]]) -> Set[str]:
     featured: Optional[Dict[str, Any]] = None
     for r in records:
         f = r.get("fields", {})
+        if not _partner_approved(f):
+            continue
         name = txt(pick(f, "organization", "name"))
         logo = logo_attachment(pick(f, "positive_logo", "logo", "negative_logo"))
         if not name or not logo:
@@ -303,7 +338,7 @@ def _partner_used_ids(records: List[Dict[str, Any]]) -> Set[str]:
 
 def _people_used_ids(records: List[Dict[str, Any]]) -> Set[str]:
     used: Set[str] = set()
-    site_tags = frozenset({"mh", "yk", "team", "fellow", "alumni", "challenger"})
+    site_tags = frozenset({"mh", "yk", "team", "fellow", "alumni", "challenger", "challlenger", "challengers"})
     for r in records:
         f = r.get("fields", {})
         if not txt(pick(f, "name")):
@@ -367,6 +402,28 @@ def _about_used_ids(records: List[Dict[str, Any]]) -> Set[str]:
     return used
 
 
+def _fellow_used_ids(records: List[Dict[str, Any]]) -> Set[str]:
+    """Rows from the `fellow` table that `build_fellow_content` actually reads.
+
+    Respects the same `active` gate as the page builder.
+    """
+    used: Set[str] = set()
+    active_fields = _fellow_active_fields(records)
+    active_names = {txt(pick(f, "name")) for f in active_fields}
+
+    for r in records:
+        f = r.get("fields", {})
+        name = txt(pick(f, "name"))
+        if name not in active_names:
+            continue
+        tag = _row_tag(f).lower()
+        if not tag.startswith("fellow_") and not tag.startswith("challenger_"):
+            continue
+        if txt(pick(f, "text")) or photo_attachment(pick(f, "attachments")):
+            _mark_record(used, r)
+    return used
+
+
 def sync_dynamic_checkboxes() -> Dict[str, Any]:
     """Tick `dynamic` on rows the site uses; clear it on rows it does not."""
     if not settings.airtable_sync_dynamic:
@@ -377,6 +434,7 @@ def sync_dynamic_checkboxes() -> Dict[str, Any]:
         (settings.airtable_table_about, _about_used_ids),
         (settings.airtable_table_people, _people_used_ids),
         (settings.airtable_table_partner, _partner_used_ids),
+        (settings.airtable_table_fellow, _fellow_used_ids),
     ]
     summary: Dict[str, Any] = {"enabled": True, "tables": {}}
     for table, used_fn in tables:
@@ -444,8 +502,13 @@ def publish_guide() -> Dict[str, Any]:
                 "filter": "needs organization + positive_logo or negative_logo",
             },
             settings.airtable_table_fellow: {
-                "used_by": "Fellow program page (when wired)",
-                "row_names": ["fellow_* fragments"],
+                "used_by": "Fellow program page — tag families on `fellow` table",
+                "filter": "If any row has active=true, only active rows are used",
+                "row_names": [
+                    "tag fellow_hero / fellow_about / fellow_application / fellow_whattoexpect",
+                    "tag fellow_fellows / fellow_alumni / fellow_giveback",
+                    "tag challenger_hero / challenger_application / challenger_whatyou'lldo / challenger_challengers",
+                ],
             },
         },
     }
@@ -655,6 +718,8 @@ def _apply_partners(content: HomeContent, partner: List[Dict[str, Any]], by_name
     featured: Optional[Partner] = None
     for r in partner:
         f = r.get("fields", {})
+        if not _partner_approved(f):
+            continue
         name = txt(pick(f, "organization", "name"))
         logo = logo_attachment(pick(f, "positive_logo", "logo", "negative_logo"))
         if not name or not logo:
@@ -718,9 +783,9 @@ def _apply_fellows(content: HomeContent, people: List[Dict[str, Any]]) -> None:
 def build_people() -> PeopleContent:
     people = _safe(settings.airtable_table_people)
     return PeopleContent(
-        trustees=_persons(people, "mh"),
-        directors=_persons(people, "yk"),
-        team=_persons(people, "team"),
+        trustees=_sort_persons_alpha(_persons(people, "mh")),
+        directors=_sort_persons_alpha(_persons(people, "yk")),
+        team=_sort_persons_alpha(_persons(people, "team")),
         fellows=_persons(people, "fellow"),
         alumni=_persons(people, "alumni"),
         challengers=_persons(people, "challenger"),
@@ -734,13 +799,21 @@ def _tags(fields: Dict[str, Any]) -> List[str]:
     return [str(t)] if t else []
 
 
+# Airtable typos / plurals → canonical site tags.
+_TAG_ALIASES: Dict[str, frozenset[str]] = {
+    "challenger": frozenset({"challenger", "challengers", "challlenger"}),
+    "team": frozenset({"team", "ekip", "staff"}),
+}
+
+
 def _has_tag(tags: List[str], tag: str) -> bool:
     want = tag.lower()
-    return any(str(t).lower() == want for t in tags)
+    aliases = _TAG_ALIASES.get(want, frozenset({want}))
+    return any(str(t).lower() in aliases for t in tags)
 
 
 def _people_with_tag(people: List[Dict[str, Any]], tag: str) -> List[Dict[str, Any]]:
-    """Preserve Airtable row order (no alphabetical re-sort)."""
+    """Preserve Airtable row order; alphabetical sort applied per section when needed."""
     rows: List[Dict[str, Any]] = []
     for r in people:
         f = r.get("fields", {})
@@ -761,12 +834,44 @@ def _persons(people: List[Dict[str, Any]], tag: str) -> List[Person]:
             position=txt(pick(f, "title", "position")),
             university=txt(pick(f, "university")),
             department=txt(pick(f, "department")),
-            photo=photo_attachment(pick(f, "photo")),
-            linkedin=txt(pick(f, "linkedin")),
+            photo=photo_attachment(pick(f, "photo"))
+            or photo_attachment(pick(f, "attachments", "Attachment", "image")),
+            linkedin=_normalize_linkedin(pick(f, "linkedin")),
             roles=_tags(f),
             year=_fellow_year(f),
         ))
     return out
+
+
+def _tr_sort_key(s: str) -> str:
+    """Turkish collation key (Ç, Ğ, I/İ, Ö, Ş, Ü). Falls back to folded ASCII-ish."""
+    try:
+        import locale
+
+        locale.setlocale(locale.LC_COLLATE, "tr_TR.UTF-8")
+        return locale.strxfrm(s)
+    except locale.Error:
+        try:
+            import locale
+
+            locale.setlocale(locale.LC_COLLATE, "tr_TR")
+            return locale.strxfrm(s)
+        except locale.Error:
+            # Manual fold when Turkish locale is unavailable.
+            table = str.maketrans({
+                "İ": "i", "I": "ı", "Ş": "s\u035f", "ş": "s\u035f",
+                "Ğ": "g\u035f", "ğ": "g\u035f", "Ü": "u\u035f", "ü": "u\u035f",
+                "Ö": "o\u035f", "ö": "o\u035f", "Ç": "c\u035f", "ç": "c\u035f",
+            })
+            return s.translate(table).casefold()
+
+
+def _sort_persons_alpha(people: List[Person]) -> List[Person]:
+    """Sort by full name as in Airtable (first + last), Turkish alphabetical order."""
+    return sorted(
+        people,
+        key=lambda p: _tr_sort_key(f"{p.first} {p.last}".strip()),
+    )
 
 
 def _split_name(name: str):
@@ -775,6 +880,414 @@ def _split_name(name: str):
     if len(parts) <= 1:
         return name, ""
     return " ".join(parts[:-1]), parts[-1]
+
+
+# --------------------------------------------------------------------------- #
+# Fellow program page (`fellow` table)
+# --------------------------------------------------------------------------- #
+# Airtable `fellow` rows are tagged fragments:
+#   fellow_hero | fellow_about | fellow_application | fellow_whattoexpect |
+#   fellow_fellows | fellow_alumni | fellow_giveback |
+#   challenger_hero | challenger_application | challenger_whatyou'lldo |
+#   challenger_challengers
+# Fields: name, text, hover text, attachments, tag, dynamic, active.
+# If any row has `active` checked, only active rows are used (Airtable "active" view).
+
+_WTE_CAPS = [
+    "cap-top cap-left",
+    "cap-bottom cap-right",
+    "cap-top cap-left",
+    "cap-bottom cap-right",
+    "cap-top cap-left",
+    "cap-bottom cap-right",
+]
+
+_WYD_FALLBACK_ICONS = [
+    "/images/chal-1-key.png",
+    "/images/chal-2-workshop.png",
+    "/images/chal-3-talk.png",
+    "/images/chal-4-heads.png",
+    "/images/chal-5-spark.png",
+]
+
+
+def build_fellow_content(seed: FellowContent) -> FellowContent:
+    """Map Airtable `fellow` tab fragments onto FellowContent (seed + overrides)."""
+    records = _safe(settings.airtable_table_fellow)
+    if not records:
+        return seed
+
+    fields_list = _fellow_active_fields(records)
+    by_name = {txt(pick(f, "name")): f for f in fields_list}
+    content = seed.model_copy(deep=True)
+
+    # --- fellow_hero ---
+    hero = _frag(by_name, "fellow_hero_headline")
+    hero_text = txt(pick(hero, "text"))
+    hero_img = photo_attachment(pick(hero, "attachments"))
+    if hero_text:
+        content.hero_headline = hero_text
+        content.hero_headline_html = _fellow_hero_html(hero_text)
+    if hero_img:
+        content.hero_image = hero_img
+    content.hero_cta_primary = _fellow_cta_from(by_name, "fellow_hero_cta_primary", content.hero_cta_primary)
+    content.hero_cta_secondary = _fellow_cta_from(by_name, "fellow_hero_cta_secondary", content.hero_cta_secondary)
+
+    # --- fellow_about ---
+    about = txt(pick(_frag(by_name, "fellow_about_text"), "text"))
+    if about:
+        content.about_html = _md_hl(about) if ("**" in about) else _fellow_about_html(about)
+
+    # --- fellow_application (criteria + selection) ---
+    content.application = _how_block_fields(
+        by_name, "fellow_application_1_subheadline", "fellow_application_1_text", content.application
+    )
+    content.selection = _how_block_fields(
+        by_name, "fellow_application_2_subheadline", "fellow_application_2_text", content.selection
+    )
+
+    # --- fellow_whattoexpect ---
+    wte_h = txt(pick(_frag(by_name, "fellow_whattoexpect_headline"), "text"))
+    if wte_h:
+        content.what_to_expect_headline = wte_h
+    wte_cards = _tagged_numbered(fields_list, "fellow_whattoexpect", "fellow_whattoexpect_")
+    if wte_cards:
+        cards: List[FellowExpectCard] = []
+        for i, f in enumerate(wte_cards):
+            name, desc = _title_desc(txt(pick(f, "text")))
+            hover = txt(pick(f, "hover text", "hover_text"))
+            if hover and not desc:
+                desc = hover
+            img = photo_attachment(pick(f, "attachments"))
+            if not name and not img:
+                continue
+            prior = content.what_to_expect[i] if i < len(content.what_to_expect) else None
+            cards.append(FellowExpectCard(
+                name=name or (prior.name if prior else ""),
+                desc=desc or (prior.desc if prior else ""),
+                image=img or (prior.image if prior else ""),
+                cap=_WTE_CAPS[i % len(_WTE_CAPS)],
+            ))
+        if cards:
+            content.what_to_expect = cards
+
+    # --- fellow_fellows ---
+    fh = txt(pick(_frag(by_name, "fellow_fellows_headline"), "text"))
+    if fh:
+        content.fellows_headline = fh
+    content.fellows_cta = _fellow_cta_from(by_name, "fellow_fellows_cta", content.fellows_cta)
+
+    # --- fellow_alumni ---
+    ah = txt(pick(_frag(by_name, "fellow_alumni_headline"), "text"))
+    if ah:
+        content.alumni_headline = ah
+        content.alumni_headline_html = _alumni_headline_html(ah)
+    ai = txt(pick(_frag(by_name, "fellow_alumni_text"), "text"))
+    if ai:
+        content.alumni_intro = ai
+    al = txt(pick(_frag(by_name, "fellow_alumni_subheadline"), "text"))
+    if al:
+        content.alumni_label = al
+    ab = txt(pick(_frag(by_name, "fellow_alumni_subtext"), "text"))
+    if ab:
+        content.alumni_bullets = _paragraphs(ab)
+    content.alumni_cta = _fellow_cta_from(by_name, "fellow_alumni_cta", content.alumni_cta)
+
+    # --- fellow_giveback ---
+    gh = txt(pick(_frag(by_name, "fellow_giveback_headline"), "text"))
+    if gh:
+        content.giveback_headline = gh
+        content.giveback_headline_html = _giveback_headline_html(gh)
+    gt = txt(pick(_frag(by_name, "fellow_giveback_text"), "text"))
+    if gt:
+        paras = _paragraphs(gt)
+        if paras:
+            content.giveback_lead = paras[0]
+            content.giveback_body = " ".join(paras[1:]) if len(paras) > 1 else content.giveback_body
+    content.giveback_cta = _fellow_cta_from(by_name, "fellow_giveback_cta", content.giveback_cta)
+
+    # --- challenger_hero ---
+    ch = _frag(by_name, "challenger_hero_headline")
+    cht = txt(pick(ch, "text"))
+    chi = photo_attachment(pick(ch, "attachments"))
+    if cht:
+        content.challenger_hero_headline = cht
+        content.challenger_hero_headline_html = _challenger_hero_html(cht)
+    if chi:
+        content.challenger_hero_image = chi
+    ctext = txt(pick(_frag(by_name, "challenger_hero_text"), "text"))
+    if ctext:
+        blocks = [b.strip() for b in re.split(r"\n\s*\n", ctext) if b.strip()]
+        if len(blocks) < 2:
+            blocks = _paragraphs(ctext)
+        content.challenger_paragraphs = [_challenger_para_html(b) for b in blocks]
+    content.challenger_cta_primary = _fellow_cta_from(
+        by_name, "challenger_hero_cta_primary", content.challenger_cta_primary
+    )
+    content.challenger_cta_secondary = _fellow_cta_from(
+        by_name, "challenger_hero_cta_secondary", content.challenger_cta_secondary
+    )
+
+    # --- challenger_application ---
+    content.challenger_application = _how_block_fields(
+        by_name,
+        "challenger_application_1_subheadline",
+        "challenger_application_1_text",
+        content.challenger_application,
+    )
+    content.challenger_selection = _how_block_fields(
+        by_name,
+        "challenger_application_2_subheadline",
+        "challenger_application_2_text",
+        content.challenger_selection,
+    )
+
+    # --- challenger_whatyou'lldo ---
+    wyd_h = txt(pick(_frag(by_name, "challenger_whatyou'lldo_headline"), "text"))
+    if not wyd_h:
+        # Find headline by tag if name apostrophe differs
+        for f in _fields_with_tag(fields_list, "challenger_whatyou'lldo"):
+            if txt(pick(f, "name")).endswith("_headline"):
+                wyd_h = txt(pick(f, "text"))
+                break
+    if wyd_h:
+        content.what_youll_do_headline = wyd_h
+    wyd_rows = _tagged_numbered(fields_list, "challenger_whatyou'lldo", "challenger_whatyou'lldo_")
+    if not wyd_rows:
+        wyd_rows = [
+            f for f in fields_list
+            if re.match(r"challenger_whatyou.?ll.?do_\d+\s*$", txt(pick(f, "name")), re.I)
+        ]
+        wyd_rows = sorted(wyd_rows, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+    if wyd_rows:
+        items: List[FellowWydItem] = []
+        for i, f in enumerate(wyd_rows):
+            text = txt(pick(f, "text"))
+            img = photo_attachment(pick(f, "attachments"))
+            prior = content.what_youll_do[i] if i < len(content.what_youll_do) else None
+            items.append(FellowWydItem(
+                text=text or (prior.text if prior else ""),
+                image=img or (prior.image if prior else (_WYD_FALLBACK_ICONS[i] if i < len(_WYD_FALLBACK_ICONS) else "")),
+            ))
+        if items:
+            content.what_youll_do = items
+
+    # --- challenger_challengers ---
+    chh = txt(pick(_frag(by_name, "challenger_challengers_headline"), "text"))
+    if chh:
+        content.challengers_headline = chh
+    content.challengers_cta = _fellow_cta_from(
+        by_name, "challenger_challengers_cta", content.challengers_cta
+    )
+
+    return content
+
+
+def _fellow_active_fields(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Return field dicts; if any `active` is checked, keep only those rows."""
+    all_fields = [r.get("fields", {}) for r in records]
+    active = [f for f in all_fields if pick(f, "active") is True]
+    return active if active else all_fields
+
+
+def _frag(by_name: Dict[str, Dict[str, Any]], name: str) -> Dict[str, Any]:
+    return by_name.get(name, {})
+
+
+def _row_tag(fields: Dict[str, Any]) -> str:
+    t = pick(fields, "tag") or pick(fields, "tags") or ""
+    if isinstance(t, list):
+        return str(t[0]).strip() if t else ""
+    return str(t).strip()
+
+
+def _fields_with_tag(fields_list: List[Dict[str, Any]], tag: str) -> List[Dict[str, Any]]:
+    want = tag.lower()
+    return [f for f in fields_list if _row_tag(f).lower() == want]
+
+
+def _tagged_numbered(
+    fields_list: List[Dict[str, Any]], tag: str, name_prefix: str
+) -> List[Dict[str, Any]]:
+    """Numbered cards in a tag family (`…_1`, `…_2`, …), excluding `…_headline`."""
+    tagged = _fields_with_tag(fields_list, tag)
+    strict = [
+        f for f in tagged
+        if re.match(re.escape(name_prefix) + r"\d+\s*$", txt(pick(f, "name")))
+    ]
+    if strict:
+        return sorted(strict, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+    loose = [
+        f for f in tagged
+        if re.search(r"_\d+\s*$", txt(pick(f, "name")))
+        and "headline" not in txt(pick(f, "name")).lower()
+    ]
+    return sorted(loose, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+
+
+def _numbered_fields(records: List[Dict[str, Any]], prefix: str) -> List[Dict[str, Any]]:
+    """Rows named `{prefix}{n}` ordered by n (excludes `…_headline`)."""
+    out: List[Dict[str, Any]] = []
+    for r in records:
+        f = r.get("fields", {})
+        name = txt(pick(f, "name"))
+        if re.match(re.escape(prefix) + r"\d+\s*$", name):
+            out.append(f)
+    return sorted(out, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+
+
+def _fellow_cta_from(by_name: Dict[str, Dict[str, Any]], key: str, current: FellowCta) -> FellowCta:
+    f = by_name.get(key, {})
+    label = txt(pick(f, "text"))
+    href = txt(pick(f, "link", "url", "href"))
+    if not href:
+        href = first_attachment(pick(f, "attachments"), None) or current.href or "#"
+    if not label:
+        return current
+    return FellowCta(label=label, href=href)
+
+
+def _how_block_fields(
+    by_name: Dict[str, Dict[str, Any]],
+    label_key: str,
+    text_key: str,
+    current: FellowHowBlock,
+) -> FellowHowBlock:
+    label = txt(pick(by_name.get(label_key, {}), "text"))
+    raw = txt(pick(by_name.get(text_key, {}), "text"))
+    if not label and not raw:
+        return current
+    paragraphs: List[str] = []
+    kicker = current.kicker
+    if raw:
+        lines = _paragraphs(raw)
+        if lines:
+            last = lines[-1]
+            bare = re.sub(r"[*_]", "", last).strip().lower().replace("\u2019", "'")
+            if bare.startswith("that's it") or (last.startswith("**") and last.endswith("**")):
+                kicker = re.sub(r"\*+", "", last).strip()
+                lines = lines[:-1]
+            paragraphs = [_md_hl(ln) for ln in lines]
+    return FellowHowBlock(
+        label=label or current.label,
+        paragraphs=paragraphs or current.paragraphs,
+        kicker=kicker,
+    )
+
+
+def _title_desc(text: str) -> tuple[str, str]:
+    """`**Title**\\ndesc` or `Title\\ndesc` → (title, desc)."""
+    text = text.strip()
+    m = re.match(r"\*\*(.+?)\*\*\s*(.*)", text, re.S)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    lines = _paragraphs(text)
+    if not lines:
+        return "", ""
+    if len(lines) == 1:
+        return lines[0], ""
+    return lines[0], " ".join(lines[1:])
+
+
+def _md_hl(s: str) -> str:
+    """Inline markdown: **_x_** / **x** → <span class=\"hl\"> (with optional <em>)."""
+    parts: List[str] = []
+    i = 0
+    while i < len(s):
+        m_bi = re.match(r"\*\*_(.+?)_\*\*", s[i:])
+        if m_bi:
+            parts.append(f'<span class="hl"><em>{html.escape(m_bi.group(1))}</em></span>')
+            i += m_bi.end()
+            continue
+        m_b = re.match(r"\*\*(.+?)\*\*", s[i:])
+        if m_b:
+            parts.append(f'<span class="hl">{html.escape(m_b.group(1))}</span>')
+            i += m_b.end()
+            continue
+        nxt = s.find("**", i)
+        chunk = s[i:] if nxt < 0 else s[i:nxt]
+        parts.append(html.escape(chunk))
+        if nxt < 0:
+            break
+        i = nxt
+    return "".join(parts)
+
+
+def _fellow_hero_html(raw: str) -> str:
+    """'A community that backs you. For life.' → last sentence highlighted."""
+    text = raw.strip()
+    m = re.match(r"^(.+?\.)\s+(.+)$", text)
+    if m:
+        return f'{html.escape(m.group(1))}<br /><span class="hl">{html.escape(m.group(2))}</span>'
+    return html.escape(text)
+
+
+def _fellow_about_html(raw: str) -> str:
+    """Highlight key phrases when Airtable sends plain text (no markdown)."""
+    text = html.escape(raw)
+    phrases = [
+        "GİRVAK Fellow Program",
+        "entrepreneurial mindset",
+        "don't need to be entrepreneurs",
+        "don\u2019t need to be entrepreneurs",
+        "proactive, solution-oriented, and resilient",
+    ]
+    for p in phrases:
+        esc = html.escape(p)
+        if esc in text:
+            text = text.replace(esc, f'<span class="hl">{esc}</span>', 1)
+    return text
+
+
+def _alumni_headline_html(raw: str) -> str:
+    text = raw.strip().rstrip(".")
+    m = re.match(r"^(once a fellow,)\s*(always)\s*(a fellow)\.?$", text, re.I)
+    if m:
+        return (
+            f'{html.escape(m.group(1))} <span class="falum-em">{html.escape(m.group(2))}</span> '
+            f"{html.escape(m.group(3))}."
+        )
+    return html.escape(raw.strip())
+
+
+def _giveback_headline_html(raw: str) -> str:
+    text = raw.strip()
+    m = re.match(r"^(.*\bmoves\s+)(forward\.?)\s*$", text, re.I)
+    if m:
+        return f'{html.escape(m.group(1))}<span class="fbecause-em">{html.escape(m.group(2))}</span>'
+    return html.escape(text)
+
+
+def _challenger_hero_html(raw: str) -> str:
+    text = raw.strip()
+    m = re.match(r"^(Your first step)\s+(into the entrepreneurial world)\.?$", text, re.I)
+    if m:
+        return (
+            f'<span style="color: #f2a81d">{html.escape(m.group(1))}</span><br />'
+            f'<span style="color: #373d42">{html.escape(m.group(2))}</span>'
+        )
+    parts = text.split()
+    if len(parts) >= 4:
+        left = " ".join(parts[:3])
+        right = " ".join(parts[3:])
+        return (
+            f'<span style="color: #f2a81d">{html.escape(left)}</span><br />'
+            f'<span style="color: #373d42">{html.escape(right)}</span>'
+        )
+    return html.escape(text)
+
+
+def _challenger_para_html(raw: str) -> str:
+    text = html.escape(raw)
+    for p in (
+        "Challenger Program",
+        "first and second-year university students",
+        "early discovery track",
+    ):
+        esc = html.escape(p)
+        if esc in text:
+            text = text.replace(esc, f'<span class="chl">{esc}</span>', 1)
+    return text
 
 
 # --------------------------------------------------------------------------- #

@@ -17,7 +17,7 @@
   var s1 = document.querySelector('.fhero-1');
   var s2 = document.querySelector('.fhero-2');
 
-  var mobile = window.matchMedia('(max-width: 900px)');
+  var mobile = window.matchMedia('(max-width: 1024px)');
 
   if (track && s1 && s2) {
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }

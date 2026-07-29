@@ -5,9 +5,10 @@ import hashlib
 
 from fastapi import APIRouter, Request, Response
 
-from ..models import AboutContent, HomeContent, PeopleContent, Fellow
+from ..models import AboutContent, FellowContent, HomeContent, PeopleContent, Fellow
 from ..services.content_source import (
     get_about_content,
+    get_fellow_content,
     get_fellow_spotlight,
     get_home_content,
     get_people,
@@ -65,6 +66,20 @@ def about_page(request: Request, response: Response) -> AboutContent:
     return content
 
 
+@router.get("/fellow", response_model=FellowContent)
+def fellow_page(request: Request, response: Response) -> FellowContent:
+    content = get_fellow_content()
+    body = content.model_dump_json().encode("utf-8")
+    etag = '"' + hashlib.sha256(body).hexdigest()[:16] + '"'
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})  # type: ignore[return-value]
+
+    return content
+
+
 @router.get("/fellows-spotlight", response_model=list[Fellow])
 def fellows_spotlight(response: Response) -> list[Fellow]:
     """Random homepage fellow cards (new sample on every request)."""
@@ -81,6 +96,7 @@ def airtable_publish_guide() -> dict:
         _about_used_ids,
         _dynamic_column,
         _dynamic_field_names,
+        _fellow_used_ids,
         _home_used_ids,
         _meta_checkbox_fields,
         _partner_used_ids,
@@ -93,6 +109,7 @@ def airtable_publish_guide() -> dict:
         settings.airtable_table_about: _about_used_ids,
         settings.airtable_table_people: _people_used_ids,
         settings.airtable_table_partner: _partner_used_ids,
+        settings.airtable_table_fellow: _fellow_used_ids,
     }
     detected: dict[str, dict] = {}
     for table in (

@@ -3,17 +3,37 @@ import type { Partners } from '../lib/types';
 interface Props { partners: Partners; }
 const { partners } = Astro.props;
 ---
+<!-- Partner logos arrive from Airtable as a mix of alpha PNGs, white-background
+     JPEGs and CMYK files whose ink ranges from near-black to light grey, so
+     `grayscale()` alone leaves every logo a different shade. This filter maps
+     any non-white pixel to one flat brand grey (#7B8189) and leaves white
+     untouched; `mix-blend-mode: multiply` then drops that white against the
+     section's white ground, so both file kinds end up identical.
+     20 discrete bands puts the white cut at luminance 0.95 — measured above
+     every logo's darkest-to-lightest ink (max 0.894) and below every white
+     background (0.99+), so no ink is dropped and no background survives. -->
+<svg class="logo-mono-def" aria-hidden="true" focusable="false" width="0" height="0">
+  <filter id="logoMono" color-interpolation-filters="sRGB">
+    <feColorMatrix type="saturate" values="0" />
+    <feComponentTransfer>
+      <feFuncR type="discrete" tableValues="0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 0.482 1" />
+      <feFuncG type="discrete" tableValues="0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 0.506 1" />
+      <feFuncB type="discrete" tableValues="0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 0.537 1" />
+    </feComponentTransfer>
+  </filter>
+</svg>
+
 <section class="partners" id="partners">
   <div class="partners-wrap">
     <div class="partners-left">
       <div class="partners-copy rv">
-        <h2 class="h2" style="color: #373d42; font-size: 38px; font-weight: 500">{partners.headline_pre}<span style="color:#f76b52">{partners.headline_highlight}</span></h2>
+        <h2 class="h2" style="color: #373d42">{partners.headline_pre}<span style="color:#f76b52">{partners.headline_highlight}</span></h2>
         <p class="partners-sub">{partners.sub}</p>
       </div>
 
       <div class="partners-actions rv" style="--d:160ms">
         {partners.ctas.map((cta) => (
-          <a href={cta.href} class="h3btn" style="font-size: 19px">{cta.label}<span class="cta-arrow" aria-hidden="true"></span></a>
+          <a href={cta.href} class="h3btn"><span class="h3btn-label">{cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
         ))}
       </div>
     </div>

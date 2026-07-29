@@ -20,6 +20,15 @@ const BOARD_COLORS = ['#19BAD1', '#F76C53', '#373D42'];
 const initials = (p: Person) =>
   ((p.first || '').charAt(0) + (p.last || '').charAt(0)).toUpperCase();
 const isRemote = (s?: string) => !!s && /^https?:\/\//.test(s);
+
+function linkedInHref(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const first = raw.trim().split(/\s+/)[0] || '';
+  if (!first || first === '#') return undefined;
+  if (/linkedin\.com\/?$/i.test(first.replace(/\/$/, ''))) return undefined;
+  const href = /^https?:\/\//i.test(first) ? first : `https://${first.replace(/^\/+/, '')}`;
+  return /linkedin\.com\/in\//i.test(href) ? href : undefined;
+}
 ---
 <div class:list={['people-grid', calm && 'people-grid--calm', teamTone && 'people-grid--team']} id={id}>
   {people.map((p, i) => {
@@ -34,12 +43,14 @@ const isRemote = (s?: string) => !!s && /^https?:\/\//.test(s);
       ? (p.color || forceColor || BOARD_COLORS[i % BOARD_COLORS.length])
       : (forceColor || p.color || BOARD_COLORS[i % BOARD_COLORS.length]);
     const name = `${p.first} ${p.last ?? ''}`.trim();
+    const href = linkedInHref(p.linkedin);
+    const Tag = href ? 'a' : 'div';
     return (
-      <a
+      <Tag
         class="bcard"
-        href={p.linkedin || '#'}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...(href
+          ? { href, target: '_blank', rel: 'noopener noreferrer' }
+          : { role: 'group', tabindex: '0' })}
         style={`--bc:${col}`}
       >
         {meta ? (
@@ -54,7 +65,7 @@ const isRemote = (s?: string) => !!s && /^https?:\/\//.test(s);
           {p.company && <span class="bcard-company">{p.company}</span>}
           {p.position && <span class="bcard-position">{p.position}</span>}
         </div>
-      </a>
+      </Tag>
     );
   })}
 </div>

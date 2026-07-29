@@ -5,7 +5,7 @@ import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
 import PeopleGrid from '../components/about/PeopleGrid.astro';
 import { getAboutContent, getHomeContent, getPeople } from '../lib/content';
-import { trustees } from '../lib/aboutPeople';
+import { trustees, sortPeopleAlpha } from '../lib/aboutPeople';
 import '../styles/about.css';
 
 const content = await getHomeContent();
@@ -13,7 +13,7 @@ const about = await getAboutContent();
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
 const livePeople = await getPeople();
-const trusteesAll = livePeople?.trustees.length ? livePeople.trustees : trustees;
+const trusteesAll = sortPeopleAlpha(livePeople?.trustees.length ? livePeople.trustees : trustees);
 ---
 
 <BaseLayout
@@ -34,7 +34,7 @@ const trusteesAll = livePeople?.trustees.length ? livePeople.trustees : trustees
     </section>
 
     <section class="people tint" id="trustees">
-      <PeopleGrid id="trustees-grid-full" people={trusteesAll} forceColor="#373D42" calm />
+      <PeopleGrid id="trustees-grid-full" people={trusteesAll} forceColor="#373D42" />
     </section>
   </main>
 

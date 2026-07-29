@@ -20,13 +20,15 @@ const { trackId, people, cardClass, ariaLabel } = Astro.props;
         const name = personName(p);
         const photo = p.photo || '';
         const local = photo && !isRemotePhoto(photo) ? resolveImage(photo) : null;
+        // One tone per belt: fellow cards red, alumni indigo, challengers amber.
+        const tone = cardClass;
         return (
-          <figure class={`fcard ${cardClass}`} tabindex="0">
+          <figure class={`fcard ${tone}`} tabindex="0">
             <div class="fcard-inner">
               <div class="fcard-front">
                 {p.year ? <span class="fcard-year">{p.year}</span> : null}
                 {local ? (
-                  <Image src={local} alt={name} width={232} height={248} />
+                  <Image src={local} alt={name} width={280} densities={[1, 2]} format="webp" />
                 ) : photo ? (
                   <img src={photo} alt={name} loading="lazy" decoding="async" />
                 ) : null}

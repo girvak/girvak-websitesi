@@ -160,3 +160,64 @@ export interface AboutContent {
   reports: AboutCtaBand;
   work_with_us: AboutCtaBand;
 }
+
+export interface FellowCta {
+  label: string;
+  href: string;
+}
+
+export interface FellowHowBlock {
+  label: string;
+  paragraphs: string[];
+  kicker: string;
+}
+
+export interface FellowExpectCard {
+  name: string;
+  desc: string;
+  image: string;
+  cap: string;
+}
+
+export interface FellowWydItem {
+  text: string;
+  image: string;
+}
+
+export interface FellowContent {
+  hero_image: string;
+  hero_headline: string;
+  hero_headline_html: string;
+  hero_cta_primary: FellowCta;
+  hero_cta_secondary: FellowCta;
+  about_html: string;
+  application: FellowHowBlock;
+  selection: FellowHowBlock;
+  what_to_expect_headline: string;
+  what_to_expect: FellowExpectCard[];
+  fellows_headline: string;
+  fellows_cta: FellowCta;
+  alumni_headline: string;
+  alumni_headline_html: string;
+  alumni_intro: string;
+  alumni_label: string;
+  alumni_bullets: string[];
+  alumni_cta: FellowCta;
+  giveback_headline: string;
+  giveback_headline_html: string;
+  giveback_lead: string;
+  giveback_body: string;
+  giveback_cta: FellowCta;
+  challenger_hero_image: string;
+  challenger_hero_headline: string;
+  challenger_hero_headline_html: string;
+  challenger_paragraphs: string[];
+  challenger_cta_primary: FellowCta;
+  challenger_cta_secondary: FellowCta;
+  challenger_application: FellowHowBlock;
+  challenger_selection: FellowHowBlock;
+  what_youll_do_headline: string;
+  what_youll_do: FellowWydItem[];
+  challengers_headline: string;
+  challengers_cta: FellowCta;
+}

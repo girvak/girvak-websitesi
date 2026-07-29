@@ -10,11 +10,12 @@ import json
 from typing import List, Optional
 
 from ..config import settings
-from ..models import AboutContent, HomeContent, PeopleContent
+from ..models import AboutContent, FellowContent, HomeContent, PeopleContent
 
 _home_cache: Optional[HomeContent] = None
 _people_cache: Optional[PeopleContent] = None
 _about_cache: Optional[AboutContent] = None
+_fellow_cache: Optional[FellowContent] = None
 _fellow_pool_cache: Optional[list] = None
 
 
@@ -134,6 +135,27 @@ def get_about_content() -> AboutContent:
     return content
 
 
+def get_fellow_content() -> FellowContent:
+    """Fellow program page content from seed + Airtable `fellow` overrides."""
+    global _fellow_cache
+    if _fellow_cache is not None:
+        return _fellow_cache
+
+    seed = _load_fellow_seed()
+    if _airtable_on():
+        from .airtable import build_fellow_content
+        try:
+            content = build_fellow_content(seed)
+        except Exception as exc:
+            print(f"[content] Airtable fellow fetch failed, serving seed: {exc}")
+            content = seed
+    else:
+        content = seed
+
+    _fellow_cache = content
+    return content
+
+
 def _load_seed() -> HomeContent:
     path = settings.data_dir / "home_content.json"
     with path.open(encoding="utf-8") as f:
@@ -148,14 +170,22 @@ def _load_about_seed() -> AboutContent:
     return AboutContent.model_validate(raw)
 
 
+def _load_fellow_seed() -> FellowContent:
+    path = settings.data_dir / "fellow_content.json"
+    with path.open(encoding="utf-8") as f:
+        raw = json.load(f)
+    return FellowContent.model_validate(raw)
+
+
 def reload_content() -> None:
     """Drop in-memory caches and re-pull from Airtable on the next request."""
-    global _home_cache, _people_cache, _about_cache, _fellow_pool_cache
+    global _home_cache, _people_cache, _about_cache, _fellow_cache, _fellow_pool_cache
     from .airtable import clear_publish_meta_cache
 
     clear_publish_meta_cache()
     _home_cache = None
     _people_cache = None
     _about_cache = None
+    _fellow_cache = None
     _fellow_pool_cache = None
     _sync_dynamic_if_due(force=True)

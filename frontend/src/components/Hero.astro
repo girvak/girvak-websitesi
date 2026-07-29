@@ -47,8 +47,8 @@ const { hero } = Astro.props;
     </p>
     <div class="hero3-actions rv">
       {hero.ctas.map((cta) => (
-        <a href={cta.href} class="h3btn" style="letter-spacing: -0.6px; font-size: 22px">
-          {cta.label}<span class="cta-arrow" aria-hidden="true"></span>
+        <a href={cta.href} class="h3btn" style="letter-spacing: -0.6px">
+          <span class="h3btn-label">{cta.label}</span><span class="cta-arrow" aria-hidden="true"></span>
         </a>
       ))}
     </div>

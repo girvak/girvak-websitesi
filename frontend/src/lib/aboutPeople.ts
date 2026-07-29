@@ -63,8 +63,17 @@ export function makePeople(n: number, seed: number): Person[] {
   return arr;
 }
 
+/** Turkish alphabetical sort by full name (first + last), matching Airtable `name`. */
+export function sortPeopleAlpha<T extends { first: string; last?: string }>(people: T[]): T[] {
+  return [...people].sort((a, b) => {
+    const an = `${a.first} ${a.last ?? ''}`.trim();
+    const bn = `${b.first} ${b.last ?? ''}`.trim();
+    return an.localeCompare(bn, 'tr', { sensitivity: 'base' });
+  });
+}
+
 // Uniform brand colour per section: trustees = GİRVAK grey, directors = coral,
 // team = turquoise (see PeopleGrid `forceColor`).
-export const trustees: Person[] = makePeople(10, 1);
-export const directors: Person[] = FEATURED.concat(makePeople(5, 40));
-export const team: Person[] = TEAM;
+export const trustees: Person[] = sortPeopleAlpha(makePeople(10, 1));
+export const directors: Person[] = sortPeopleAlpha(FEATURED.concat(makePeople(5, 40)));
+export const team: Person[] = sortPeopleAlpha(TEAM);
