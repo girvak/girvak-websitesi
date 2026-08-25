@@ -7,14 +7,17 @@ import NavMenu from '../components/NavMenu.astro';
 import Hero from '../components/Hero.astro';
 import ImpactMosaic from '../components/ImpactMosaic.astro';
 import WhatWeDo from '../components/WhatWeDo.astro';
-import Fellows from '../components/Fellows.astro';
+import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
 import Partners from '../components/Partners.astro';
 import Footer from '../components/Footer.astro';
-import { getHomeContent } from '../lib/content';
+import { getHomeContent, getPeople } from '../lib/content';
 
 const content = await getHomeContent();
-const { seo, hero, impact, impact_image, what_we_do, fellows, partners, footer } = content;
+const { seo, hero, impact, impact_image, what_we_do, fellows_headline, fellows_cta, partners, footer } = content;
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+
+const peopleApi = await getPeople();
+const fellowSpotlight = (peopleApi?.fellows ?? []).filter((p) => p.photo).slice(0, 8);
 ---
 
 <BaseLayout title={seo.title} description={seo.description}>
@@ -23,11 +26,32 @@ const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
   <Hero hero={hero} />
   <ImpactMosaic impact={impact} impactImage={impact_image ?? '/images/impact-photo.jpg'} />
   <WhatWeDo cards={what_we_do} />
-  <Fellows fellows={fellows} />
+  <section class="fellows" id="fellows">
+    <div class="fellows-head rv" style="font-weight: 600">
+      <div>
+        <h2 class="h2" style="color: #373d42"><span style="color: #373d42">{fellows_headline ?? 'meet our fellows'}</span></h2>
+      </div>
+      <a href={fellows_cta?.href ?? '/fellow-program#fellows'} class="h3btn"><span class="h3btn-label">{fellows_cta?.label ?? 'see all fellows'}</span><span class="cta-arrow" aria-hidden="true"></span></a>
+    </div>
+    {
+      fellowSpotlight.length > 0 ? (
+        <FellowFlipBelt
+          trackId="belt"
+          people={fellowSpotlight}
+          cardClass="fc-teal"
+          ariaLabel="Meet our fellows"
+          spotlightFetch
+          colorRotate
+          programBack
+        />
+      ) : null
+    }
+  </section>
   <Partners partners={partners} />
   <Footer footer={footer} apiBase={apiBase} />
 </BaseLayout>
 
 <script>
   import '../scripts/home.js';
+  import '../scripts/partners_dynamic.js';
 </script>

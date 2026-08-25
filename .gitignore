@@ -68,3 +68,10 @@ Desktop.ini
 *.key
 credentials.json
 service-account*.json
+
+# Mirrored Airtable attachments (regenerated on demand)
+backend/media/
+
+# CMS images pulled in at build time by frontend/scripts/sync-cms-media.mjs
+frontend/src/assets/images/cms/
+frontend/public/media/

@@ -147,30 +147,53 @@ function escHtml(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/"/g, '&quot;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-function fellowCardMarkup(f) {
-  const cls = COLOR_CLASS[f.color] || 'fc-teal';
-  const yearFront = f.year ? `<span class="fcard-year">${escHtml(f.year)}</span>` : '';
-  const yearBack = f.year ? `<span class="fcard-back-year">${escHtml(f.year)}</span>` : '';
-  const img = f.image
-    ? `<img src="${escHtml(f.image)}" alt="${escHtml(f.name)}" loading="lazy" decoding="async" />`
+function linkedInHref(raw) {
+  if (!raw) return undefined;
+  const first = String(raw).trim().split(/\s+/)[0] || '';
+  if (!first || first === '#') return undefined;
+  // Ignore non-profile tokens like "linkedin.com"
+  if (/linkedin\.com\/?$/i.test(first.replace(/\/$/, ''))) return undefined;
+  const href = /^https?:\/\//i.test(first) ? first : `https://${first.replace(/^\/+/, '')}`;
+  return /linkedin\.com\/in\//i.test(href) ? href : undefined;
+}
+
+function personName(p) {
+  return [p.first, p.last].filter(Boolean).join(' ');
+}
+
+const PALETTE = ['fc-teal', 'fc-coral', 'fc-ink'];
+
+function fellowCardMarkup(p, index) {
+  const cls = PALETTE[index % PALETTE.length];
+  const name = personName(p);
+  const yearFront = p.year ? `<span class="fcard-year">${escHtml(p.year)}</span>` : '';
+  const yearBack = p.year ? `<span class="fcard-back-year">${escHtml(p.year)}</span>` : '';
+  const img = p.photo
+    ? `<img src="${escHtml(p.photo)}" alt="${escHtml(name)}" loading="lazy" decoding="async" />`
     : '';
-  const uni = f.university ? `<span class="fcard-uni">${escHtml(f.university)}</span>` : '';
-  const dept = f.department ? `<span class="fcard-dept">${escHtml(f.department)}</span>` : '';
+  const uni = (p.university || p.company)
+    ? `<span class="fcard-uni">${escHtml(p.university || p.company)}</span>`
+    : '';
+  const dept = p.department ? `<span class="fcard-dept">${escHtml(p.department)}</span>` : '';
+  const linkedin = linkedInHref(p.linkedin);
+  const linkedinAttr = linkedin ? ` data-linkedin="${escHtml(linkedin)}"` : '';
   return (
-    `<figure class="fcard ${cls}" tabindex="0">` +
+    `<figure class="fcard ${cls}" tabindex="0"${linkedinAttr}>` +
       '<div class="fcard-inner">' +
         '<div class="fcard-front">' +
           yearFront +
           img +
-          `<div class="fcard-band"><span class="fcard-frontname">${escHtml(f.name)}</span></div>` +
+          `<div class="fcard-band"><span class="fcard-frontname">${escHtml(name)}</span></div>` +
         '</div>' +
         '<div class="fcard-back">' +
           yearBack +
           '<div class="fcard-back-meta">' +
-            `<span class="fcard-name">${escHtml(f.name)}</span>` +
+            `<span class="fcard-name">${escHtml(name)}</span>` +
             uni +
             dept +
           '</div>' +
@@ -183,17 +206,23 @@ function fellowCardMarkup(f) {
 async function initFellowsBelt() {
   const track = document.getElementById('belt');
   if (!track || track.dataset.spotlightFetch !== 'true') return;
-  try {
-    const res = await fetch('/api/content/fellows-spotlight');
-    if (res.ok) {
-      const fellows = await res.json();
-      if (Array.isArray(fellows) && fellows.length) {
-        track.innerHTML = fellows.map(fellowCardMarkup).join('');
-        track.dataset.beltDuplicated = '0';
+  // Re-sampling the spotlight at runtime is a dev convenience. In production it
+  // would swap the build's optimized <picture> markup for raw backend image
+  // URLs and make the API a hard dependency of the homepage, so the cards baked
+  // at build time stay put (they are already a fresh random sample per build).
+  if (import.meta.env.DEV) {
+    try {
+      const res = await fetch('/api/content/fellows-spotlight');
+      if (res.ok) {
+        const fellows = await res.json();
+        if (Array.isArray(fellows) && fellows.length) {
+          track.innerHTML = fellows.map((f, i) => fellowCardMarkup(f, i)).join('');
+          track.dataset.beltDuplicated = '0';
+        }
       }
+    } catch (_) {
+      /* keep SSR cards from build / first paint */
     }
-  } catch (_) {
-    /* keep SSR cards from build / first paint */
   }
   finalizeFellowsTrack(track);
 }
@@ -343,13 +372,16 @@ if (form) {
     try {
       const res = await fetch(`${apiBase}/api/newsletter`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
         body: JSON.stringify({ email }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      await res.json();
       form.classList.add('ok');
-      if (lbl) lbl.textContent = data.status === 'already_subscribed' ? 'Already in ✓' : 'Subscribed ✓';
+      if (lbl) lbl.textContent = 'Subscribed ✓';
       if (input) input.value = '';
     } catch (err) {
       if (lbl) lbl.textContent = 'Try again';
@@ -358,17 +390,42 @@ if (form) {
   });
 }
 
+// ---------- Fellow / challenger cards → LinkedIn on click (desktop + mobile) ----------
+// Use event delegation so dynamically injected cards also work.
+document.addEventListener('click', (e) => {
+  const fcard = e.target && e.target.closest ? e.target.closest('.fcard') : null;
+  if (fcard) {
+    const linkedIn = fcard.getAttribute('data-linkedin') || '';
+    if (linkedIn) {
+      e.preventDefault();
+      window.open(linkedIn, '_blank', 'noopener,noreferrer');
+    }
+    return;
+  }
+
+  const cchcard = e.target && e.target.closest ? e.target.closest('.cchcard') : null;
+  if (cchcard) {
+    const linkedIn = cchcard.getAttribute('data-linkedin') || '';
+    if (!linkedIn) return;
+    e.preventDefault();
+    window.open(linkedIn, '_blank', 'noopener,noreferrer');
+  }
+});
+
 // ---------- Touch: fellow flip cards + people curtain cards ----------
 if (!canHover) {
-  document.querySelectorAll('.fcard').forEach((card) => {
-    card.addEventListener('click', (e) => {
-      e.preventDefault();
-      const open = card.classList.contains('is-flipped');
-      document.querySelectorAll('.fcard.is-flipped').forEach((o) => {
-        if (o !== card) o.classList.remove('is-flipped');
-      });
-      card.classList.toggle('is-flipped', !open);
+  // Touch flip: delegate so dynamically injected cards also work.
+  document.addEventListener('click', (e) => {
+    const card = e.target && e.target.closest ? e.target.closest('.fcard') : null;
+    if (!card) return;
+    if (card.getAttribute('data-linkedin')) return; // LinkedIn has priority
+
+    e.preventDefault();
+    const open = card.classList.contains('is-flipped');
+    document.querySelectorAll('.fcard.is-flipped').forEach((o) => {
+      if (o !== card) o.classList.remove('is-flipped');
     });
+    card.classList.toggle('is-flipped', !open);
   });
 
   document.querySelectorAll('.bcard').forEach((card) => {

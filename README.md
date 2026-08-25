@@ -89,8 +89,49 @@ CTAs, nav menu and footer Explore links stay in code (structural).
 After editing Airtable, `POST /api/content/refresh` clears the server cache (or
 restart). Rebuild the frontend to regenerate the static pages.
 
+## Deploy (VPS)
+
+Server port layout:
+
+| Port | Service |
+|------|---------|
+| **80** | Host nginx (public) |
+| **8080** | Backend API (Docker) |
+| **8081** | Static frontend (Docker) |
+
+### 1. Build frontend (on the server or CI)
+
+```bash
+cd frontend
+cp .env.example .env
+# Production .env:
+#   API_BASE_URL=http://127.0.0.1:8080
+#   PUBLIC_SITE_URL=https://girisimcilikvakfi.org
+#   PUBLIC_API_BASE_URL=
+npm ci && npm run build
+```
+
+### 2. Start Docker services
+
+```bash
+cp backend/.env.example backend/.env   # fill in Airtable keys + ADMIN_API_KEY
+docker compose up -d --build
+```
+
+### 3. Configure host nginx
+
+```bash
+sudo cp deploy/nginx-site.conf /etc/nginx/sites-available/girvak
+sudo ln -sf /etc/nginx/sites-available/girvak /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+- Frontend → static files via Docker `:8081`, proxied through nginx `:80`
+- Backend → FastAPI on Docker `:8080`; nginx forwards `/api` and `/media`
+- Set `PUBLIC_API_BASE_URL=` (empty) so the newsletter form posts to same-origin `/api`
+
 ## Deploy (Phase 2+)
 
 - Frontend → any static host (Vercel / Netlify / Cloudflare Pages). Set
   `PUBLIC_SITE_URL`, `API_BASE_URL`, `PUBLIC_API_BASE_URL`.
-- Backend → Render / Railway / a VPS (or `docker-compose up backend`).
+- Backend → Render / Railway / a VPS (`docker compose up`).

@@ -1,12 +1,41 @@
-# Optional convenience: run backend (and a static preview of the built frontend)
-# together. For day-to-day dev, prefer running each app directly (see README).
+# Optional: run backend + static frontend together on the VPS.
+# Host nginx (:80) proxies to these services — see deploy/nginx-site.conf.
+#
+#   :80   nginx (host)  → public site
+#   :8080 backend API   → FastAPI / uvicorn
+#   :8081 frontend      → static dist (nginx container)
+#
+# Build the frontend first:  cd frontend && npm run build
+# Then:                     docker compose up -d --build
+
 services:
   backend:
     build: ./backend
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8080:8000"
+    env_file:
+      - ./backend/.env
     environment:
-      - CORS_ORIGINS=http://localhost:4321,http://localhost:8080
-      - CONTENT_SOURCE=seed
+      - CORS_ORIGINS=https://girisimcilikvakfi.org,https://www.girisimcilikvakfi.org,http://localhost:4321
+      - ALLOWED_HOSTS=localhost,127.0.0.1,girisimcilikvakfi.org,www.girisimcilikvakfi.org
+      - DEBUG=false
+      - ENABLE_DEBUG_ROUTES=false
     volumes:
-      - ./backend:/app
+      - backend_media:/app/media
+      - backend_data:/app/data
+
+  frontend:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./deploy/frontend-container.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  backend_media:
+  backend_data:

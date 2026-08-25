@@ -576,6 +576,9 @@ body.menu-open { overflow: hidden; }
   transform-origin: center;
   transition: transform .42s cubic-bezier(0.25,1,0.5,1), opacity .42s var(--ease-out);
 }
+@media (hover: hover) and (pointer: fine) {
+  .fcard[data-linkedin] { cursor: pointer; }
+}
 .fellows-belt .fcard:focus-visible,
 .fellows-belt .fcard.is-flipped { transform: scale(1.12); opacity: 1; z-index: 5; }
 @media (hover: hover) {
@@ -651,6 +654,21 @@ body.menu-open { overflow: hidden; }
 .fc-teal  .fcard-band { background: linear-gradient(to top, color-mix(in srgb, var(--turquoise) 86%, transparent) 40%, transparent); }
 .fc-coral .fcard-band { background: linear-gradient(to top, color-mix(in srgb, var(--coral) 86%, transparent) 40%, transparent); }
 .fc-ink   .fcard-band { background: linear-gradient(to top, color-mix(in srgb, var(--ink-800) 86%, transparent) 40%, transparent); }
+
+/* Homepage fellows belt — back face matches fellow-program layout */
+.fellows-belt--program-back .fcard-back-year {
+  position: absolute; top: 14px; right: 18px; z-index: 2;
+  font-weight: 300; font-size: clamp(30px, 2.6vw, 42px); line-height: 1;
+  letter-spacing: -0.01em; opacity: 1; margin: 0;
+}
+.fellows-belt--program-back .fcard-back-meta {
+  padding: clamp(10px, 2vw, 18px) 0 clamp(4px, 1vw, 8px);
+  max-width: 90%;
+}
+.fellows-belt--program-back .fcard-dept {
+  font-size: clamp(11px, 0.9vw, 12.5px);
+  opacity: 0.8;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .fcard-inner { transition: none; }

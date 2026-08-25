@@ -6,9 +6,8 @@ import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
 import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
 import ChallengerBelt from '../components/fellow/ChallengerBelt.astro';
-import { resolveImage } from '../lib/images';
+import { isUnbundled, resolveImage } from '../lib/images';
 import { getFellowContent, getHomeContent, getPeople } from '../lib/content';
-import { sortPeopleAlpha } from '../lib/aboutPeople';
 import '../styles/fellow.css';
 
 const content = await getHomeContent();
@@ -25,13 +24,12 @@ const seo = {
     'A community that backs you. For life. The GİRVAK Fellow Program equips young people with an entrepreneurial mindset to drive change.',
 };
 
-// Airtable returns records in table order — sort like the about / trustees
-// grids so every people list on the site reads alphabetically (Turkish locale).
-const fellowPeople = sortPeopleAlpha(peopleApi?.fellows?.length ? peopleApi.fellows : []);
-const alumniPeople = sortPeopleAlpha(peopleApi?.alumni?.length ? peopleApi.alumni : []);
-const challengerPeople = sortPeopleAlpha(peopleApi?.challengers?.length ? peopleApi.challengers : []);
+// Backend sorts fellows/alumni/challengers (Turkish A–Z).
+const fellowPeople = peopleApi?.fellows?.length ? peopleApi.fellows : [];
+const alumniPeople = peopleApi?.alumni?.length ? peopleApi.alumni : [];
+const challengerPeople = peopleApi?.challengers?.length ? peopleApi.challengers : [];
 
-const isRemote = (s: string) => /^https?:\/\//.test(s);
+const isRemote = isUnbundled;
 
 const heroRemote = fp.hero_image && isRemote(fp.hero_image) ? fp.hero_image : '';
 const heroLocal =
@@ -80,7 +78,7 @@ const fwyd = fp.what_youll_do.map((i) => ({
           {heroRemote ? (
             <img class="fhero-photo" src={heroRemote} alt="GİRVAK Fellows" loading="eager" decoding="async" />
           ) : heroLocal ? (
-            <Image class="fhero-photo" src={heroLocal} alt="GİRVAK Fellows" widths={[560, 1120]} sizes="(max-width: 900px) 92vw, 44vw" />
+            <Image class="fhero-photo" src={heroLocal} alt="GİRVAK Fellows" widths={[560, 1120]} sizes="(max-width: 900px) 92vw, 44vw" loading="eager" fetchpriority="high" />
           ) : (
             <img class="fhero-photo" src="/images/fellow-group.png" alt="GİRVAK Fellows" />
           )}
@@ -299,4 +297,5 @@ const fwyd = fp.what_youll_do.map((i) => ({
 <script>
   import '../scripts/home.js';
   import '../scripts/fellow.js';
+  import '../scripts/fellow_program_dynamic.js';
 </script>

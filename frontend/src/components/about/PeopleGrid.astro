@@ -3,7 +3,7 @@
 // A person with a resolvable photo renders the portrait; otherwise the card
 // falls back to coloured initials (the design's own graceful default).
 import { Image } from 'astro:assets';
-import { resolveImage } from '../../lib/images';
+import { isUnbundled, resolveImage } from '../../lib/images';
 import type { Person } from '../../lib/types';
 
 interface Props {
@@ -19,7 +19,7 @@ const { id, people, forceColor, calm = false, teamTone = false } = Astro.props;
 const BOARD_COLORS = ['#19BAD1', '#F76C53', '#373D42'];
 const initials = (p: Person) =>
   ((p.first || '').charAt(0) + (p.last || '').charAt(0)).toUpperCase();
-const isRemote = (s?: string) => !!s && /^https?:\/\//.test(s);
+const isRemote = isUnbundled;
 
 function linkedInHref(raw?: string): string | undefined {
   if (!raw) return undefined;
@@ -36,7 +36,10 @@ function linkedInHref(raw?: string): string | undefined {
     // plain <img>; nothing resolvable → coloured initials.
     const meta = p.photo && !isRemote(p.photo) ? resolveImage(p.photo) : undefined;
     const remote = isRemote(p.photo) ? p.photo : undefined;
-    const hasPhoto = !!meta || !!remote;
+    // If photo is a local `/images/...` path but not bundled under `src/assets/images`,
+    // `resolveImage()` returns undefined — still render it as a normal <img>.
+    const localPhoto = !remote && p.photo && !meta ? p.photo : undefined;
+    const hasPhoto = !!meta || !!remote || !!localPhoto;
     // Photo cards keep the colour baked into the portrait; initials cards take
     // the section's uniform brand colour first.
     const col = hasPhoto
@@ -57,6 +60,8 @@ function linkedInHref(raw?: string): string | undefined {
           <Image class="bcard-photo" src={meta} alt={name} width={260} height={278} />
         ) : remote ? (
           <img class="bcard-photo" src={remote} alt={name} width={260} height={278} loading="lazy" decoding="async" />
+        ) : localPhoto ? (
+          <img class="bcard-photo" src={localPhoto} alt={name} width={260} height={278} loading="lazy" decoding="async" />
         ) : (
           <span class="bcard-initials">{initials(p)}</span>
         )}

@@ -39,13 +39,13 @@ const { partners } = Astro.props;
     </div>
 
     <div class="partners-logos rv" style="--d:80ms">
-      <a href="#" class="partners-feat" aria-label={partners.featured.name}>
+      <a href={partners.featured.href ?? '#'} class="partners-feat" aria-label={partners.featured.name}>
         <img src={partners.featured.logo} alt={partners.featured.name} loading="lazy" decoding="async" />
       </a>
 
       <div class="plogo-grid">
         {partners.logos.map((p) => (
-          <a href="#" class="plogo" aria-label={p.name}>
+          <a href={p.href ?? '#'} class="plogo" aria-label={p.name}>
             <img src={p.logo} alt={p.name} loading="lazy" decoding="async" />
           </a>
         ))}

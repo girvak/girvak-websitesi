@@ -61,8 +61,21 @@
 .ab-photo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(15,109,142,.12) 0%, rgba(8,40,52,.18) 45%, rgba(8,40,52,.82) 100%); }
 .ab-photo-in { position: relative; z-index: 2; max-width: none; width: 100%; margin: 0; padding: clamp(40px,6vw,72px) var(--edge); color: #fff; }
 .ab-photo .ab-pk { font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,.85); }
-.ab-photo h2 { font-size: clamp(28px,4vw,56px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; margin: 14px 0 0; max-width: 22ch; color: #fff; }
-.ab-photo h2 em { font-style: italic; color: var(--turquoise-200); }
+.ab-photo h2 { font-size: clamp(28px, 3.6vw, 52px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.12; margin: 14px 0 0; width: min(100%, 58rem); max-width: none; color: #fff; text-wrap: balance; }
+.ab-photo h2 em { font-style: italic; color: var(--turquoise); }
+.ab-photo h2 .ab-mission-line1,
+.ab-photo h2 .ab-mission-line2 {
+  white-space: nowrap;
+  display: inline-block;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+@media (max-width: 900px) {
+  .ab-photo h2 .ab-mission-line1 { white-space: normal; display: inline; }
+  .ab-photo h2 .ab-mission-line2 { white-space: normal; display: inline; }
+}
 .ab-credit { position: absolute; right: var(--gutter); top: 20px; z-index: 3; font-size: 11.5px; font-weight: 500; letter-spacing: .04em; color: rgba(255,255,255,.7); background: rgba(0,0,0,.22); padding: 6px 12px; border-radius: var(--r-pill); backdrop-filter: blur(4px); }
 
 /* photo stat strip overlapping the band */

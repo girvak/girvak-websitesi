@@ -56,6 +56,7 @@ export interface Fellow {
 export interface Partner {
   name: string;
   logo: string;
+  href?: string;
 }
 
 export interface Partners {
@@ -90,6 +91,8 @@ export interface HomeContent {
   impact_image: string;
   what_we_do: WhatWeDoCard[];
   fellows: Fellow[];
+  fellows_headline?: string;
+  fellows_cta?: CTA;
   partners: Partners;
   footer: Footer;
 }
@@ -130,6 +133,7 @@ export interface AboutWwsStrip {
   desc: string;
   overlay_color: string;
   image: string;
+  href?: string;
 }
 
 export interface AboutSectionHead {

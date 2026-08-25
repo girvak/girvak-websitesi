@@ -1,11 +1,11 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImpactTile } from '../lib/types';
-import { resolveImage } from '../lib/images';
+import { isUnbundled, resolveImage } from '../lib/images';
 interface Props { impact: ImpactTile[]; impactImage: string; }
 const { impact, impactImage } = Astro.props;
 const colorClass = { teal: 'm-teal', coral: 'm-coral', ink: 'm-ink' } as const;
-const isRemote = (s: string) => /^https?:\/\//.test(s);
+const isRemote = isUnbundled;
 const photoLocal = impactImage && !isRemote(impactImage) ? resolveImage(impactImage) : undefined;
 const photoRemote = impactImage && isRemote(impactImage) ? impactImage : undefined;
 const photoFallback = impactImage && !photoLocal && !photoRemote ? impactImage : '/images/impact-photo.jpg';

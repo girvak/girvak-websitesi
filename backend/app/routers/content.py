@@ -3,20 +3,31 @@ from __future__ import annotations
 
 import hashlib
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from ..models import AboutContent, FellowContent, HomeContent, PeopleContent, Fellow
+from ..config import settings
+from ..models import AboutContent, Fellow, FellowContent, HomeContent, PeopleContent, Person
+from ..security import refresh_limiter, require_admin
+from ..services.airtable import publish_guide
 from ..services.content_source import (
     get_about_content,
     get_fellow_content,
+    get_fellow_people_spotlight,
     get_fellow_spotlight,
     get_home_content,
     get_people,
     reload_content,
 )
-from ..services.airtable import publish_guide
+from ..services.media import stats as media_stats
 
 router = APIRouter(prefix="/api/content", tags=["content"])
+
+
+def _cache_control(response: Response) -> None:
+    if settings.content_cache_enabled:
+        response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    else:
+        response.headers["Cache-Control"] = "no-store"
 
 
 def _etag(content: HomeContent) -> str:
@@ -29,7 +40,7 @@ def home(request: Request, response: Response) -> HomeContent:
     content = get_home_content()
     etag = _etag(content)
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    _cache_control(response)
 
     if request.headers.get("if-none-match") == etag:
         # Content unchanged — let the client reuse its copy.
@@ -44,7 +55,7 @@ def people(request: Request, response: Response) -> PeopleContent:
     body = content.model_dump_json().encode("utf-8")
     etag = '"' + hashlib.sha256(body).hexdigest()[:16] + '"'
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    _cache_control(response)
 
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})  # type: ignore[return-value]
@@ -58,7 +69,7 @@ def about_page(request: Request, response: Response) -> AboutContent:
     body = content.model_dump_json().encode("utf-8")
     etag = '"' + hashlib.sha256(body).hexdigest()[:16] + '"'
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    _cache_control(response)
 
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})  # type: ignore[return-value]
@@ -72,7 +83,7 @@ def fellow_page(request: Request, response: Response) -> FellowContent:
     body = content.model_dump_json().encode("utf-8")
     etag = '"' + hashlib.sha256(body).hexdigest()[:16] + '"'
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = "public, max-age=86400, must-revalidate"
+    _cache_control(response)
 
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})  # type: ignore[return-value]
@@ -80,18 +91,26 @@ def fellow_page(request: Request, response: Response) -> FellowContent:
     return content
 
 
-@router.get("/fellows-spotlight", response_model=list[Fellow])
-def fellows_spotlight(response: Response) -> list[Fellow]:
+@router.get("/fellows-spotlight", response_model=list[Person])
+def fellows_spotlight(response: Response) -> list[Person]:
     """Random homepage fellow cards (new sample on every request)."""
+    response.headers["Cache-Control"] = "no-store"
+    return get_fellow_people_spotlight()
+
+
+@router.get("/fellows-spotlight-legacy", response_model=list[Fellow], include_in_schema=False)
+def fellows_spotlight_legacy(response: Response) -> list[Fellow]:
     response.headers["Cache-Control"] = "no-store"
     return get_fellow_spotlight()
 
 
-@router.get("/publish-guide")
+@router.get("/publish-guide", include_in_schema=False)
 def airtable_publish_guide() -> dict:
-    """Which Airtable rows the site uses — mirrored in the `dynamic` checkbox."""
+    """Which Airtable rows the site uses — internal debug only."""
+    if not settings.enable_debug_routes:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
     guide = publish_guide()
-    from ..config import settings
     from ..services.airtable import (
         _about_used_ids,
         _dynamic_column,
@@ -131,14 +150,16 @@ def airtable_publish_guide() -> dict:
             "total_rows": len(rows),
         }
     guide["dynamic_sync"] = detected
+    guide["media_mirror"] = media_stats()
     return guide
 
 
-@router.post("/refresh")
+@router.post("/refresh", dependencies=[Depends(require_admin), Depends(refresh_limiter.dependency())])
 def refresh() -> dict:
     """Clear the cached content so the next request re-pulls from Airtable.
 
     Also re-syncs `dynamic` checkboxes in Airtable when AIRTABLE_SYNC_DYNAMIC=true.
+    Requires X-Admin-Token header.
     """
     reload_content()
     return {"status": "refreshed"}

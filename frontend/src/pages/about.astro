@@ -5,9 +5,9 @@ import Nav from '../components/Nav.astro';
 import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
 import PeopleGrid from '../components/about/PeopleGrid.astro';
-import { resolveImage } from '../lib/images';
+import { isUnbundled, resolveImage } from '../lib/images';
 import { getAboutContent, getHomeContent, getPeople } from '../lib/content';
-import { trustees, directors, team, sortPeopleAlpha } from '../lib/aboutPeople';
+import { sortTrusteesPriority, sortPeopleAlpha } from '../lib/aboutPeople';
 import '../styles/about.css';
 
 const TRUSTEES_PREVIEW = 10; // 2 rows × 5 columns on desktop
@@ -17,16 +17,31 @@ const about = await getAboutContent();
 const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
 const livePeople = await getPeople();
-const trusteesAll = sortPeopleAlpha(livePeople?.trustees.length ? livePeople.trustees : trustees);
-const directorsData = sortPeopleAlpha(livePeople?.directors.length ? livePeople.directors : directors);
-const teamData = sortPeopleAlpha(livePeople?.team.length ? livePeople.team : team);
+const trusteesAll = sortPeopleAlpha(livePeople?.trustees ?? []);
+const directorsData = sortTrusteesPriority(livePeople?.directors ?? []);
+const teamData = sortPeopleAlpha(livePeople?.team ?? []);
 const trusteesPreview = trusteesAll.slice(0, TRUSTEES_PREVIEW);
 
-const isRemote = (s: string) => /^https?:\/\//.test(s);
+const isRemote = isUnbundled;
 const missionLocal = about.mission.image && !isRemote(about.mission.image)
   ? resolveImage(about.mission.image)
   : undefined;
 const missionRemote = about.mission.image && isRemote(about.mission.image) ? about.mission.image : undefined;
+
+// Mission headline is plain text from backend; emphasize "entrepreneurship"
+// as blue + italic by wrapping it in <em>.
+const missionHeadlineHtml = (() => {
+  const s = about.mission.headline ?? '';
+  // If backend already sent HTML, don't double-inject.
+  if (s.includes('<')) return s;
+  const normalized = s.replace(/\s+/g, ' ').trim();
+  if (/^to remove the structural barriers that limit access to entrepreneurship in türkiye\.?$/i.test(normalized)) {
+    return '<span class="ab-mission-line1">To remove the structural barriers that</span><br /><span class="ab-mission-line2">limit access to <em>entrepreneurship</em> in&nbsp;Türkiye.</span>';
+  }
+  const withBreak = normalized.replace(/that limit access to\s+/i, 'that limit access to<br />');
+  const withAccent = withBreak.replace(/entrepreneurship/gi, (m) => `<em>${m}</em>`);
+  return withAccent.replace(/\bin Türkiye\b/gi, 'in&nbsp;Türkiye');
+})();
 ---
 
 <BaseLayout title={about.seo_title} description={about.seo_description} bodyClass="hm ab">
@@ -50,7 +65,7 @@ const missionRemote = about.mission.image && isRemote(about.mission.image) ? abo
 
     <section class="ab-photo" id="mission">
       {missionLocal ? (
-        <Image class="ab-photo-img" src={missionLocal} alt="" widths={[960, 1600, 2048]} sizes="100vw" />
+        <Image class="ab-photo-img" src={missionLocal} alt="" widths={[960, 1600, 2048]} sizes="100vw" loading="eager" fetchpriority="high" />
       ) : missionRemote ? (
         <img class="ab-photo-img" src={missionRemote} alt="" loading="eager" decoding="async" />
       ) : (
@@ -58,7 +73,7 @@ const missionRemote = about.mission.image && isRemote(about.mission.image) ? abo
       )}
       <div class="ab-photo-in">
         <div class="ab-pk">{about.mission.kicker}</div>
-        <h2>{about.mission.headline}</h2>
+        <h2 set:html={missionHeadlineHtml} />
       </div>
     </section>
     <div class="ab-photo-spacer"></div>
@@ -85,7 +100,7 @@ const missionRemote = about.mission.image && isRemote(about.mission.image) ? abo
           const local = strip.image && !isRemote(strip.image) ? resolveImage(strip.image) : undefined;
           const remote = strip.image && isRemote(strip.image) ? strip.image : undefined;
           return (
-            <a class="wss-strip" style={`--ov:${strip.overlay_color}`} href="#">
+            <a class="wss-strip" style={`--ov:${strip.overlay_color}`} href={strip.href || '#'}>
               {local ? (
                 <Image class="wss-photo" src={local} alt="" widths={[800, 1400]} sizes="100vw" />
               ) : remote ? (
@@ -112,7 +127,7 @@ const missionRemote = about.mission.image && isRemote(about.mission.image) ? abo
       <PeopleGrid id="trustees-grid" people={trusteesPreview} forceColor="#373D42" />
       <div class="people-cta">
         <a class="h3btn" href="/board-of-trustees">
-          <span class="h3btn-label">view full board of trustees</span><span class="cta-arrow" aria-hidden="true"></span>
+          <span class="h3btn-label">see all</span><span class="cta-arrow" aria-hidden="true"></span>
         </a>
       </div>
     </section>
@@ -164,4 +179,5 @@ const missionRemote = about.mission.image && isRemote(about.mission.image) ? abo
 <script>
   import '../scripts/home.js';
   import '../scripts/about.js';
+  import '../scripts/about_dynamic.js';
 </script>

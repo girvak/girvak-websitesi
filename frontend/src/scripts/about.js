@@ -6,33 +6,41 @@
 // preserving the <br> line breaks.
 // ============================================================
 (function () {
-  var heroTitle = document.querySelector('.ab-hero--home .ab-hero-title');
-  if (!heroTitle) return;
+  function splitHeroTitle() {
+    var heroTitle = document.querySelector('.ab-hero--home .ab-hero-title');
+    if (!heroTitle) return;
 
-  function isSpace(ch) { return ch === ' ' || ch.charCodeAt(0) === 160; }
+    function isSpace(ch) { return ch === ' ' || ch.charCodeAt(0) === 160; }
 
-  Array.prototype.slice.call(heroTitle.childNodes).forEach(function (node) {
-    // accent word: split into per-letter spans that invert (teal → ink) on hover
-    if (node.nodeType === 1 && node.classList && node.classList.contains('ab-accent')) {
-      var atxt = node.textContent, afrag = document.createDocumentFragment();
-      for (var j = 0; j < atxt.length; j++) {
-        var ac = atxt[j];
-        if (isSpace(ac)) { afrag.appendChild(document.createTextNode(ac)); continue; }
-        var as = document.createElement('span'); as.className = 'ch-inv'; as.textContent = ac;
-        afrag.appendChild(as);
+    Array.prototype.slice.call(heroTitle.childNodes).forEach(function (node) {
+      // accent word: split into per-letter spans that invert (teal → ink) on hover
+      if (node.nodeType === 1 && node.classList && node.classList.contains('ab-accent')) {
+        var atxt = node.textContent, afrag = document.createDocumentFragment();
+        for (var j = 0; j < atxt.length; j++) {
+          var ac = atxt[j];
+          if (isSpace(ac)) { afrag.appendChild(document.createTextNode(ac)); continue; }
+          var as = document.createElement('span'); as.className = 'ch-inv'; as.textContent = ac;
+          afrag.appendChild(as);
+        }
+        node.textContent = '';
+        node.appendChild(afrag);
+        return;
       }
-      node.textContent = '';
-      node.appendChild(afrag);
-      return;
-    }
-    if (node.nodeType !== 3) return; // skip <br> and the accent dot span
-    var txt = node.textContent, frag = document.createDocumentFragment();
-    for (var i = 0; i < txt.length; i++) {
-      var c = txt[i];
-      if (isSpace(c)) { frag.appendChild(document.createTextNode(c)); continue; }
-      var s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
-      frag.appendChild(s);
-    }
-    heroTitle.replaceChild(frag, node);
-  });
+      if (node.nodeType !== 3) return; // skip <br> and the accent dot span
+      var txt = node.textContent, frag = document.createDocumentFragment();
+      for (var i = 0; i < txt.length; i++) {
+        var c = txt[i];
+        if (isSpace(c)) { frag.appendChild(document.createTextNode(c)); continue; }
+        var s = document.createElement('span'); s.className = 'ch'; s.textContent = c;
+        frag.appendChild(s);
+      }
+      heroTitle.replaceChild(frag, node);
+    });
+  }
+
+  // Expose so about_dynamic.js can re-run it after updating hero_html.
+  window.__girvakSplitHeroTitle = splitHeroTitle;
+
+  // First run on initial page load.
+  splitHeroTitle();
 })();

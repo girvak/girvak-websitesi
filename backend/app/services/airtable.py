@@ -13,9 +13,10 @@ The `dynamic` checkbox is *written by the backend* (not an editor publish gate):
 after each sync, ticked rows are the ones the site logic actually pulls. Editors
 use it to see live vs unused fragments. Disable writes with AIRTABLE_SYNC_DYNAMIC=false.
 
-Images use the direct Airtable attachment URL. NOTE: those URLs are refreshed
-periodically by Airtable, so a static build should be rebuilt when content
-changes (e.g. via the /api/content/refresh webhook + a redeploy).
+Images are mirrored to disk by `services.media` and handed out as `/media/...`
+URLs. Airtable's own attachment links expire after a few hours, which used to
+make a static build's images 403 by the next day; the mirror is keyed by the
+stable attachment id, so a build stays valid until the content itself changes.
 """
 from __future__ import annotations
 
@@ -28,6 +29,8 @@ from urllib.parse import quote
 import httpx
 
 from ..config import settings
+from ..security import safe_href
+from .media import mirror
 from ..models import (
     AboutContent,
     AboutCtaBand,
@@ -56,7 +59,8 @@ PALETTE = ["teal", "coral", "ink"]
 _CONTENT_FIELD_KEYS = frozenset({
     "name", "text", "hover text", "attachments", "tag", "tags", "key", "value",
     "organization", "organisation", "photo", "linkedin", "title", "university",
-    "department", "e-mail", "email", "created", "link", "negative_logo",
+    "department", "e-mail", "email", "created", "link", "external link",
+    "external_link", "external link url", "negative_logo",
     "positive_logo", "year", "cohort", "dönem", "donem", "period", "class",
     "fellow_year", "fellow year", "order", "sort", "rank", "notes", "note",
 })
@@ -126,6 +130,40 @@ def txt(value: Any) -> str:
     return str(value).strip()
 
 
+def _link_from_fields(fields: Dict[str, Any], fallback: str = "#") -> str:
+    """URL-only link fields (never treat image attachments as hrefs)."""
+    href = txt(
+        pick(
+            fields,
+            "link",
+            "url",
+            "href",
+            "external link",
+            "external_link",
+            "external link url",
+        )
+    )
+    return safe_href(href, fallback)
+
+
+def _href_from_fields(fields: Dict[str, Any], fallback: str = "#") -> str:
+    """CTA / card link from Airtable (`link`, `external link`, attachment URL, …)."""
+    href = txt(
+        pick(
+            fields,
+            "link",
+            "url",
+            "href",
+            "external link",
+            "external_link",
+            "external link url",
+        )
+    )
+    if not href:
+        href = first_attachment(pick(fields, "attachments"), None) or fallback
+    return safe_href(href, fallback)
+
+
 def _normalize_linkedin(value: Any) -> str:
     """First usable LinkedIn profile URL; empty if missing / homepage-only."""
     raw = txt(value)
@@ -149,14 +187,16 @@ def _att_url(att: Dict[str, Any], prefer: Optional[str]) -> str:
     """Attachment URL, optionally preferring an Airtable thumbnail size.
 
     `prefer=None` returns the original — used for partner logos (PNG alpha).
-    Photos use `photo_attachment()` which prefers `full` (~3000px) over `large`
-    (~512px) so hero / card imagery stays sharp on retina displays.
+    Hero / section imagery uses `photo_attachment()` (`full`, ~3000px) to stay
+    sharp on retina displays; person cards use `person_photo()` (`large`,
+    ~512px) because they render small and dominate total page weight.
     """
     if prefer:
         thumb = (att.get("thumbnails") or {}).get(prefer)
         if isinstance(thumb, dict) and thumb.get("url"):
-            return thumb["url"]
-    return att.get("url", "")
+            return mirror(att, thumb["url"], prefer)
+    url = att.get("url", "")
+    return mirror(att, url, "orig") if url else ""
 
 
 def photo_attachment(value: Any) -> str:
@@ -167,6 +207,21 @@ def photo_attachment(value: Any) -> str:
 def logo_attachment(value: Any) -> str:
     """Partner / logo URL — always original (keeps PNG transparency)."""
     return first_attachment(value, None)
+
+
+def person_photo(value: Any) -> str:
+    """Photo for a person card — `large` (512px), not the 3000px original.
+
+    People render at ~200-400px in the grids, so `full` cost roughly 12x the
+    bytes for no visible gain: person photos alone were 94% of the site's image
+    weight (430 MB of 454 MB), which is what pushed `/board-of-trustees` to
+    262 MB for a visitor who scrolls the list. Hero and section images are few
+    and stay on `photo_attachment()` (full).
+
+    Falls back to the original when Airtable has no `large` thumbnail (SVG and
+    other formats it can't rasterise).
+    """
+    return first_attachment(value, "large")
 
 
 def attachments(value: Any, prefer: Optional[str] = None) -> List[str]:
@@ -576,11 +631,15 @@ def build_home_content(seed: HomeContent) -> HomeContent:
     partner = _safe(settings.airtable_table_partner)
 
     by_name = _by_name(home)
+    _apply_seo(content, by_name)
     _apply_hero(content, home, by_name)
+    _apply_hero_subhead(content, by_name)
     _apply_impact(content, home)
     _apply_impact_image(content, by_name)
     _apply_whatwedo(content, home)
+    _apply_fellows_section(content, by_name)
     _apply_partners(content, partner, by_name)
+    _apply_footer(content, by_name)
     # Fellows on the homepage are filled per-request via pick_fellow_spotlight().
 
     return content
@@ -596,17 +655,117 @@ def _apply_hero(content: HomeContent, home: List[Dict[str, Any]], by_name: Dict[
     primary = txt(pick(by_name.get("index_hero_cta_primary", {}), "text"))
     secondary = txt(pick(by_name.get("index_hero_cta_secondary", {}), "text"))
     if primary or secondary:
-        # Keep seed hrefs (Airtable holds only labels); order: build → open.
         ctas: List[CTA] = []
         if secondary:
-            ctas.append(CTA(label=secondary, href=content.hero.ctas[0].href if content.hero.ctas else "#"))
+            sec_row = by_name.get("index_hero_cta_secondary", {})
+            ctas.append(
+                CTA(
+                    label=secondary,
+                    href=_link_from_fields(
+                        sec_row,
+                        content.hero.ctas[0].href if content.hero.ctas else "#",
+                    ),
+                )
+            )
         if primary:
-            ctas.append(CTA(label=primary, href=content.hero.ctas[1].href if len(content.hero.ctas) > 1 else "#wwd"))
+            pri_row = by_name.get("index_hero_cta_primary", {})
+            ctas.append(
+                CTA(
+                    label=primary,
+                    href=_link_from_fields(
+                        pri_row,
+                        content.hero.ctas[1].href if len(content.hero.ctas) > 1 else "#wwd",
+                    ),
+                )
+            )
         content.hero.ctas = ctas
 
     # Headline + rotator words stay on the seed/design split (`base_text` +
     # `rotator_words`). Airtable `index_hero_headline` is a single line and
     # breaks the word rotator when pasted in wholesale.
+
+
+def _apply_seo(content: HomeContent, by_name: Dict[str, Dict[str, Any]]) -> None:
+    title = txt(pick(by_name.get("index_seo_title", {}), "text"))
+    desc = txt(pick(by_name.get("index_seo_description", {}), "text"))
+    if title:
+        content.seo.title = title
+    if desc:
+        content.seo.description = desc
+
+
+def _split_subhead(raw: str, current: Hero) -> tuple[str, str, str]:
+    """Parse subhead into pre / coral highlight / post."""
+    raw = raw.strip()
+    if not raw:
+        return current.subhead_pre, current.subhead_highlight, current.subhead_post
+    m = re.match(r"(.+?)\*\*(.+?)\*\*(.*)", raw, re.S)
+    if m:
+        return m.group(1), m.group(2), m.group(3)
+    highlight = current.subhead_highlight or "a way of looking at the world."
+    idx = raw.lower().find(highlight.lower().rstrip("."))
+    if idx >= 0:
+        end = idx + len(highlight.rstrip("."))
+        while end < len(raw) and raw[end] in ". ":
+            end += 1
+        return raw[:idx], raw[idx:end].strip(), raw[end:]
+    return raw, "", ""
+
+
+def _apply_hero_subhead(content: HomeContent, by_name: Dict[str, Dict[str, Any]]) -> None:
+    raw = txt(pick(by_name.get("index_hero_subheadline", {}), "text"))
+    if not raw:
+        return
+    pre, hi, post = _split_subhead(raw, content.hero)
+    content.hero.subhead_pre = pre
+    content.hero.subhead_highlight = hi
+    content.hero.subhead_post = post
+
+
+def _apply_fellows_section(content: HomeContent, by_name: Dict[str, Dict[str, Any]]) -> None:
+    headline = txt(pick(by_name.get("index_fellows_headline", {}), "text"))
+    if headline:
+        content.fellows_headline = headline
+    cta_row = by_name.get("index_fellows_cta", {})
+    cta_label = txt(pick(cta_row, "text"))
+    if cta_label:
+        content.fellows_cta = CTA(
+            label=cta_label,
+            href=_link_from_fields(cta_row, content.fellows_cta.href),
+        )
+
+
+def _apply_footer(content: HomeContent, by_name: Dict[str, Dict[str, Any]]) -> None:
+    """Map `index_footer_*` fragments onto the footer model when present."""
+    mapping = {
+        "index_footer_newsletter_title": ("newsletter_title", None),
+        "index_footer_newsletter_text": ("newsletter_text", None),
+        "index_footer_brand_text": ("brand_text", None),
+        "index_footer_copyright": ("copyright", None),
+        "index_footer_address": ("contact.address", None),
+        "index_footer_email": ("contact.email", None),
+        "index_footer_phone": ("contact.phone", None),
+        "index_footer_phone_href": ("contact.phone_href", None),
+    }
+    for key, (path, _) in mapping.items():
+        val = txt(pick(by_name.get(key, {}), "text"))
+        if not val:
+            continue
+        if path.startswith("contact."):
+            setattr(content.footer.contact, path.split(".", 1)[1], val)
+        else:
+            setattr(content.footer, path, val)
+    # Explore links: index_footer_explore_1 .. n  (text + link fields)
+    explore: List[CTA] = []
+    for f in sorted(
+        [by_name[k] for k in by_name if re.match(r"index_footer_explore_\d+\s*$", k)],
+        key=lambda row: _trailing_int(txt(pick(row, "name"))),
+    ):
+        label = txt(pick(f, "text"))
+        if label:
+            explore.append(CTA(label=label, href=_link_from_fields(f, "#")))
+    if explore:
+        content.footer.explore_links = explore
 
 
 def _apply_impact(content: HomeContent, home: List[Dict[str, Any]]) -> None:
@@ -668,11 +827,25 @@ def _apply_whatwedo(content: HomeContent, home: List[Dict[str, Any]]) -> None:
         lead, sub = _split_lead(text)
         eyebrow = _eyebrow(sub)
         seed_card = seed[i] if i < len(seed) else None
-        img = photo_attachment(pick(f, "attachments"))
+        img = (
+            photo_attachment(pick(f, "attachments"))
+            or photo_attachment(pick(f, "photo", "image"))
+        )
         if not img and seed_card:
             img = seed_card.image
+        link = txt(
+            pick(
+                f,
+                "link",
+                "url",
+                "href",
+                "external link",
+                "external_link",
+                "external link url",
+            )
+        )
         cards.append(WhatWeDoCard(
-            href=seed_card.href if seed_card else ("#"),
+            href=link or (seed_card.href if seed_card else "#"),
             image=img or (seed_card.image if seed_card else ""),
             lead=lead,
             sub=sub,
@@ -724,7 +897,8 @@ def _apply_partners(content: HomeContent, partner: List[Dict[str, Any]], by_name
         logo = logo_attachment(pick(f, "positive_logo", "logo", "negative_logo"))
         if not name or not logo:
             continue
-        p = Partner(name=name, logo=logo)
+        link = _link_from_fields(f, "#")
+        p = Partner(name=name, logo=logo, href=link)
         tags = pick(f, "Tags", "tags") or []
         is_main = isinstance(tags, list) and any("main" in str(t).lower() for t in tags)
         if is_main and featured is None:
@@ -734,7 +908,17 @@ def _apply_partners(content: HomeContent, partner: List[Dict[str, Any]], by_name
     if featured:
         content.partners.featured = featured
     if logos:
+        logos.sort(key=lambda p: (p.name or "").casefold())
         content.partners.logos = logos
+
+
+def pick_people_spotlight(pool: List[Person], count: Optional[int] = None) -> List[Person]:
+    """Random homepage fellow cards from the live people pool."""
+    if not pool:
+        return []
+    k = count if count is not None else settings.home_fellows_spotlight_count
+    k = max(1, min(k, len(pool)))
+    return random.sample(pool, k)
 
 
 def build_home_fellow_pool() -> List[Fellow]:
@@ -743,7 +927,7 @@ def build_home_fellow_pool() -> List[Fellow]:
     pool: List[Fellow] = []
     for f in _people_with_tag(people, "fellow"):
         name = txt(pick(f, "name"))
-        photo = photo_attachment(pick(f, "photo"))
+        photo = person_photo(pick(f, "photo"))
         if not name or not photo:
             continue
         pool.append(Fellow(
@@ -784,11 +968,11 @@ def build_people() -> PeopleContent:
     people = _safe(settings.airtable_table_people)
     return PeopleContent(
         trustees=_sort_persons_alpha(_persons(people, "mh")),
-        directors=_sort_persons_alpha(_persons(people, "yk")),
+        directors=_sort_trustees_priority(_persons(people, "yk")),
         team=_sort_persons_alpha(_persons(people, "team")),
-        fellows=_persons(people, "fellow"),
-        alumni=_persons(people, "alumni"),
-        challengers=_persons(people, "challenger"),
+        fellows=_sort_persons_alpha(_persons(people, "fellow")),
+        alumni=_sort_persons_alpha(_persons(people, "alumni")),
+        challengers=_sort_persons_alpha(_persons(people, "challenger")),
     )
 
 
@@ -834,8 +1018,8 @@ def _persons(people: List[Dict[str, Any]], tag: str) -> List[Person]:
             position=txt(pick(f, "title", "position")),
             university=txt(pick(f, "university")),
             department=txt(pick(f, "department")),
-            photo=photo_attachment(pick(f, "photo"))
-            or photo_attachment(pick(f, "attachments", "Attachment", "image")),
+            photo=person_photo(pick(f, "photo"))
+            or person_photo(pick(f, "attachments", "Attachment", "image")),
             linkedin=_normalize_linkedin(pick(f, "linkedin")),
             roles=_tags(f),
             year=_fellow_year(f),
@@ -864,6 +1048,30 @@ def _tr_sort_key(s: str) -> str:
                 "Ö": "o\u035f", "ö": "o\u035f", "Ç": "c\u035f", "ç": "c\u035f",
             })
             return s.translate(table).casefold()
+
+
+def _person_full_name(p: Person) -> str:
+    return f"{p.first} {p.last}".strip()
+
+
+# Board of directors (yk): chair first, vice second, then Turkish A–Z.
+_TRUSTEE_PRIORITY = ("sina", "yomi")
+
+
+def _trustee_rank(p: Person) -> int:
+    first = p.first.casefold().strip()
+    fn = _person_full_name(p).casefold()
+    for i, key in enumerate(_TRUSTEE_PRIORITY):
+        if first == key or fn.startswith(f"{key} "):
+            return i
+    return len(_TRUSTEE_PRIORITY)
+
+
+def _sort_trustees_priority(people: List[Person]) -> List[Person]:
+    return sorted(
+        people,
+        key=lambda p: (_trustee_rank(p), _tr_sort_key(_person_full_name(p))),
+    )
 
 
 def _sort_persons_alpha(people: List[Person]) -> List[Person]:
@@ -1043,27 +1251,55 @@ def build_fellow_content(seed: FellowContent) -> FellowContent:
     )
 
     # --- challenger_whatyou'lldo ---
+    # Airtable naming varies: you might have `challenger_whatyou'lldo` (headline)
+    # or `challenger_whatyou'lldo_headline`. Icons live in `challenger_whatyou'lldo_1..5`.
     wyd_h = txt(pick(_frag(by_name, "challenger_whatyou'lldo_headline"), "text"))
     if not wyd_h:
-        # Find headline by tag if name apostrophe differs
+        wyd_h = txt(pick(_frag(by_name, "challenger_whatyou'lldo"), "text"))
+    if not wyd_h:
+        # Fallback: find anything in the tag family that matches the headline name.
         for f in _fields_with_tag(fields_list, "challenger_whatyou'lldo"):
-            if txt(pick(f, "name")).endswith("_headline"):
+            nm = txt(pick(f, "name")).lower()
+            if re.match(r"^challenger_whatyou.?ll.?do(_headline)?\s*$", nm, re.I):
                 wyd_h = txt(pick(f, "text"))
                 break
     if wyd_h:
         content.what_youll_do_headline = wyd_h
-    wyd_rows = _tagged_numbered(fields_list, "challenger_whatyou'lldo", "challenger_whatyou'lldo_")
-    if not wyd_rows:
-        wyd_rows = [
+
+    # Prefer exact numbered fragment fields, independent of tag mismatch.
+    named_wyd_rows = [
+        f for f in fields_list
+        if re.match(r"challenger_whatyou.?ll.?do_\d+\s*$", txt(pick(f, "name")), re.I)
+    ]
+    named_wyd_rows = sorted(named_wyd_rows, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+
+    vyd_rows = named_wyd_rows
+    if not vyd_rows:
+        vyd_rows = _tagged_numbered(
+            fields_list,
+            "challenger_whatyou'lldo",
+            "challenger_whatyou'lldo_",
+        )
+    if not vyd_rows:
+        vyd_rows = [
             f for f in fields_list
             if re.match(r"challenger_whatyou.?ll.?do_\d+\s*$", txt(pick(f, "name")), re.I)
         ]
-        wyd_rows = sorted(wyd_rows, key=lambda f: _trailing_int(txt(pick(f, "name"))))
-    if wyd_rows:
+        vyd_rows = sorted(vyd_rows, key=lambda f: _trailing_int(txt(pick(f, "name"))))
+    if vyd_rows:
         items: List[FellowWydItem] = []
-        for i, f in enumerate(wyd_rows):
+        for i, f in enumerate(vyd_rows):
             text = txt(pick(f, "text"))
-            img = photo_attachment(pick(f, "attachments"))
+            img = (
+                photo_attachment(pick(f, "attachments"))
+                or photo_attachment(pick(f, "photo"))
+                or photo_attachment(pick(f, "image"))
+            )
+            # Allow plain URL fields if Airtable stores icon as a URL text.
+            if not img:
+                url = txt(pick(f, "photo", "image", "icon", "url"))
+                if url.startswith("http"):
+                    img = url
             prior = content.what_youll_do[i] if i < len(content.what_youll_do) else None
             items.append(FellowWydItem(
                 text=text or (prior.text if prior else ""),
@@ -1139,9 +1375,7 @@ def _numbered_fields(records: List[Dict[str, Any]], prefix: str) -> List[Dict[st
 def _fellow_cta_from(by_name: Dict[str, Dict[str, Any]], key: str, current: FellowCta) -> FellowCta:
     f = by_name.get(key, {})
     label = txt(pick(f, "text"))
-    href = txt(pick(f, "link", "url", "href"))
-    if not href:
-        href = first_attachment(pick(f, "attachments"), None) or current.href or "#"
+    href = _href_from_fields(f, current.href or "#")
     if not label:
         return current
     return FellowCta(label=label, href=href)
@@ -1334,6 +1568,13 @@ def build_about_content(seed: AboutContent) -> AboutContent:
     if st:
         content.story_paragraphs = [_rich_para(p) for p in _paragraphs(st)]
 
+    wwh = txt(pick(by_name.get("about_seo_title", {}), "text"))
+    wwd = txt(pick(by_name.get("about_seo_description", {}), "text"))
+    if wwh:
+        content.seo_title = wwh
+    if wwd:
+        content.seo_description = wwd
+
     wwh = txt(pick(by_name.get("about_whatwesolve_headline", {}), "text"))
     if wwh:
         content.what_we_solve_headline = wwh
@@ -1351,13 +1592,28 @@ def build_about_content(seed: AboutContent) -> AboutContent:
         label = txt(pick(f, "text")).title()
         hover = txt(pick(f, "hover text"))
         headline, desc = _wws_hover(hover, label)
-        img = photo_attachment(pick(f, "attachments")) or _WWS_FALLBACK_IMAGES[i % 3]
+        img = (
+            photo_attachment(pick(f, "attachments"))
+            or photo_attachment(pick(f, "photo", "image"))
+            or _WWS_FALLBACK_IMAGES[i % 3]
+        )
         strips.append(AboutWwsStrip(
             label=label,
             headline=headline,
             desc=desc,
             overlay_color=_WWS_COLORS[i % 3],
             image=img,
+            href=txt(
+                pick(
+                    f,
+                    "link",
+                    "url",
+                    "href",
+                    "external link",
+                    "external_link",
+                    "external link url",
+                )
+            ) or "#",
         ))
     if strips:
         content.what_we_solve_strips = strips
@@ -1395,14 +1651,15 @@ def _section_head(by_name, headline_key, sub_key, current: AboutSectionHead) -> 
 def _cta_band(by_name, headline_key, text_key, cta_key, current: AboutCtaBand) -> AboutCtaBand:
     h = txt(pick(by_name.get(headline_key, {}), "text"))
     t = txt(pick(by_name.get(text_key, {}), "text"))
-    c = txt(pick(by_name.get(cta_key, {}), "text"))
+    cta_row = by_name.get(cta_key, {})
+    c = txt(pick(cta_row, "text"))
     if not (h or t or c):
         return current
     return AboutCtaBand(
         headline=h or current.headline,
         text=t or current.text,
         cta_label=c or current.cta_label,
-        cta_href=current.cta_href,
+        cta_href=_link_from_fields(cta_row, current.cta_href),
     )
 
 

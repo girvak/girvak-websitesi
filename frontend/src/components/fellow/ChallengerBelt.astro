@@ -15,15 +15,25 @@ interface Props {
   ariaLabel: string;
 }
 const { trackId, people, ariaLabel } = Astro.props;
+
+function linkedInHref(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const first = raw.trim().split(/\s+/)[0] || '';
+  if (!first || first === '#') return undefined;
+  if (/linkedin\.com\/?$/i.test(first.replace(/\/$/, ''))) return undefined;
+  const href = /^https?:\/\//i.test(first) ? first : `https://${first.replace(/^\/+/, '')}`;
+  return /linkedin\.com\/in\//i.test(href) ? href : undefined;
+}
 ---
 <div class="fellows-belt" aria-label={ariaLabel}>
   <div class="fellows-track" id={trackId}>
     {
       people.map((p) => (
-        <figure class="cchcard">
+        <figure class="cchcard" {...(linkedInHref(p.linkedin) ? { 'data-linkedin': linkedInHref(p.linkedin) } : {})}>
           {p.year ? <span class="cchcard-year">{p.year}</span> : null}
           <span class="cchcard-name">{personName(p)}</span>
-          {p.university ? <span class="cchcard-uni">{p.university}</span> : null}
+          {(p.university || p.company) ? <span class="cchcard-uni">{p.university || p.company}</span> : null}
+          {p.department ? <span class="cchcard-dept">{p.department}</span> : null}
         </figure>
       ))
     }

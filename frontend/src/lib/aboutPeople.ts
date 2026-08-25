@@ -72,6 +72,27 @@ export function sortPeopleAlpha<T extends { first: string; last?: string }>(peop
   });
 }
 
+/** Board of directors (yk): Sina first, Yomi second, then Turkish A–Z. */
+const TRUSTEE_PRIORITY = ['sina', 'yomi'];
+
+export function sortTrusteesPriority<T extends { first: string; last?: string }>(people: T[]): T[] {
+  const full = (p: T) => `${p.first} ${p.last ?? ''}`.trim();
+  const rank = (p: T) => {
+    const first = p.first.trim().toLocaleLowerCase('tr');
+    const fn = full(p).toLocaleLowerCase('tr');
+    for (let i = 0; i < TRUSTEE_PRIORITY.length; i++) {
+      const key = TRUSTEE_PRIORITY[i];
+      if (first === key || fn.startsWith(`${key} `)) return i;
+    }
+    return TRUSTEE_PRIORITY.length;
+  };
+  return [...people].sort((a, b) => {
+    const dr = rank(a) - rank(b);
+    if (dr !== 0) return dr;
+    return full(a).localeCompare(full(b), 'tr', { sensitivity: 'base' });
+  });
+}
+
 // Uniform brand colour per section: trustees = GİRVAK grey, directors = coral,
 // team = turquoise (see PeopleGrid `forceColor`).
 export const trustees: Person[] = sortPeopleAlpha(makePeople(10, 1));

@@ -17,7 +17,9 @@ export default defineConfig({
       allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', '.trycloudflare.com'],
       proxy: {
         // Same-origin /api in dev (newsletter + refresh) — works through ngrok.
-        '/api': { target: 'http://127.0.0.1:8001', changeOrigin: true },
+        '/api': { target: process.env.API_BASE_URL || 'http://127.0.0.1:8000', changeOrigin: true },
+        // Mirrored Airtable attachments (non-expiring image URLs) — same host as /api.
+        '/media': { target: process.env.API_BASE_URL || 'http://127.0.0.1:8000', changeOrigin: true },
       },
     },
   },

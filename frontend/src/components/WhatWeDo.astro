@@ -1,11 +1,11 @@
 ---
 import { Image } from 'astro:assets';
 import type { WhatWeDoCard } from '../lib/types';
-import { resolveImage } from '../lib/images';
+import { isUnbundled, resolveImage } from '../lib/images';
 interface Props { cards: WhatWeDoCard[]; }
 const { cards } = Astro.props;
 const colorClass = { teal: 'wd-teal', coral: 'wd-coral', ink: 'wd-ink' } as const;
-const isRemote = (s: string) => /^https?:\/\//.test(s);
+const isRemote = isUnbundled;
 ---
 <section class="wwd" id="wwd" style="padding: 80px 0px 103px">
   <div class="wwd-head rv" style="font-weight: 600">

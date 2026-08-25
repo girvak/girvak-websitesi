@@ -543,6 +543,9 @@
   box-shadow: 0 12px 30px rgba(27,31,34,.14);
   transition: transform .3s var(--ease-out), opacity .3s var(--ease-out);
 }
+@media (hover: hover) and (pointer: fine) {
+  .cchcard[data-linkedin] { cursor: pointer; }
+}
 @media (hover: hover) {
   .fchallengers .fellows-belt:hover .cchcard { transform: scale(0.92); opacity: .55; }
   .fchallengers .fellows-belt:hover .cchcard:hover { transform: scale(1.06); opacity: 1; z-index: 5; }
@@ -558,11 +561,21 @@
   text-wrap: balance;
 }
 .cchcard-uni {
-  /* equal auto margins → sits exactly halfway between the name and the bottom,
-     whatever height the name wraps to */
-  margin-top: auto; margin-bottom: auto;
+  margin-top: clamp(14px, 1.6vw, 18px);
   text-align: center; font-style: italic;
   font-weight: 500; font-size: clamp(12px, 1vw, 14px); line-height: 1.35; opacity: .9;
+  max-width: 92%;
+  text-wrap: balance;
+}
+.cchcard-dept {
+  margin-top: clamp(6px, 0.8vw, 10px);
+  text-align: center;
+  font-weight: 500;
+  font-size: clamp(11px, 0.9vw, 12.5px);
+  line-height: 1.35;
+  opacity: .78;
+  max-width: 92%;
+  text-wrap: balance;
 }
 @media (prefers-reduced-motion: reduce) {
   .fchallengers .fellows-belt:hover .cchcard,

@@ -69,6 +69,7 @@ class Fellow(BaseModel):
 class Partner(BaseModel):
     name: str             # used as alt text
     logo: str             # image path/filename
+    href: str = "#"
 
 
 class Partners(BaseModel):
@@ -103,6 +104,8 @@ class HomeContent(BaseModel):
     impact_image: str = "/images/impact-photo.jpg"
     what_we_do: list[WhatWeDoCard]
     fellows: list[Fellow]
+    fellows_headline: str = "meet our fellows"
+    fellows_cta: CTA = CTA(label="see all fellows", href="/fellow-program#fellows")
     partners: Partners
     footer: Footer
 
@@ -152,6 +155,7 @@ class AboutWwsStrip(BaseModel):
     desc: str
     overlay_color: str
     image: str = ""
+    href: str = "#"
 
 
 class AboutSectionHead(BaseModel):

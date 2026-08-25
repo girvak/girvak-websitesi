@@ -9,21 +9,42 @@ interface Props {
   people: Person[];
   cardClass: string;
   ariaLabel: string;
+  /** When true, client script may refresh cards from /api/content/fellows-spotlight */
+  spotlightFetch?: boolean;
+  /** Homepage: rotate fc-teal / fc-coral / fc-ink per card */
+  colorRotate?: boolean;
+  /** Fellow-page back layout (year top-right, centered meta) */
+  programBack?: boolean;
 }
 
-const { trackId, people, cardClass, ariaLabel } = Astro.props;
+const PALETTE = ['fc-teal', 'fc-coral', 'fc-ink'] as const;
+const { trackId, people, cardClass, ariaLabel, spotlightFetch = false, colorRotate = false, programBack = false } = Astro.props;
+
+function linkedInHref(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const first = raw.trim().split(/\s+/)[0] || '';
+  if (!first || first === '#') return undefined;
+  if (/linkedin\.com\/?$/i.test(first.replace(/\/$/, ''))) return undefined;
+  const href = /^https?:\/\//i.test(first) ? first : `https://${first.replace(/^\/+/, '')}`;
+  return /linkedin\.com\/in\//i.test(href) ? href : undefined;
+}
 ---
-<div class="fellows-belt" aria-label={ariaLabel}>
-  <div class="fellows-track" id={trackId}>
+<div class:list={['fellows-belt', programBack && 'fellows-belt--program-back']} aria-label={ariaLabel}>
+  <div
+    class="fellows-track"
+    id={trackId}
+    data-spotlight-fetch={spotlightFetch ? 'true' : undefined}
+    data-color-rotate={colorRotate ? 'true' : undefined}
+  >
     {
-      people.map((p) => {
+      people.map((p, i) => {
         const name = personName(p);
         const photo = p.photo || '';
+        const linkedin = linkedInHref(p.linkedin);
         const local = photo && !isRemotePhoto(photo) ? resolveImage(photo) : null;
-        // One tone per belt: fellow cards red, alumni indigo, challengers amber.
-        const tone = cardClass;
+        const tone = colorRotate ? PALETTE[i % PALETTE.length] : cardClass;
         return (
-          <figure class={`fcard ${tone}`} tabindex="0">
+          <figure class={`fcard ${tone}`} tabindex="0" {...(linkedin ? { 'data-linkedin': linkedin } : {})}>
             <div class="fcard-inner">
               <div class="fcard-front">
                 {p.year ? <span class="fcard-year">{p.year}</span> : null}

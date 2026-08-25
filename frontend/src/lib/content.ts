@@ -8,9 +8,11 @@ import fellowFallback from '../data/fellow_content.json';
 // the site still builds and renders.
 const API_BASE = import.meta.env.API_BASE_URL ?? 'http://localhost:8000';
 
+const fetchOpts: RequestInit = import.meta.env.DEV ? { cache: 'no-store' } : {};
+
 export async function getHomeContent(): Promise<HomeContent> {
   try {
-    const res = await fetch(`${API_BASE}/api/content/home`);
+    const res = await fetch(`${API_BASE}/api/content/home`, fetchOpts);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HomeContent;
   } catch (err) {
@@ -25,7 +27,7 @@ export async function getHomeContent(): Promise<HomeContent> {
 // is off (empty lists) — callers then keep their bundled fallback people.
 export async function getPeople(): Promise<PeopleContent | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/content/people`);
+    const res = await fetch(`${API_BASE}/api/content/people`, fetchOpts);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as PeopleContent;
     const total =
@@ -46,7 +48,7 @@ export async function getPeople(): Promise<PeopleContent | null> {
 
 export async function getAboutContent(): Promise<AboutContent> {
   try {
-    const res = await fetch(`${API_BASE}/api/content/about`);
+    const res = await fetch(`${API_BASE}/api/content/about`, fetchOpts);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as AboutContent;
   } catch (err) {
@@ -59,7 +61,7 @@ export async function getAboutContent(): Promise<AboutContent> {
 
 export async function getFellowContent(): Promise<FellowContent> {
   try {
-    const res = await fetch(`${API_BASE}/api/content/fellow`);
+    const res = await fetch(`${API_BASE}/api/content/fellow`, fetchOpts);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as FellowContent;
   } catch (err) {
