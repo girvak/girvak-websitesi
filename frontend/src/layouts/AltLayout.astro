@@ -10,7 +10,7 @@ interface Props {
 
 const { title, description, image = '/assets/logo-primary-turquoise.png' } = Astro.props;
 
-const site = Astro.site ?? new URL('http://localhost:4321');
+const site = Astro.site ?? new URL('https://girisimcilikvakfi.org');
 const canonical = new URL(Astro.url.pathname, site).href;
 const ogImage = new URL(image, site).href;
 ---

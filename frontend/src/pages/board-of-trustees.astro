@@ -10,7 +10,7 @@ import '../styles/about.css';
 
 const content = await getHomeContent();
 const about = await getAboutContent();
-const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? '';
 
 const livePeople = await getPeople();
 const trusteesAll = sortPeopleAlpha(livePeople?.trustees ?? []);

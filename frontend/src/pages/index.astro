@@ -14,7 +14,7 @@ import { getHomeContent, getPeople } from '../lib/content';
 
 const content = await getHomeContent();
 const { seo, hero, impact, impact_image, what_we_do, fellows_headline, fellows_cta, partners, footer } = content;
-const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? '';
 
 const peopleApi = await getPeople();
 const fellowSpotlight = (peopleApi?.fellows ?? []).filter((p) => p.photo).slice(0, 8);
