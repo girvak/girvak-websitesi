@@ -96,8 +96,8 @@ Server port layout:
 | Port | Service |
 |------|---------|
 | **80** | Host nginx (public) |
-| **8080** | Backend API (Docker) |
-| **8081** | Static frontend (Docker) |
+| **8082** | Backend API (Docker) |
+| **8083** | Static frontend (Docker) |
 
 ### 1. Build frontend (on the server or CI)
 
@@ -105,7 +105,7 @@ Server port layout:
 cd frontend
 cp .env.example .env
 # Production .env:
-#   API_BASE_URL=http://127.0.0.1:8080
+#   API_BASE_URL=http://127.0.0.1:8082
 #   PUBLIC_SITE_URL=https://girisimcilikvakfi.org
 #   PUBLIC_API_BASE_URL=
 npm ci && npm run build
@@ -126,8 +126,8 @@ sudo ln -sf /etc/nginx/sites-available/girvak /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-- Frontend → static files via Docker `:8081`, proxied through nginx `:80`
-- Backend → FastAPI on Docker `:8080`; nginx forwards `/api` and `/media`
+- Frontend → static files via Docker `:8083`, proxied through nginx `:80`
+- Backend → FastAPI on Docker `:8082`; nginx forwards `/api` and `/media`
 - Set `PUBLIC_API_BASE_URL=` (empty) so the newsletter form posts to same-origin `/api`
 
 ## Deploy (Phase 2+)
