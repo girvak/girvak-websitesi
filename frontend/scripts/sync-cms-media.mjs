@@ -19,14 +19,31 @@
 // bundled snapshot.
 
 import { mkdir, readdir, unlink, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Load frontend/.env when npm doesn't inject it (sync:media runs before Astro). */
+function loadDotEnv() {
+  const envPath = join(ROOT, '.env');
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadDotEnv();
 const RASTER_DIR = join(ROOT, 'src/assets/images/cms');
 const SVG_DIR = join(ROOT, 'public/media');
-const API_BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8082';
 const ENDPOINTS = ['home', 'about', 'fellow', 'people'];
 
 const isSvg = (name) => name.toLowerCase().endsWith('.svg');

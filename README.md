@@ -101,6 +101,14 @@ Server port layout:
 
 ### 1. Build frontend (on the server or CI)
 
+Requires **Node.js 20+** (`node -v` should show v20.x). Upgrade if needed:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v   # expect v20.x
+```
+
 ```bash
 cd frontend
 cp .env.example .env
