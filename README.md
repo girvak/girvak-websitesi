@@ -1,145 +1,87 @@
 # GİRVAK Website
 
-Modern client–server rebuild of the GİRVAK (Entrepreneurship Foundation of Türkiye) site.
+Public site of the Entrepreneurship Foundation of Türkiye. Content lives in
+Airtable; the site shows it on the next page load — no build, no deploy.
 
-- **Frontend** — [Astro](https://astro.build) (static SSG, optimized for SEO + speed). `frontend/`
-- **Backend** — [FastAPI](https://fastapi.tiangolo.com) (content API + newsletter). `backend/`
+## What it is for
 
-Phase 1 ships the **home page**. About / Fellow Program / Board of Trustees follow in Phase 2.
+Four pages — home, about, fellow program, board of trustees — plus a newsletter
+form. Editors work in Airtable and never touch this repo.
 
-## Architecture
+## Architecture in a few lines
 
 ```
-Astro (build time)  ──GET /api/content/home──►  FastAPI  ──►  content seed JSON
-   │                                                            (Airtable-shaped,
-   └─ newsletter form ──POST /api/newsletter──►  FastAPI  ──►   adapter swaps to Airtable later)
-                                                       └──►  SQLite (subscribers)
+Airtable → FastAPI (snapshot cache + /media mirror) → Astro SSR → nginx
 ```
 
-Content is decoupled from code: the FastAPI `content_source` adapter reads an
-Airtable-shaped seed (`backend/app/data/home_content.json`) today, and can be
-switched to a live Airtable base by env without touching the frontend.
+FastAPI reads Airtable at most once per TTL and can be told to re-read now.
+Astro renders each page per request from that API, so an edit appears on reload.
+Details: [docs/architecture/overview.md](docs/architecture/overview.md) ·
+[docs/data-model.md](docs/data-model.md).
 
-## Run locally
+## Stack
 
-### 1. Backend (FastAPI)
+- **backend/** — Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 + Alembic, PostgreSQL
+- **frontend/** — Astro 5 SSR (`@astrojs/node`), TypeScript strict, no UI framework
+- **coding-playbook/** — the architecture and coding rules both of the above follow
+- **old/** — the previous site, kept for reference. Nothing here reads it
+
+## Requirements
+
+- Python 3.12 and [uv](https://docs.astral.sh/uv/)
+- Node.js 20.9+
+- PostgreSQL 13+ (only the newsletter form needs it)
+- An Airtable personal access token with read access to the content base
+
+## Local setup
+
+Full instructions: [docs/development/setup.md](docs/development/setup.md).
 
 ```bash
-cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload --port 8000
+# backend
+cd backend && uv sync && cp .env.example .env   # fill ADMIN_API_KEY, DATABASE__DSN
+uv run alembic upgrade head
+uv run uvicorn girvak.main:create_app --factory --app-dir src --port 8000
+
+# frontend
+cd frontend && npm install && cp .env.example .env
+npm run dev            # http://localhost:4321
 ```
 
-- API docs: http://localhost:8000/docs
-- Content:  http://localhost:8000/api/content/home
-
-### 2. Frontend (Astro)
+## How to run the tests
 
 ```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev          # http://localhost:4321
+cd backend && uv run pytest            # add -m "not db" to skip the ones needing PostgreSQL
+cd backend && uv run ruff check src tests && uv run mypy
+cd frontend && npm run check
 ```
 
-`npm run build && npm run preview` produces the static site. If the backend is
-down at build time, Astro falls back to the bundled snapshot in
-`frontend/src/data/home_content.json` (keep it in sync with the backend seed).
+More: [docs/development/testing.md](docs/development/testing.md) once it exists.
 
-## Images
-
-Design assets live in the Claude Design project and belong in
-`frontend/public/images/` and `frontend/public/assets/`. Until they're added,
-image slots render empty but the layout is intact.
-
-> Performance upgrade path: move hero/card photos into `frontend/src/assets/`
-> and switch `<img>` → Astro's `<Image />` for automatic WebP/AVIF + `srcset`.
-
-## Airtable content (CONTENT_SOURCE=airtable)
-
-The backend reads Airtable via REST using your Personal Access Token. Set in
-`backend/.env`:
+## Repository layout
 
 ```
-CONTENT_SOURCE=airtable
-AIRTABLE_API_KEY=pat...        # token with data.records:read on the base
-AIRTABLE_BASE_ID=app...
+backend/     FastAPI: content API, newsletter, Airtable adapter, media mirror
+frontend/    Astro SSR: four pages, layouts, styles, browser behaviour
+docs/        architecture, data model, setup, API
+coding-playbook/  the rules; read AGENTS.md if you are an AI coding agent
+old/         previous implementation, reference only
 ```
 
-The adapter is **seed + overrides**: it starts from the bundled seed and
-overrides each section Airtable provides. A missing/empty table keeps the seed
-value, so you can fill the base incrementally. Field names are matched
-case-insensitively with aliases.
+## Deploy
 
-Expected tables (names overridable via `AIRTABLE_TABLE_*` env):
+Host nginx in front of two containers plus PostgreSQL; nginx forwards `/api` and
+`/media` to the backend. Steps, configuration names, rollback and post-deploy
+checks: [docs/operations/deployment.md](docs/operations/deployment.md).
 
-| Table | Fields (aliases accepted) |
-|---|---|
-| `Settings` | `Key`, `Value` — singleton text. Keys: `seo_title`, `seo_description`, `hero_base_text`, `hero_rotator_words` (comma-sep), `hero_subhead_pre/_highlight/_post`, `partners_headline_pre/_highlight`, `partners_sub`, `footer_newsletter_title/_text`, `footer_brand_text`, `footer_address/_email/_phone/_phone_href`, `footer_copyright` |
-| `HeroImages` | `Order`, `Image` (attachment) |
-| `Impact` | `Order`, `Count`, `Decimals`, `Prefix`, `Suffix`, `Label`, `Description`, `Color` (teal/coral/ink), `Row`, `Col` |
-| `WhatWeDo` | `Order`, `Lead`, `Sub`, `Eyebrow`, `Text`, `Color`, `Image`, `Href` |
-| `Fellows` | `Order`, `Year`, `Name`, `University`, `Image`, `Color` |
-| `Partners` | `Order`, `Name`, `Logo` (attachment), `Featured` (checkbox) |
+## Documentation
 
-CTAs, nav menu and footer Explore links stay in code (structural).
+- [docs/architecture/overview.md](docs/architecture/overview.md) — how the system works
+- [docs/operations/deployment.md](docs/operations/deployment.md) — building, deploying, rolling back
+- [docs/data-model.md](docs/data-model.md) — the nouns and who owns them
+- [docs/api.md](docs/api.md) — the HTTP contract
+- [docs/development/setup.md](docs/development/setup.md) — running it locally
 
-After editing Airtable, `POST /api/content/refresh` clears the server cache (or
-restart). Rebuild the frontend to regenerate the static pages.
+## Who to ask
 
-## Deploy (VPS)
-
-Server port layout:
-
-| Port | Service |
-|------|---------|
-| **80** | Host nginx (public) |
-| **8082** | Backend API (Docker) |
-| **8083** | Static frontend (Docker) |
-
-### 1. Build frontend (on the server or CI)
-
-Requires **Node.js 20+** (`node -v` should show v20.x). Upgrade if needed:
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node -v   # expect v20.x
-```
-
-```bash
-cd frontend
-cp .env.example .env
-# Production .env:
-#   API_BASE_URL=http://127.0.0.1:8082
-#   PUBLIC_SITE_URL=https://girisimcilikvakfi.org
-#   PUBLIC_API_BASE_URL=
-npm ci && npm run build
-```
-
-### 2. Start Docker services
-
-```bash
-cp backend/.env.example backend/.env   # fill in Airtable keys + ADMIN_API_KEY
-docker compose up -d --build
-```
-
-### 3. Configure host nginx
-
-```bash
-sudo cp deploy/nginx-site.conf /etc/nginx/sites-available/girvak
-sudo ln -sf /etc/nginx/sites-available/girvak /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-- Frontend → static files via Docker `:8083`, proxied through nginx `:80`
-- Backend → FastAPI on Docker `:8082`; nginx forwards `/api` and `/media`
-- Set `PUBLIC_API_BASE_URL=` (empty) so the newsletter form posts to same-origin `/api`
-
-## Deploy (Phase 2+)
-
-- Frontend → any static host (Vercel / Netlify / Cloudflare Pages). Set
-  `PUBLIC_SITE_URL`, `API_BASE_URL`, `PUBLIC_API_BASE_URL`.
-- Backend → Render / Railway / a VPS (`docker compose up`).
+GİRVAK — enes@girisimcilikvakfi.org

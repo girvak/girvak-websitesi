@@ -1,4 +1,5 @@
 ---
+import { siteUrl } from '../lib/env';
 import '../styles/styles.css';
 import '../styles/home.css';
 
@@ -11,7 +12,8 @@ interface Props {
 
 const { title, description, image = '/assets/logo-primary-turquoise.png', bodyClass = 'hm' } = Astro.props;
 
-const site = Astro.site ?? new URL('https://girisimcilikvakfi.org');
+// Read at request time: the deployed domain must be a restart, not a rebuild.
+const site = new URL(siteUrl);
 const canonical = new URL(Astro.url.pathname, site).href;
 const ogImage = new URL(image, site).href;
 ---

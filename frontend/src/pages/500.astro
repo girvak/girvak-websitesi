@@ -1,0 +1,39 @@
+---
+// Shown when the content API is unreachable and this process has no copy of the
+// page yet. Imports no content on purpose — an error page that needs the API is
+// not an error page.
+import '../styles/styles.css';
+import '../styles/about.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Şu anda yayında değil · GİRVAK</title>
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="hm ab">
+    <main>
+      <section class="ab-hero ab-hero--home ab-hero--compact">
+        <div class="ab-hero-in">
+          <h1 class="ab-hero-title ab-hero-title--page">Sayfa şu anda yüklenemiyor</h1>
+          <p class="ab-hero-sub">
+            İçerik servisine ulaşamıyoruz. Birkaç dakika içinde tekrar deneyin.
+          </p>
+          <a class="h3btn" href="/">
+            <span class="h3btn-label">tekrar dene</span>
+            <span class="cta-arrow" aria-hidden="true"></span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -3,6 +3,10 @@ import type { Footer } from '../lib/types';
 interface Props { footer: Footer; apiBase: string; }
 const { footer, apiBase } = Astro.props;
 const c = footer.contact;
+
+// One place decides where the form posts. Empty apiBase means same origin, and
+// the reverse proxy forwards /api to FastAPI — so no API hostname is in the page.
+const newsletterEndpoint = apiBase ? `${apiBase}/v1/newsletter` : '/api/v1/newsletter';
 ---
 <footer class="ft" id="footer">
   <div class="ft-news">
@@ -10,9 +14,10 @@ const c = footer.contact;
       <h3 style="color: #373d42; font-weight: 500">{footer.newsletter_title}</h3>
       <p>{footer.newsletter_text}</p>
     </div>
-    <form class="ft-form" data-api={apiBase}>
-      <input type="email" placeholder="type your email" aria-label="Email address" required style="border-radius: 5px" />
+    <form class="ft-form" method="post" action={newsletterEndpoint} data-endpoint={newsletterEndpoint}>
+      <input type="email" name="email" placeholder="type your email" aria-label="Email address" required style="border-radius: 5px" />
       <button type="submit" class="ft-subscribe"><span class="ft-sub-label">subscribe</span><span class="cta-arrow" aria-hidden="true"></span></button>
+      <p class="ft-form-msg" role="status" aria-live="polite"></p>
     </form>
   </div>
   <div class="ft-main">

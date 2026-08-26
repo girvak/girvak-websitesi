@@ -1,41 +1,72 @@
-# Optional: run backend + static frontend together on the VPS.
-# Host nginx (:80) proxies to these services — see deploy/nginx-site.conf.
+# GİRVAK — backend, site, and their database.
 #
-#   :80   nginx (host)  → public site
-#   :8082 backend API   → FastAPI / uvicorn  (8080/8081 başka projelerde)
-#   :8083 frontend      → static dist (nginx container)
+# Port layout on the server (unchanged from the previous deployment):
+#   :80    host nginx (public)          -> deploy/nginx-site.conf
+#   :8082  backend API   (this file)
+#   :8083  site          (this file)
+#   :5432  PostgreSQL    (loopback only)
 #
-# Build the frontend first:  cd frontend && npm run build
-# Then:                     docker compose up -d --build
-
+#   docker compose up -d --build
+#   docker compose run --rm backend alembic upgrade head    # release step
 services:
+  db:
+    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: girvak
+      POSTGRES_DB: girvak
+      # Set POSTGRES_PASSWORD in .env beside this file; never inline it here.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    ports:
+      # Loopback only: nothing outside the host may reach the database.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U girvak -d girvak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./backend
     restart: unless-stopped
-    ports:
-      - "8082:8000"
     env_file:
       - ./backend/.env
     environment:
-      - CORS_ORIGINS=https://girisimcilikvakfi.org,https://www.girisimcilikvakfi.org,http://localhost:4321
-      - ALLOWED_HOSTS=localhost,127.0.0.1,girisimcilikvakfi.org,www.girisimcilikvakfi.org
-      - DEBUG=false
-      - ENABLE_DEBUG_ROUTES=false
+      ENVIRONMENT: production
+      DOCS_ENABLED: "false"
+      DATABASE__DSN: postgresql+asyncpg://girvak:${POSTGRES_PASSWORD}@db:5432/girvak
+      TRUSTED_HOSTS: girisimcilikvakfi.org,www.girisimcilikvakfi.org,localhost,127.0.0.1,backend
+      # The browser reaches /api through nginx on the site's own origin, so no
+      # cross-origin request is expected in production.
+      CORS_ORIGINS: https://girisimcilikvakfi.org,https://www.girisimcilikvakfi.org
+      MEDIA__DIR_PATH: /app/media
+    ports:
+      - "127.0.0.1:8082:8000"
     volumes:
+      # The attachment mirror. Losing it costs one background re-download, not data.
       - backend_media:/app/media
-      - backend_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
-    image: nginx:1.27-alpine
+    build: ./frontend
     restart: unless-stopped
+    environment:
+      # Server-side only. The browser never sees this.
+      API_BASE_URL: http://backend:8000
+      # Empty: the form posts to the site's own origin and nginx forwards /api.
+      PUBLIC_API_BASE_URL: ""
+      PUBLIC_SITE_URL: https://girisimcilikvakfi.org
+      PAGE_CACHE_SECONDS: "30"
+      BROWSER_CACHE_SECONDS: "30"
     ports:
-      - "8083:80"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
-      - ./deploy/frontend-container.conf:/etc/nginx/conf.d/default.conf:ro
+      - "127.0.0.1:8083:4321"
     depends_on:
       - backend
 
 volumes:
+  db_data:
   backend_media:
-  backend_data:
