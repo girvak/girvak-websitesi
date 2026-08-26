@@ -1,0 +1,61 @@
+[project]
+name = "girvak-backend"
+version = "1.0.0"
+description = "GİRVAK content API — Airtable-backed page content and the newsletter form."
+requires-python = "==3.12.*"
+dependencies = [
+    "alembic>=1.19.1",
+    "asyncpg>=0.31.0",
+    "email-validator>=2.3.0",
+    "fastapi>=0.141.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.0.52",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "RUF"]
+# S101: asserts are how a handler narrows a framework-typed exception.
+# RUF001-003: user-facing copy is Turkish, so "ı" and "İ" are correct, not lookalikes.
+ignore = ["S101", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+mypy_path = "src"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+strict = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# "." so a test can import a sibling builder module by its full path; importlib
+# mode so two test files may share a basename across mirrored folders.
+pythonpath = ["src", "."]
+addopts = "--import-mode=importlib"
+testpaths = ["tests"]
+markers = ["db: needs the test PostgreSQL database"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.4",
+]

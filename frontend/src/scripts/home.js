@@ -141,89 +141,11 @@ function initAllFellowsBelts() {
   });
 }
 
-const COLOR_CLASS = { teal: 'fc-teal', coral: 'fc-coral', ink: 'fc-ink' };
-
-function escHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function linkedInHref(raw) {
-  if (!raw) return undefined;
-  const first = String(raw).trim().split(/\s+/)[0] || '';
-  if (!first || first === '#') return undefined;
-  // Ignore non-profile tokens like "linkedin.com"
-  if (/linkedin\.com\/?$/i.test(first.replace(/\/$/, ''))) return undefined;
-  const href = /^https?:\/\//i.test(first) ? first : `https://${first.replace(/^\/+/, '')}`;
-  return /linkedin\.com\/in\//i.test(href) ? href : undefined;
-}
-
-function personName(p) {
-  return [p.first, p.last].filter(Boolean).join(' ');
-}
-
-const PALETTE = ['fc-teal', 'fc-coral', 'fc-ink'];
-
-function fellowCardMarkup(p, index) {
-  const cls = PALETTE[index % PALETTE.length];
-  const name = personName(p);
-  const yearFront = p.year ? `<span class="fcard-year">${escHtml(p.year)}</span>` : '';
-  const yearBack = p.year ? `<span class="fcard-back-year">${escHtml(p.year)}</span>` : '';
-  const img = p.photo
-    ? `<img src="${escHtml(p.photo)}" alt="${escHtml(name)}" loading="lazy" decoding="async" />`
-    : '';
-  const uni = (p.university || p.company)
-    ? `<span class="fcard-uni">${escHtml(p.university || p.company)}</span>`
-    : '';
-  const dept = p.department ? `<span class="fcard-dept">${escHtml(p.department)}</span>` : '';
-  const linkedin = linkedInHref(p.linkedin);
-  const linkedinAttr = linkedin ? ` data-linkedin="${escHtml(linkedin)}"` : '';
-  return (
-    `<figure class="fcard ${cls}" tabindex="0"${linkedinAttr}>` +
-      '<div class="fcard-inner">' +
-        '<div class="fcard-front">' +
-          yearFront +
-          img +
-          `<div class="fcard-band"><span class="fcard-frontname">${escHtml(name)}</span></div>` +
-        '</div>' +
-        '<div class="fcard-back">' +
-          yearBack +
-          '<div class="fcard-back-meta">' +
-            `<span class="fcard-name">${escHtml(name)}</span>` +
-            uni +
-            dept +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-    '</figure>'
-  );
-}
-
-async function initFellowsBelt() {
+function initFellowsBelt() {
   const track = document.getElementById('belt');
   if (!track || track.dataset.spotlightFetch !== 'true') return;
-  // Re-sampling the spotlight at runtime is a dev convenience. In production it
-  // would swap the build's optimized <picture> markup for raw backend image
-  // URLs and make the API a hard dependency of the homepage, so the cards baked
-  // at build time stay put (they are already a fresh random sample per build).
-  if (import.meta.env.DEV) {
-    try {
-      const res = await fetch('/api/content/fellows-spotlight');
-      if (res.ok) {
-        const fellows = await res.json();
-        if (Array.isArray(fellows) && fellows.length) {
-          track.innerHTML = fellows.map((f, i) => fellowCardMarkup(f, i)).join('');
-          track.dataset.beltDuplicated = '0';
-        }
-      }
-    } catch (_) {
-      /* keep SSR cards from build / first paint */
-    }
-  }
+  // The server rendered this belt from the live content snapshot; fetching it
+  // again in the browser would replace real markup with a second copy.
   finalizeFellowsTrack(track);
 }
 
@@ -361,31 +283,51 @@ setTimeout(checkCount, 600);
 // ---------- Newsletter (posts to FastAPI) ----------
 const form = document.querySelector('.ft-form');
 if (form) {
+  const input = form.querySelector('input');
+  const btn = form.querySelector('button');
+  const label = btn && btn.querySelector('.ft-sub-label');
+  const message = form.querySelector('.ft-form-msg');
+  const endpoint = form.dataset.endpoint || '/api/v1/newsletter';
+
+  const setState = (state, text) => {
+    form.classList.remove('is-sending', 'ok', 'has-error');
+    if (state) form.classList.add(state);
+    if (message) message.textContent = text || '';
+  };
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const input = form.querySelector('input');
-    const btn = form.querySelector('button');
-    const lbl = btn && btn.querySelector('.ft-sub-label');
     const email = input ? input.value.trim() : '';
     if (!email) return;
-    const apiBase = form.dataset.api || '';
+
+    if (btn) btn.disabled = true;
+    setState('is-sending', 'Gönderiliyor…');
+    if (label) label.textContent = 'sending';
+
     try {
-      const res = await fetch(`${apiBase}/api/newsletter`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await res.json();
-      form.classList.add('ok');
-      if (lbl) lbl.textContent = 'Subscribed ✓';
-      if (input) input.value = '';
+      // The API decides what the visitor is told; the form only shows it.
+      const body = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setState('ok', body.message || 'Kaydınız alındı.');
+        if (label) label.textContent = 'subscribed ✓';
+        if (input) input.value = '';
+        return;
+      }
+
+      setState('has-error', body.message || 'Kayıt tamamlanamadı. Lütfen tekrar deneyin.');
+      if (label) label.textContent = 'try again';
     } catch (err) {
-      if (lbl) lbl.textContent = 'Try again';
+      setState('has-error', 'Bağlantı kurulamadı. Lütfen tekrar deneyin.');
+      if (label) label.textContent = 'try again';
       console.error('[newsletter]', err);
+    } finally {
+      if (btn) btn.disabled = false;
     }
   });
 }

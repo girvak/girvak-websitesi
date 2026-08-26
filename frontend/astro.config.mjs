@@ -1,25 +1,38 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
+import node from '@astrojs/node';
 
-// `site` is used for canonical URLs and the sitemap. Override per environment
-// with PUBLIC_SITE_URL (e.g. the production domain).
+// Absolute origin for canonical links, Open Graph URLs and the sitemap.
 const site = process.env.PUBLIC_SITE_URL || 'https://girisimcilikvakfi.org';
 
 export default defineConfig({
   site,
-  integrations: [sitemap()],
-  // Static output (SSG) — best SEO + speed for a content site.
-  output: 'static',
+
+  // Server-rendered: every request reads the content API, so an Airtable edit
+  // appears on the next reload. A static build would need a rebuild per change,
+  // which is the thing this site is not allowed to need.
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
+
+  // /sitemap.xml is a route in src/pages: in SSR the sitemap integration only
+  // sees prerendered pages, and this site has four URLs.
+
   vite: {
     server: {
-      // Allow ngrok / Cloudflare tunnel hostnames in dev.
+      // Tunnel hostnames used while sharing a dev preview.
       allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', '.trycloudflare.com'],
       proxy: {
-        // Same-origin /api in dev (newsletter + refresh) — works through ngrok.
-        '/api': { target: process.env.API_BASE_URL || 'http://127.0.0.1:8000', changeOrigin: true },
-        // Mirrored Airtable attachments (non-expiring image URLs) — same host as /api.
-        '/media': { target: process.env.API_BASE_URL || 'http://127.0.0.1:8000', changeOrigin: true },
+        // Same-origin /api and /media in dev, exactly as the reverse proxy
+        // serves them in production.
+        '/api': {
+          target: process.env.API_BASE_URL || 'http://127.0.0.1:8000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
+        '/media': {
+          target: process.env.API_BASE_URL || 'http://127.0.0.1:8000',
+          changeOrigin: true,
+        },
       },
     },
   },

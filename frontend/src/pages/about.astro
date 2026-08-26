@@ -6,20 +6,24 @@ import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
 import PeopleGrid from '../components/about/PeopleGrid.astro';
 import { isUnbundled, resolveImage } from '../lib/images';
-import { getAboutContent, getHomeContent, getPeople } from '../lib/content';
-import { sortTrusteesPriority, sortPeopleAlpha } from '../lib/aboutPeople';
+import { getAboutContent, getHomeContent, getPeople } from '../lib/api';
+import { publicApiBase } from '../lib/env';
 import '../styles/about.css';
 
 const TRUSTEES_PREVIEW = 10; // 2 rows × 5 columns on desktop
 
-const content = await getHomeContent();
-const about = await getAboutContent();
-const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? '';
+const [content, about, livePeople] = await Promise.all([
+  getHomeContent(),
+  getAboutContent(),
+  getPeople(),
+]);
+const apiBase = publicApiBase;
 
-const livePeople = await getPeople();
-const trusteesAll = sortPeopleAlpha(livePeople?.trustees ?? []);
-const directorsData = sortTrusteesPriority(livePeople?.directors ?? []);
-const teamData = sortPeopleAlpha(livePeople?.team ?? []);
+// Order is the API's: Turkish alphabetical, board chair and vice-chair first.
+// Sorting again here would be a second, divergent rule.
+const trusteesAll = livePeople.trustees;
+const directorsData = livePeople.directors;
+const teamData = livePeople.team;
 const trusteesPreview = trusteesAll.slice(0, TRUSTEES_PREVIEW);
 
 const isRemote = isUnbundled;
@@ -179,5 +183,4 @@ const missionHeadlineHtml = (() => {
 <script>
   import '../scripts/home.js';
   import '../scripts/about.js';
-  import '../scripts/about_dynamic.js';
 </script>

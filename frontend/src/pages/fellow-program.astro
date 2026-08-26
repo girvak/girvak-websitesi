@@ -7,15 +7,19 @@ import Footer from '../components/Footer.astro';
 import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
 import ChallengerBelt from '../components/fellow/ChallengerBelt.astro';
 import { isUnbundled, resolveImage } from '../lib/images';
-import { getFellowContent, getHomeContent, getPeople } from '../lib/content';
+import { getFellowContent, getHomeContent, getPeople } from '../lib/api';
+import type { Person } from '../lib/types';
+import { publicApiBase } from '../lib/env';
 import '../styles/fellow.css';
 
-const content = await getHomeContent();
-const peopleApi = await getPeople();
 // Page copy + section media: Airtable `fellow` table (tag families).
 // People belts: Airtable `people` table (tags fellow / alumni / challenger).
-const fp = await getFellowContent();
-const apiBase = import.meta.env.PUBLIC_API_BASE_URL ?? '';
+const [content, peopleApi, fp] = await Promise.all([
+  getHomeContent(),
+  getPeople(),
+  getFellowContent(),
+]);
+const apiBase = publicApiBase;
 
 const seo = {
   title: 'Fellow Program · GİRVAK',
@@ -24,10 +28,23 @@ const seo = {
     'A community that backs you. For life. The GİRVAK Fellow Program equips young people with an entrepreneurial mindset to drive change.',
 };
 
-// Backend sorts fellows/alumni/challengers (Turkish A–Z).
-const fellowPeople = peopleApi?.fellows?.length ? peopleApi.fellows : [];
-const alumniPeople = peopleApi?.alumni?.length ? peopleApi.alumni : [];
-const challengerPeople = peopleApi?.challengers?.length ? peopleApi.challengers : [];
+// The three belts are auto-scrolling marquees: a visitor sees a handful of cards
+// go by, never 780 of them. Rendering every alumnus cost 1.6 MB of HTML and 430
+// image requests for no visible gain, so each belt shows a sample — reshuffled
+// whenever the content snapshot is rebuilt, so over time everyone appears.
+// Order within a belt stays the API's (Turkish A–Z).
+const BELT_SIZE = 40;
+
+function belt(people: Person[]): Person[] {
+  if (people.length <= BELT_SIZE) return people;
+  const picked = new Set<number>();
+  while (picked.size < BELT_SIZE) picked.add(Math.floor(Math.random() * people.length));
+  return [...picked].sort((a, b) => a - b).map((index) => people[index]);
+}
+
+const fellowPeople = belt(peopleApi.fellows);
+const alumniPeople = belt(peopleApi.alumni);
+const challengerPeople = belt(peopleApi.challengers);
 
 const isRemote = isUnbundled;
 
@@ -297,5 +314,4 @@ const fwyd = fp.what_youll_do.map((i) => ({
 <script>
   import '../scripts/home.js';
   import '../scripts/fellow.js';
-  import '../scripts/fellow_program_dynamic.js';
 </script>

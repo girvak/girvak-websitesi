@@ -1,12 +1,12 @@
+.venv/
 .env
 .env.*
 !.env.example
-*.db
 media/
-.venv/
-venv/
+tests/
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .git/
-.gitignore
