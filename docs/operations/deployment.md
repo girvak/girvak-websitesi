@@ -86,6 +86,12 @@ docker compose run --rm backend alembic upgrade head
 The chain is backward compatible by rule (`coding-playbook/python-fastapi-backend/07-migrations.md`),
 so the old code keeps working against the new schema during a rolling restart.
 
+The previous site kept subscribers in a SQLite file. That file is preserved
+locally at `backend/legacy-subscribers.db` (git-ignored, because it holds real
+addresses). Import it into PostgreSQL once, before or just after the first
+release — one `INSERT ... ON CONFLICT DO NOTHING` per row is enough, and the
+unique constraint makes a re-run harmless.
+
 Only `newsletter_subscribers` lives in PostgreSQL. Content is Airtable's, and the
 `/media` mirror is a cache — losing either costs a re-read, not data.
 

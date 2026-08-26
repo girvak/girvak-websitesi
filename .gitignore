@@ -28,11 +28,6 @@ backend/media/
 # os / editor
 .DS_Store
 
-# The previous implementation, kept on disk as a design reference. Its source is
-# already in this repo's history (commit a927f30 and earlier), and the folder
-# also holds 950 MB of virtualenv, node_modules and mirrored media.
-old/
-
 # A separate repository (github.com/Arslanex/coding-playbook) cloned beside the
 # app, as its README prescribes. Clone it, or add it as a submodule.
 coding-playbook/

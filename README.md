@@ -24,7 +24,7 @@ Details: [docs/architecture/overview.md](docs/architecture/overview.md) ·
 - **backend/** — Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 + Alembic, PostgreSQL
 - **frontend/** — Astro 5 SSR (`@astrojs/node`), TypeScript strict, no UI framework
 - **coding-playbook/** — the architecture and coding rules both of the above follow
-- **old/** — the previous site, kept for reference. Nothing here reads it
+  (a separate repository, cloned beside the app)
 
 ## Requirements
 
@@ -65,7 +65,6 @@ backend/     FastAPI: content API, newsletter, Airtable adapter, media mirror
 frontend/    Astro SSR: four pages, layouts, styles, browser behaviour
 docs/        architecture, data model, setup, API
 coding-playbook/  the rules; read AGENTS.md if you are an AI coding agent
-old/         previous implementation, reference only
 ```
 
 ## Deploy
@@ -73,6 +72,15 @@ old/         previous implementation, reference only
 Host nginx in front of two containers plus PostgreSQL; nginx forwards `/api` and
 `/media` to the backend. Steps, configuration names, rollback and post-deploy
 checks: [docs/operations/deployment.md](docs/operations/deployment.md).
+
+## The previous implementation
+
+The static Astro + SQLite version this replaced is in git history, at commit
+`a927f30` and earlier. To read or run it without disturbing the working tree:
+
+```bash
+git worktree add ../girvak-old a927f30
+```
 
 ## Documentation
 
