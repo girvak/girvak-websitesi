@@ -18,6 +18,44 @@ prefix stripped, `/media/…` to the backend with immutable caching. **The site 
 not proxy anything itself** — without nginx (or `npm run dev`), `/api` and
 `/media` are 404. That is deliberate: one place decides routing.
 
+## Migrating from the previous deployment
+
+The server already runs the old site with nginx, DNS and certbot configured, and
+the port layout above is unchanged — so **DNS and the certificate need nothing**.
+
+The mandatory change is one character. The old API served its routes under
+`/api/...`, so nginx passed the path through:
+
+```nginx
+location /api/ { proxy_pass http://127.0.0.1:8082; }     # old: path kept
+location /api/ { proxy_pass http://127.0.0.1:8082/; }    # new: /api stripped
+```
+
+The new API serves `/v1/...`, so without that trailing slash every API call
+becomes a 404 and the newsletter form stops working. `/media/` and `/` are
+unchanged.
+
+Two ways to apply it:
+
+- **Minimal (keeps certbot's work).** Edit the live file
+  `/etc/nginx/sites-available/girvak`, add the trailing slash, and drop the three
+  `add_header` security lines — the app sends those itself now, and nginx would
+  send each one twice. Then `sudo nginx -t && sudo systemctl reload nginx`.
+- **Replace the file.** Copy `deploy/nginx-site.conf` over it, then re-run
+  `sudo certbot --nginx -d girisimcilikvakfi.org -d www.girisimcilikvakfi.org`,
+  because the copy removes the TLS blocks certbot had written.
+
+Also on the server, once:
+
+- `frontend/dist` is no longer mounted anywhere: the site is a Node process now,
+  not a static bundle behind an nginx container. `deploy/frontend-container.conf`
+  and `deploy/frontend.env.production` from the old repo are obsolete.
+- The published ports now bind to `127.0.0.1` instead of every interface, so
+  `:8082` and `:8083` are no longer reachable from outside the host.
+- `docker compose up -d --build` recreates the `backend` and `frontend` services
+  in place and adds `db`.
+- Import the legacy subscriber file (below) before announcing the form.
+
 ## Environments
 
 - **local** — `uv run uvicorn …` + `npm run dev`. `CONTENT__SOURCE=seed` works
