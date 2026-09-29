@@ -34,7 +34,7 @@ const fellowSpotlight = peopleApi.fellows.filter((p) => p.photo).slice(0, 8);
       <div>
         <h2 class="h2" style="color: #373d42"><span style="color: #373d42">{fellows_headline ?? 'meet our fellows'}</span></h2>
       </div>
-      <a href={fellows_cta?.href ?? '/fellow-program#fellows'} class="h3btn"><span class="h3btn-label">{fellows_cta?.label ?? 'see all fellows'}</span><span class="cta-arrow" aria-hidden="true"></span></a>
+      <a href={fellows_cta?.href ?? '/fellows'} class="h3btn"><span class="h3btn-label">{fellows_cta?.label ?? 'see all fellows'}</span><span class="cta-arrow" aria-hidden="true"></span></a>
     </div>
     {
       fellowSpotlight.length > 0 ? (

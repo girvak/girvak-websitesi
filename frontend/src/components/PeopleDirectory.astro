@@ -1,0 +1,182 @@
+---
+/**
+ * Module: src/components/PeopleDirectory.astro
+ * Layer: Component
+ * Purpose: A whole-cohort directory — a hero, university / department / year
+ *          filters, a name search, and one flip card per person, revealed 24
+ *          at a time. The body of
+ *          /fellows and /alumni, which the design draws as the same page in two
+ *          colours.
+ *
+ *          Server-rendered like /founders-ventures: the cards and the dropdown
+ *          choices are in the HTML, and the browser only toggles `hidden`.
+ *
+ * Called by: src/pages/fellows.astro, src/pages/alumni.astro
+ * Calls: src/scripts/directory.js
+ */
+import type { Person } from '../lib/types';
+
+interface Props {
+  /** Hero headline. Trusted markup written in the page, never editor content. */
+  headlineHtml: string;
+  /** Hero sub-line. Same. */
+  introHtml: string;
+  people: Person[];
+  /** What the list holds, for "showing 24 of 405 alumni". */
+  noun: string;
+}
+
+const { headlineHtml, introHtml, people, noun } = Astro.props;
+
+/** Cohort key a card filters on: `’18` becomes `18`, matching the dropdown. */
+const yearKey = (year: string | undefined): string => (year?.match(/\d/g) ?? []).join('').slice(-2);
+
+const nameOf = (p: Person): string => `${p.first} ${p.last ?? ''}`.trim();
+
+// Newest cohort first. The API hands people over Turkish A–Z and `sort` is
+// stable, so within a cohort that order is kept.
+const cohort = [...people].sort(
+  (a, b) => Number(yearKey(b.year) || -1) - Number(yearKey(a.year) || -1),
+);
+
+/** Distinct non-empty values, in Turkish alphabetical order. */
+function distinct(pick: (p: Person) => string | undefined): string[] {
+  const seen = new Set<string>();
+  for (const p of cohort) {
+    const v = pick(p)?.trim();
+    if (v) seen.add(v);
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b, 'tr'));
+}
+
+const years = new Map<string, string>();
+for (const p of cohort) {
+  const key = yearKey(p.year);
+  if (key && !years.has(key)) years.set(key, p.year ?? '');
+}
+
+const filters = [
+  {
+    key: 'university',
+    label: 'university',
+    all: 'all universities',
+    options: distinct((p) => p.university).map((v) => ({ value: v, label: v })),
+  },
+  {
+    key: 'department',
+    label: 'department',
+    all: 'all departments',
+    options: distinct((p) => p.department).map((v) => ({ value: v, label: v })),
+  },
+  {
+    key: 'year',
+    label: 'year',
+    all: 'all years',
+    // Already newest first: `cohort` is sorted that way and Map keeps insertion order.
+    options: [...years].map(([value, label]) => ({ value, label })),
+  },
+];
+---
+
+<main>
+  <section class="fa-hero ap-edge" id="top">
+    <h1 class="fa-hero-title" set:html={headlineHtml} />
+    <p class="fa-hero-sub" set:html={introHtml} />
+  </section>
+
+  <section class="fa-body ap-edge">
+    <div class="fv-filters" id="faFilters">
+      {filters.map((f) => (
+        <div class="fv-filter" data-key={f.key}>
+          <button class="fv-fbtn" type="button" aria-expanded="false">
+            <span class="fv-fbtn-label">{f.label}</span>
+            <span class="fv-caret" aria-hidden="true"></span>
+          </button>
+          <div class="fv-menu" role="listbox" aria-label={f.label}>
+            <button class="fv-opt is-on" type="button" role="option" aria-selected="true" data-val="">
+              {f.all}
+            </button>
+            {f.options.map((o) => (
+              <button class="fv-opt" type="button" role="option" aria-selected="false" data-val={o.value}>
+                <span class="fv-opt-label">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <button class="fa-reset" id="faReset" type="button">clear filters</button>
+
+      <div class="fv-filter ca-search fv-searchbox" data-key="q">
+        <button class="fv-fbtn" type="button" aria-expanded="false">
+          <span class="fv-fbtn-label">search</span>
+          <span class="fv-caret" aria-hidden="true"></span>
+        </button>
+        <div class="fv-menu ca-searchmenu">
+          <input
+            class="ca-input"
+            id="faSearch"
+            type="text"
+            placeholder="type a name"
+            aria-label="Search by name"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="fv-grid" id="faGrid">
+      {cohort.map((p) => {
+        const name = nameOf(p);
+        // A card goes to the person's LinkedIn. With none on file it stays a
+        // plain figure rather than pretending to be clickable. `Tag` is
+        // capitalised so Astro treats it as the element.
+        const Tag = p.linkedin ? 'a' : 'figure';
+        return (
+          <Tag
+            class:list={['fv-card', !p.photo && 'no-photo']}
+            {...(p.linkedin
+              ? { href: p.linkedin, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `${name} — LinkedIn` }
+              : { tabindex: '0' })}
+            data-university={p.university ?? ''}
+            data-department={p.department ?? ''}
+            data-year={yearKey(p.year)}
+          >
+            <div class="fv-inner">
+              <div class="fv-front">
+                {p.year && <div class="fv-year">{p.year}</div>}
+                {p.photo && (
+                  <img class="fv-photo" src={p.photo} alt={name} loading="lazy" decoding="async" />
+                )}
+                <div class="fv-band"><span class="fv-frontname">{name}</span></div>
+              </div>
+              <div class="fv-back">
+                {p.year && <div class="fv-year">{p.year}</div>}
+                <div class="fv-back-mid">
+                  <div class="fv-name">{name}</div>
+                  {p.university && <div class="fv-uni">{p.university}</div>}
+                  {p.department && <div class="fv-dept">{p.department}</div>}
+                </div>
+              </div>
+            </div>
+          </Tag>
+        );
+      })}
+
+      <p class="fv-empty" id="faEmpty" hidden>
+        Nothing matches just yet. Try tweaking your filters and see what turns up.
+      </p>
+    </div>
+
+    <div class="lm" id="faMore" data-noun={noun}>
+      <p class="lm-status" id="faStatus" aria-live="polite" tabindex="-1"></p>
+      <button class="h3btn lm-btn" id="faMoreBtn" type="button" hidden>
+        <span class="h3btn-label">load more</span>
+        <span class="cta-arrow" aria-hidden="true"></span>
+      </button>
+    </div>
+  </section>
+</main>
+
+<script>
+  import '../scripts/directory.js';
+</script>

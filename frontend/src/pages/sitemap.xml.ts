@@ -1,7 +1,7 @@
 /**
  * Module: src/pages/sitemap.xml.ts
  * Layer: Page
- * Purpose: The sitemap, written by hand because this site has four URLs and the
+ * Purpose: The sitemap, written by hand because this site has a handful of URLs and the
  *          sitemap integration only sees prerendered routes in SSR.
  *
  * Called by: crawlers
@@ -11,7 +11,7 @@
 import type { APIRoute } from 'astro';
 import { siteUrl } from '../lib/env';
 
-const PATHS = ['/', '/about', '/fellow-program', '/board-of-trustees'];
+const PATHS = ['/', '/about', '/fellow-program', '/founders-ventures', '/fellows', '/alumni', '/challengers', '/board-of-trustees'];
 
 export const GET: APIRoute = () => {
   const urls = PATHS.map((path) => `  <url><loc>${siteUrl}${path}</loc></url>`).join('\n');

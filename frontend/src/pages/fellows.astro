@@ -1,0 +1,48 @@
+---
+/**
+ * Module: src/pages/fellows.astro
+ * Layer: Page
+ * Purpose: Every current fellow as a flip card, filtered by university,
+ *          department and cohort, or found by name. Red.
+ *
+ * Called by: visitors at /fellows
+ * Calls: src/lib/api.ts, src/components/PeopleDirectory.astro
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import PeopleDirectory from '../components/PeopleDirectory.astro';
+import { getHomeContent, getPeople } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import '../styles/ventures.css';
+import '../styles/directory.css';
+
+const [home, people] = await Promise.all([getHomeContent(), getPeople()]);
+const apiBase = publicApiBase;
+
+// The page's own words. Airtable has no copy table for this page, and the design
+// fixes them, so they live here rather than in a seed nobody edits.
+const seo = {
+  title: 'All Fellows · GİRVAK',
+  description: 'Meet the GİRVAK fellows finding their way — curious, driven, and just getting started.',
+};
+---
+
+<BaseLayout title={seo.title} description={seo.description} bodyClass="hm ap fv fa">
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <PeopleDirectory
+    headlineHtml="those who <i>grow</i> with us."
+    introHtml="Meet the <em>fellows</em> finding their way, curious, driven, and just getting started."
+    people={people.fellows}
+    noun="fellows"
+  />
+
+  <Footer footer={home.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+</script>

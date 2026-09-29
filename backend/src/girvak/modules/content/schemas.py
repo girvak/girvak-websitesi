@@ -138,7 +138,7 @@ class HomeContent(_Frozen):
     what_we_do: list[WhatWeDoCard]
     fellows: list[Fellow]
     fellows_headline: str = "meet our fellows"
-    fellows_cta: CTA = CTA(label="see all fellows", href="/fellow-program#fellows")
+    fellows_cta: CTA = CTA(label="see all fellows", href="/fellows")
     partners: Partners
     footer: Footer
 

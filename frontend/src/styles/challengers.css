@@ -1,0 +1,44 @@
+/* ============================================================
+   All Challengers — a photo-less list, in challenger yellow.
+
+   Ported from the design project's challengers-all.css. The hero and the
+   reset control come from directory.css, the filter bar (dropdowns, reset,
+   search box) from ventures.css and directory.css — the same bar, in the same
+   place, as the fellows and alumni pages; this file holds the rows and the
+   yellow.
+
+   One change from the source: the hand-drawn underline under each row was a
+   1600x16 PNG mask. It is redrawn here as an inline SVG mask — same size, same
+   stretch, tinted by the row's own background — so no binary asset ships. It is
+   a filled brush shape, not a stroke: it swells and thins along its length and
+   tapers into both ends, as the original does.
+   ============================================================ */
+.ca { --chal: #f3c00c; }
+.ca .fa-hero-title i { color: var(--chal); }
+.ca .fa-hero-title .ch:hover { color: var(--chal); }
+.ca .fa-hero-title i .ch-inv:hover { color: #373d42; }
+.ca .fa-hero-sub em { color: var(--chal); }
+
+/* The rows start where the cards do on the other showcase pages. */
+.ca-rows { margin-top: clamp(58px,7vw,104px); }
+.ca-row { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.6fr);
+  gap: clamp(24px,4vw,72px); align-items: center; }
+.ca .fv-fbtn:hover, .ca .fv-filter.has-val .fv-fbtn { color: var(--chal); }
+.ca .fv-opt.is-on, .ca .fv-opt:hover, .ca .fv-opt.is-on:hover { color: var(--chal); }
+.ca-searchmenu { padding: 12px; }
+.ca .ca-input:focus, .ca .ca-input:focus-visible { border-color: var(--chal); caret-color: var(--chal); }
+
+.ca-row { position: relative; padding: clamp(16px,1.7vw,24px) 0 clamp(20px,2.1vw,30px); }
+.ca-row[hidden] { display: none; }
+.ca-row::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 16px;
+  background-color: var(--chal);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='16' viewBox='0 0 1600 16' preserveAspectRatio='none'%3E%3Cpath d='M0 10.7 L13 11.2 L27 11.5 L40 11.7 L53 11.8 L67 11.7 L80 11.5 L93 11.3 L107 11.0 L120 10.6 L133 10.1 L147 9.6 L160 9.0 L173 8.4 L187 7.9 L200 7.3 L213 6.9 L227 6.4 L240 6.0 L253 5.7 L267 5.5 L280 5.2 L293 5.0 L307 4.9 L320 4.7 L333 4.6 L347 4.4 L360 4.2 L373 4.0 L387 3.8 L400 3.5 L413 3.3 L427 3.1 L440 2.9 L453 2.7 L467 2.7 L480 2.7 L493 2.8 L507 3.0 L520 3.3 L533 3.7 L547 4.2 L560 4.8 L573 5.5 L587 6.2 L600 6.9 L613 7.6 L627 8.3 L640 8.9 L653 9.5 L667 9.9 L680 10.3 L693 10.5 L707 10.6 L720 10.7 L733 10.7 L747 10.6 L760 10.4 L773 10.2 L787 10.0 L800 9.8 L813 9.6 L827 9.4 L840 9.3 L853 9.1 L867 9.0 L880 8.9 L893 8.7 L907 8.6 L920 8.4 L933 8.1 L947 7.8 L960 7.5 L973 7.1 L987 6.6 L1000 6.0 L1013 5.5 L1027 4.9 L1040 4.3 L1053 3.8 L1067 3.3 L1080 2.9 L1093 2.6 L1107 2.3 L1120 2.2 L1133 2.3 L1147 2.4 L1160 2.6 L1173 3.0 L1187 3.4 L1200 3.9 L1213 4.4 L1227 5.0 L1240 5.5 L1253 6.0 L1267 6.5 L1280 6.9 L1293 7.2 L1307 7.5 L1320 7.8 L1333 8.0 L1347 8.1 L1360 8.2 L1373 8.3 L1387 8.5 L1400 8.6 L1413 8.7 L1427 8.9 L1440 9.1 L1453 9.3 L1467 9.5 L1480 9.7 L1493 9.9 L1507 10.1 L1520 10.3 L1533 10.4 L1547 10.5 L1560 10.5 L1573 10.4 L1587 10.2 L1600 9.7 L1600 10.3 L1587 10.8 L1573 11.5 L1560 11.9 L1547 12.3 L1533 12.6 L1520 12.8 L1507 12.9 L1493 12.8 L1480 12.7 L1467 12.5 L1453 12.4 L1440 12.2 L1427 12.1 L1413 11.9 L1400 11.8 L1387 11.7 L1373 11.6 L1360 11.5 L1347 11.4 L1333 11.3 L1320 11.1 L1307 10.8 L1293 10.5 L1280 10.1 L1267 9.7 L1253 9.2 L1240 8.6 L1227 8.0 L1213 7.4 L1200 6.9 L1187 6.3 L1173 5.8 L1160 5.4 L1147 5.1 L1133 4.9 L1120 4.8 L1107 4.8 L1093 4.9 L1080 5.2 L1067 5.5 L1053 6.0 L1040 6.4 L1027 6.9 L1013 7.4 L1000 7.9 L987 8.4 L973 8.8 L960 9.2 L947 9.5 L933 9.8 L920 10.0 L907 10.2 L893 10.3 L880 10.5 L867 10.6 L853 10.7 L840 10.9 L827 11.1 L813 11.3 L800 11.5 L787 11.7 L773 12.0 L760 12.2 L747 12.4 L733 12.6 L720 12.7 L707 12.7 L693 12.6 L680 12.5 L667 12.2 L653 11.8 L640 11.3 L627 10.8 L613 10.2 L600 9.6 L587 8.9 L573 8.3 L560 7.7 L547 7.2 L533 6.7 L520 6.3 L507 6.1 L493 5.9 L480 5.8 L467 5.9 L453 6.0 L440 6.1 L427 6.4 L413 6.6 L400 6.8 L387 7.1 L373 7.3 L360 7.5 L347 7.6 L333 7.8 L320 7.9 L307 8.0 L293 8.1 L280 8.3 L267 8.4 L253 8.6 L240 8.9 L227 9.2 L213 9.6 L200 10.0 L187 10.5 L173 10.9 L160 11.4 L147 11.9 L133 12.4 L120 12.8 L107 13.1 L93 13.3 L80 13.4 L67 13.3 L53 13.1 L40 12.7 L27 12.3 L13 11.8 L0 11.3Z' fill='%23000'/%3E%3C/svg%3E") no-repeat left center / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='16' viewBox='0 0 1600 16' preserveAspectRatio='none'%3E%3Cpath d='M0 10.7 L13 11.2 L27 11.5 L40 11.7 L53 11.8 L67 11.7 L80 11.5 L93 11.3 L107 11.0 L120 10.6 L133 10.1 L147 9.6 L160 9.0 L173 8.4 L187 7.9 L200 7.3 L213 6.9 L227 6.4 L240 6.0 L253 5.7 L267 5.5 L280 5.2 L293 5.0 L307 4.9 L320 4.7 L333 4.6 L347 4.4 L360 4.2 L373 4.0 L387 3.8 L400 3.5 L413 3.3 L427 3.1 L440 2.9 L453 2.7 L467 2.7 L480 2.7 L493 2.8 L507 3.0 L520 3.3 L533 3.7 L547 4.2 L560 4.8 L573 5.5 L587 6.2 L600 6.9 L613 7.6 L627 8.3 L640 8.9 L653 9.5 L667 9.9 L680 10.3 L693 10.5 L707 10.6 L720 10.7 L733 10.7 L747 10.6 L760 10.4 L773 10.2 L787 10.0 L800 9.8 L813 9.6 L827 9.4 L840 9.3 L853 9.1 L867 9.0 L880 8.9 L893 8.7 L907 8.6 L920 8.4 L933 8.1 L947 7.8 L960 7.5 L973 7.1 L987 6.6 L1000 6.0 L1013 5.5 L1027 4.9 L1040 4.3 L1053 3.8 L1067 3.3 L1080 2.9 L1093 2.6 L1107 2.3 L1120 2.2 L1133 2.3 L1147 2.4 L1160 2.6 L1173 3.0 L1187 3.4 L1200 3.9 L1213 4.4 L1227 5.0 L1240 5.5 L1253 6.0 L1267 6.5 L1280 6.9 L1293 7.2 L1307 7.5 L1320 7.8 L1333 8.0 L1347 8.1 L1360 8.2 L1373 8.3 L1387 8.5 L1400 8.6 L1413 8.7 L1427 8.9 L1440 9.1 L1453 9.3 L1467 9.5 L1480 9.7 L1493 9.9 L1507 10.1 L1520 10.3 L1533 10.4 L1547 10.5 L1560 10.5 L1573 10.4 L1587 10.2 L1600 9.7 L1600 10.3 L1587 10.8 L1573 11.5 L1560 11.9 L1547 12.3 L1533 12.6 L1520 12.8 L1507 12.9 L1493 12.8 L1480 12.7 L1467 12.5 L1453 12.4 L1440 12.2 L1427 12.1 L1413 11.9 L1400 11.8 L1387 11.7 L1373 11.6 L1360 11.5 L1347 11.4 L1333 11.3 L1320 11.1 L1307 10.8 L1293 10.5 L1280 10.1 L1267 9.7 L1253 9.2 L1240 8.6 L1227 8.0 L1213 7.4 L1200 6.9 L1187 6.3 L1173 5.8 L1160 5.4 L1147 5.1 L1133 4.9 L1120 4.8 L1107 4.8 L1093 4.9 L1080 5.2 L1067 5.5 L1053 6.0 L1040 6.4 L1027 6.9 L1013 7.4 L1000 7.9 L987 8.4 L973 8.8 L960 9.2 L947 9.5 L933 9.8 L920 10.0 L907 10.2 L893 10.3 L880 10.5 L867 10.6 L853 10.7 L840 10.9 L827 11.1 L813 11.3 L800 11.5 L787 11.7 L773 12.0 L760 12.2 L747 12.4 L733 12.6 L720 12.7 L707 12.7 L693 12.6 L680 12.5 L667 12.2 L653 11.8 L640 11.3 L627 10.8 L613 10.2 L600 9.6 L587 8.9 L573 8.3 L560 7.7 L547 7.2 L533 6.7 L520 6.3 L507 6.1 L493 5.9 L480 5.8 L467 5.9 L453 6.0 L440 6.1 L427 6.4 L413 6.6 L400 6.8 L387 7.1 L373 7.3 L360 7.5 L347 7.6 L333 7.8 L320 7.9 L307 8.0 L293 8.1 L280 8.3 L267 8.4 L253 8.6 L240 8.9 L227 9.2 L213 9.6 L200 10.0 L187 10.5 L173 10.9 L160 11.4 L147 11.9 L133 12.4 L120 12.8 L107 13.1 L93 13.3 L80 13.4 L67 13.3 L53 13.1 L40 12.7 L27 12.3 L13 11.8 L0 11.3Z' fill='%23000'/%3E%3C/svg%3E") no-repeat left center / 100% 100%; }
+.ca-cell { font-size: clamp(14.5px,1.22vw,17px); font-weight: 400; line-height: 1.3; color: #373D42; }
+.ca-cell.ca-name { font-weight: 500; }
+.ca-empty { margin: clamp(28px,3vw,44px) 0 0; font-size: clamp(15px,1.2vw,17px); color: var(--ink-500,#6b7278); }
+.ca .fa-reset:hover { color: var(--chal); }
+/* Yellow text does not read on white: the button stays ink and its arrow turns yellow. */
+.ca .lm-btn:hover, .ca .lm-btn:focus-visible { color: #373d42; }
+.ca .lm-btn:hover .cta-arrow, .ca .lm-btn:focus-visible .cta-arrow { background-color: var(--chal); }
+@media (max-width: 780px){ .ca-row { grid-template-columns: 1fr 1fr; gap: 12px 24px; } }

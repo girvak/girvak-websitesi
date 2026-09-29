@@ -1,0 +1,68 @@
+/* ============================================================
+   All Fellows / All Alumni — the founders & ventures page's format, in the
+   cohort's own colour.
+
+   Ported from the design project's fellows-all.css and alumni-all.css. The
+   shell, filters, search box and flip cards come from ventures.css; this file
+   only holds what is particular to these two pages: the hero, the coloured
+   faces and the photo-filled front. Fellows are red, alumni override to indigo.
+   ============================================================ */
+.fa { --fellow: #BA1818; }
+.al { --fellow: #281858; }
+.al ::selection { background: #281858; color: #fff; }
+.al ::-moz-selection { background: #281858; color: #fff; }
+
+/* ---------- hero ---------- */
+.fa-hero { padding-top: clamp(140px,15vw,190px); padding-bottom: clamp(20px,2.4vw,32px); }
+.fa-hero-title { margin: 0; font-size: clamp(40px,6.4vw,75px); font-weight: 500; line-height: 1.04; letter-spacing: -0.035em; color: var(--ink-800); text-wrap: balance; }
+.fa-hero-title i { font-style: italic; color: var(--fellow); }
+.fa-hero-title .ch { transition: color .3s var(--ease-out); }
+.fa-hero-title .ch:hover { color: var(--fellow); }
+.fa-hero-title i .ch-inv { transition: color .3s var(--ease-out); }
+.fa-hero-title i .ch-inv:hover { color: #373d42; }
+.fa-hero-sub { margin: clamp(28px,3.4vw,46px) 0 0; padding-top: 25px; font-size: 20px; font-weight: 400; line-height: 1.5; color: var(--ink-800); text-wrap: pretty; }
+.fa-hero-sub em { font-style: italic; color: var(--fellow); }
+
+/* ---------- filters keep the fv geometry, in indigo, with a reset control ---------- */
+.fa .fv-filters { margin-top: clamp(34px,4.4vw,64px); align-items: center; }
+.fa .fv-fbtn:hover { color: var(--fv-filter-fill, var(--fellow)); }
+.fa .fv-filter.has-val .fv-fbtn { color: var(--fv-filter-fill, var(--fellow)); }
+.fa .fv-opt.is-on { color: var(--fv-filter-fill, var(--fellow)); }
+.fa .fv-opt:hover, .fa .fv-opt.is-on:hover { color: var(--fv-opt-fill, var(--fellow)); }
+.fa .fa-reset:hover { color: var(--fellow); }
+.fa .ca-input:focus { --accent: var(--fellow); }
+
+/* ---------- cards: same dimensions, radius and flip as fv; indigo faces ---------- */
+.fa .fv-grid { margin-top: clamp(58px,7vw,104px); padding-bottom: 0; }
+.fa .fv-front, .fa .fv-back { background: var(--fellow); }
+.fa a.fv-card:focus-visible { outline-color: var(--fellow); }
+.fa .fv-front img.fv-photo { width: 100%; height: 100%; object-fit: cover; object-position: center top; align-self: stretch; }
+.fa .fv-band { background: linear-gradient(to top, color-mix(in srgb, var(--fellow) 82%, transparent) 42%, transparent); padding: clamp(26px,8%,38px) 14px 13px; }
+.fa .fv-frontname { font-weight: 500; font-size: clamp(14px,1.12vw,16px); text-shadow: none; }
+.fa .fv-card.no-photo .fv-front { align-items: center; }
+.fa .fv-card.no-photo .fv-frontname { font-size: clamp(19px,1.12vw,21px); }
+.fa .fv-card.no-photo .fv-band { position: static; background: none; padding: 0 16px; text-align: center; }
+.fa .fv-back { padding: clamp(16px,1.7vw,24px); }
+.fa .fv-back-mid { gap: 7px; }
+.fa .fv-name { font-size: clamp(15px,1.25vw,18px); font-weight: 700; }
+.fa .fv-uni { display: block; font-size: clamp(12.5px,1.05vw,14.5px); font-weight: 500; line-height: 1.25; }
+.fa .fv-dept { display: block; font-size: clamp(11.5px,.98vw,13.5px); font-weight: 400; line-height: 1.25; opacity: .92; }
+
+/* ---------- load more ----------
+   The button and the "showing 24 of 405" line under the list. `.lm` also carries
+   the space the grid's own bottom padding used to, so the page ends the same
+   whether or not there is a button. */
+.lm { display: flex; flex-direction: column; align-items: center; gap: clamp(14px,1.6vw,22px);
+  padding: clamp(40px,4.6vw,66px) 0 clamp(60px,7vw,110px); }
+.lm-status { margin: 0; font-size: clamp(14px,1.15vw,16px); color: var(--ink-500, #6b7278); }
+.lm-status:focus { outline: none; }
+.lm-btn { cursor: pointer; padding: clamp(18px,1.8vw,24px) 0; }
+.lm-btn[hidden] { display: none; }
+/* The site's one arrow, turned to point down: the list grows below the button. */
+.lm-btn .cta-arrow { width: clamp(44px,4.4vw,62px); height: clamp(14px,1.4vw,20px); transform: rotate(90deg); }
+.lm-btn:hover .cta-arrow, .lm-btn:focus-visible .cta-arrow { transform: rotate(90deg) translateX(7px); }
+.fa .lm-btn:hover, .fa .lm-btn:focus-visible { color: var(--fellow); }
+
+/* Cards revealed by "load more" rise in one after another, like a tab swap. */
+.lm-new { animation: fvIn .46s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 24ms); }
+@media (prefers-reduced-motion: reduce) { .lm-new { animation: none; } }

@@ -63,6 +63,11 @@ npm run dev               # http://localhost:4321
 The dev server proxies `/api` and `/media` to the API, which is how production
 serves them too — so the browser never learns the API's hostname.
 
+If the API is not on port 8000, start the site with `API_BASE_URL` set on the
+command line (`API_BASE_URL=http://127.0.0.1:8001 npm run dev`): the proxy reads
+it before Astro loads `.env`, so the `.env` entry does not reach it. See
+[showcase-pages.md](showcase-pages.md#running-it-locally).
+
 Production-style check:
 
 ```bash

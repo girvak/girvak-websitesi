@@ -32,7 +32,7 @@
     { "name": "The whole ecosystem", "desc": "access to Türkiye's innovation ecosystem and a powerful alumni network", "image": "/images/wte-ecosystem.jpg", "cap": "cap-bottom cap-right" }
   ],
   "fellows_headline": "meet the fellows",
-  "fellows_cta": { "label": "see all", "href": "/fellow-program#fellows" },
+  "fellows_cta": { "label": "see all", "href": "/fellows" },
   "alumni_headline": "once a fellow, always a fellow",
   "alumni_headline_html": "once a fellow, <span class=\"falum-em\">always</span> a fellow.",
   "alumni_intro": "Becoming a fellow isn't a two-year chapter. It's the start of a select, lifelong network of people who get you, grow with you, and have your back, always.",
@@ -45,7 +45,7 @@
     "Free event tickets and corporate tech perks",
     "Visibility and curated access to high-level conferences, acceleration programs, and funding opportunities"
   ],
-  "alumni_cta": { "label": "meet our alumni", "href": "/fellow-program#alumni" },
+  "alumni_cta": { "label": "meet our alumni", "href": "/alumni" },
   "giveback_headline": "because when one gives back, everyone moves forward.",
   "giveback_headline_html": "because when one gives back, everyone moves <span class=\"fbecause-em\">forward.</span>",
   "giveback_lead": "1 ₺ invested, the program generates 21 ₺ of social value.",
@@ -86,5 +86,5 @@
     { "text": "Grow curiosity, creativity, and critical thinking skills", "image": "/images/chal-5-spark.png" }
   ],
   "challengers_headline": "meet the challengers",
-  "challengers_cta": { "label": "see all", "href": "/fellow-program#challengers" }
+  "challengers_cta": { "label": "see all", "href": "/challengers" }
 }
