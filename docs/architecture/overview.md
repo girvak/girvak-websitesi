@@ -69,16 +69,30 @@ Three layers, each with one job:
 
 1. **Content snapshot** (backend, in process) — Airtable rows mapped to page
    models, held for `CONTENT_TTL_SECONDS`. Protects Airtable's rate limit and
-   makes a page render one dict lookup.
+   makes a page render one dict lookup. **No visitor waits on Airtable once a
+   page has been built:** every snapshot is filled behind the process start
+   (`warm_up`), and when one runs out of TTL the last good copy is answered at
+   once while one rebuild runs behind the request. A cold read of the home page
+   or the ventures directory is 4–6 seconds of Airtable, longer than the site
+   waits for the API (5 s), so without this every deploy and every TTL expiry
+   handed that wait — or a `500` — to one visitor.
 2. **HTTP** — `ETag` + `304` on content responses; `Cache-Control` with a short
    `max-age` and `stale-while-revalidate`. `/media` is immutable.
 3. **Page HTML** (frontend, in process) — rendered HTML held for a short TTL, so
    a burst of visitors costs one API call.
 
 Invalidation: TTL expiry, or `POST /v1/content/refresh` for "publish now".
-Both are safe because no response is visitor-specific.
+Both are safe because no response is visitor-specific. They differ in one way
+that matters: after TTL expiry a visitor may see the previous copy for the
+length of one request while it rebuilds; after a refresh the next request
+**waits** for Airtable and gets what it holds now, because the operator asked
+for exactly that. A rebuild that fails leaves the last copy in place and is not
+retried for 30 seconds, so an outage costs one attempt per interval, not one per
+visitor.
 
-MUST NOT: a cache layer that outlives its TTL with no way to clear it.
+MUST NOT: a cache layer that outlives its TTL with no way to clear it. (The last
+copy handed over after expiry is replaced by the rebuild behind that request, and
+`refresh` drops it.)
 
 ## External systems in use today
 

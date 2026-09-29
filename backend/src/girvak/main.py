@@ -14,8 +14,9 @@ Calls: config/, shared/logging/, infra/db/session.py, http/*
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +34,7 @@ from girvak.infra.cache.snapshot import dispose_cache, init_cache
 from girvak.infra.db.session import dispose_engine, init_engine
 from girvak.infra.storage.media_mirror import dispose_mirror, init_mirror
 from girvak.modules.content.router import router as content_router
+from girvak.modules.content.service import build_service, warm_up
 from girvak.modules.newsletter.router import router as newsletter_router
 from girvak.shared.logging import LoggerName, configure_logging, get_logger, shutdown_logging
 
@@ -58,9 +60,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "api_started",
         extra={"environment": settings.environment, "content_source": settings.content.source},
     )
+    # Fill the content snapshots behind the start, not in front of it: the first
+    # visitor after a deploy should not be the one who waits on Airtable.
+    warming = (
+        asyncio.create_task(warm_up(build_service(settings)))
+        if settings.content.source == "airtable"
+        else None
+    )
     try:
         yield
     finally:
+        if warming is not None:
+            warming.cancel()
+            with suppress(asyncio.CancelledError):
+                await warming
         await dispose_client()
         await dispose_engine()
         dispose_cache()

@@ -6,6 +6,12 @@ Purpose: The one way a page gets its content. Reads Airtable at most once per
          committed seed. Sending anything back to Airtable is not done here —
          this side of the system only reads.
 
+         No visitor waits on Airtable once a page has been built. The snapshots
+         are filled when the process starts (`warm_up`), and when one runs out
+         of TTL the last good copy is handed over at once while a single rebuild
+         runs behind the request. Only an operator's refresh, which asked for
+         what Airtable holds now, waits for the read.
+
 Dependencies:
     - Settings: source, TTL, table names, spotlight size
     - SnapshotCache: the per-process snapshot
@@ -19,13 +25,16 @@ Calls: infra/airtable/client.py, infra/cache/snapshot.py,
 
 from __future__ import annotations
 
+import asyncio
+import time
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol, TypeVar, cast
 
 from girvak.config import Settings
 from girvak.infra.airtable.client import AirtableRecord
-from girvak.infra.cache.snapshot import SnapshotCache
-from girvak.infra.storage.media_mirror import AttachmentRef, MediaMirror
+from girvak.infra.airtable.client import client as airtable_client
+from girvak.infra.cache.snapshot import SnapshotCache, cache
+from girvak.infra.storage.media_mirror import AttachmentRef, MediaMirror, mirror
 from girvak.modules.content import about as about_page
 from girvak.modules.content import fellow as fellow_page
 from girvak.modules.content import home as home_page
@@ -58,6 +67,20 @@ PEOPLE_KEY = "people"
 VENTURES_KEY = "ventures"
 
 ValueT = TypeVar("ValueT")
+
+# After a rebuild fails, the last good copy stays the answer for this long before
+# Airtable is tried again — so an outage costs one attempt per interval, not one
+# per visitor.
+_RETRY_AFTER_FAILURE_SECONDS = 30
+
+# Rebuilds running behind a request. Held here because the event loop keeps only
+# a weak reference to a task, and a rebuild must not be collected half way.
+_background: set[asyncio.Task[None]] = set()
+
+
+def pending_revalidations() -> list[asyncio.Task[None]]:
+    """Rebuilds still running behind a request. Read by tests and diagnostics."""
+    return list(_background)
 
 
 class RecordSource(Protocol):
@@ -139,7 +162,7 @@ class ContentService:
 
         The whole directory is mapped once per TTL and the filter and page
         number are applied to that snapshot, so paging and filtering cost
-        Airtable nothing — only the first request after a TTL expiry reads it.
+        Airtable nothing — and no visitor waits for the read that refills it.
 
         Args:
             kind: Which tab to page through — `ventures` or `founders`.
@@ -184,6 +207,16 @@ class ContentService:
         if cached is not None:
             return cached
 
+        # Past its TTL but built before: answer with it now and rebuild behind
+        # the request, so no visitor waits on Airtable. A first-ever build (or
+        # one an operator just asked for) has nothing to hand over and waits.
+        stale = cast(ValueT | None, self._cache.get_stale(key))
+        if stale is not None:
+            task = asyncio.create_task(self._rebuild_behind(key, build))
+            _background.add(task)
+            task.add_done_callback(_background.discard)
+            return stale
+
         async with self._cache.lock(key):
             # Another request may have filled it while this one waited.
             cached = cast(ValueT | None, self._cache.get(key))
@@ -203,6 +236,32 @@ class ContentService:
             self._cache.set(key, value)
             self._cache.set_fallback(key, value)
             return value
+
+    async def _rebuild_behind(self, key: str, build: Callable[[], Awaitable[ValueT]]) -> None:
+        """Rebuild one snapshot after its TTL ran out, with nobody waiting.
+
+        Under the key's lock and re-checked inside it, so a burst of requests
+        that all saw the expiry does one read between them.
+        """
+        async with self._cache.lock(key):
+            if self._cache.get(key) is not None:
+                return
+            try:
+                value = await build()
+            except Exception as exc:
+                # Whatever went wrong, the last good copy is still the answer.
+                # Keep it fresh for a short while so the next visitors do not each
+                # trigger another read of a source that just failed.
+                stale = self._cache.get_fallback(key)
+                _logger.warning(
+                    "content_rebuild_failed",
+                    extra={"page": key, "served": "stale", "reason": str(exc)},
+                )
+                if stale is not None:
+                    self._cache.set(key, stale, ttl=_RETRY_AFTER_FAILURE_SECONDS)
+                return
+            self._cache.set(key, value)
+            self._cache.set_fallback(key, value)
 
     def _media_urls(self, refs: list[AttachmentRef]) -> dict[str, str]:
         """URLs for a set of attachments, without waiting on any download.
@@ -307,6 +366,43 @@ class ContentService:
             if person.photo
         ]
         return people_page.spotlight(pool, SPOTLIGHT_COUNT)
+
+
+def build_service(settings: Settings) -> ContentService:
+    """The service, wired to the process's cache, media mirror and Airtable client."""
+    return ContentService(settings, cache(), mirror(), airtable_client())
+
+
+async def warm_up(service: ContentService) -> None:
+    """Fill every snapshot, so the first visitor after a start waits for nothing.
+
+    A cold read of the home page or the ventures directory is several seconds of
+    Airtable — longer than the site is willing to wait — and every deploy would
+    otherwise hand that to whoever arrives first. Run behind the process start,
+    not in front of it: the API answers health checks while this works, and a
+    page requested in the meantime simply waits on the same rebuild.
+
+    One page at a time, in an order where the home belt finds the people it
+    samples already built, to stay well inside Airtable's request rate. A page
+    that fails is logged and skipped; the others still fill.
+
+    Args:
+        service: The service to fill.
+    """
+    started = time.monotonic()
+    pages: tuple[tuple[str, Callable[[], Awaitable[object]]], ...] = (
+        (PEOPLE_KEY, service.people),
+        (HOME_KEY, service.home),
+        (ABOUT_KEY, service.about),
+        (FELLOW_KEY, service.fellow_program),
+        (VENTURES_KEY, service.ventures),
+    )
+    for name, read in pages:
+        try:
+            await read()
+        except Exception as exc:
+            _logger.warning("content_warm_failed", extra={"page": name, "reason": str(exc)})
+    _logger.info("content_warmed", extra={"seconds": round(time.monotonic() - started, 1)})
 
 
 def _empty_ventures() -> VenturesData:

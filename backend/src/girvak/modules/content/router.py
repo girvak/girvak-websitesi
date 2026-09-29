@@ -25,9 +25,6 @@ from starlette.responses import JSONResponse
 
 from girvak.config import Settings
 from girvak.http.deps import SettingsDep, require_admin
-from girvak.infra.airtable.client import client as airtable_client
-from girvak.infra.cache.snapshot import cache
-from girvak.infra.storage.media_mirror import mirror
 from girvak.modules.content.schemas import (
     AboutContent,
     FellowContent,
@@ -35,7 +32,7 @@ from girvak.modules.content.schemas import (
     PeopleContent,
     VenturesContent,
 )
-from girvak.modules.content.service import ContentService
+from girvak.modules.content.service import ContentService, build_service
 from girvak.modules.content.ventures import DEFAULT_PER_PAGE, Kind
 
 router = APIRouter(prefix="/v1/content", tags=["content"])
@@ -47,7 +44,7 @@ _MAX_QUERY_LENGTH = 100
 
 
 def _service(settings: Settings) -> ContentService:
-    return ContentService(settings, cache(), mirror(), airtable_client())
+    return build_service(settings)
 
 
 @router.get("/home", response_model=HomeContent, summary="Home page content")
