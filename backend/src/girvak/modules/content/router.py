@@ -17,8 +17,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 
@@ -32,10 +33,17 @@ from girvak.modules.content.schemas import (
     FellowContent,
     HomeContent,
     PeopleContent,
+    VenturesContent,
 )
 from girvak.modules.content.service import ContentService
+from girvak.modules.content.ventures import DEFAULT_PER_PAGE, Kind
 
 router = APIRouter(prefix="/v1/content", tags=["content"])
+
+# A filter longer than this is not a visitor narrowing a directory of a few
+# dozen ventures; it is a query string someone is leaning on.
+_MAX_FILTER_VALUES = 32
+_MAX_QUERY_LENGTH = 100
 
 
 def _service(settings: Settings) -> ContentService:
@@ -64,6 +72,35 @@ async def fellow(request: Request, settings: SettingsDep) -> Response:
 async def people(request: Request, settings: SettingsDep) -> Response:
     """Trustees, directors, team, fellows, alumni, and challengers."""
     return _page(request, await _service(settings).people(), settings)
+
+
+@router.get("/ventures", response_model=VenturesContent, summary="Founders & ventures page")
+async def ventures(
+    request: Request,
+    settings: SettingsDep,
+    kind: Annotated[Kind, Query(description="Which tab to page through")] = "ventures",
+    sector: Annotated[list[str], Query(description="Sector slug; repeat to widen")] = [],  # noqa: B006
+    program: Annotated[list[str], Query(description="Programme slug; repeat to widen")] = [],  # noqa: B006
+    year: Annotated[list[str], Query(description="Cohort key `26`; repeat to widen")] = [],  # noqa: B006
+    q: Annotated[str, Query(description="Free text over name, description, founders")] = "",
+    page: Annotated[int, Query(description="1-based; past the end clamps")] = 1,
+    per_page: Annotated[int, Query(description="Cards per page; capped")] = DEFAULT_PER_PAGE,
+) -> Response:
+    """One page of `/founders-ventures`.
+
+    Filtering and paging read the snapshot, never Airtable, so the ETag changes
+    only when the filter does or when the snapshot is rebuilt.
+    """
+    payload = await _service(settings).ventures(
+        kind=kind,
+        sectors=sector[:_MAX_FILTER_VALUES],
+        programs=program[:_MAX_FILTER_VALUES],
+        years=year[:_MAX_FILTER_VALUES],
+        q=q[:_MAX_QUERY_LENGTH],
+        page=page,
+        per_page=per_page,
+    )
+    return _page(request, payload, settings)
 
 
 @router.post(

@@ -304,3 +304,154 @@ class FellowContent(_Frozen):
 
     challengers_headline: str = ""
     challengers_cta: FellowCta = FellowCta()
+
+
+class VentureFounder(_Frozen):
+    """One founder of a venture, as the card shows them."""
+
+    name: str
+    title: str = ""
+    photo: str = ""
+    linkedin: str = ""
+    # Cohort year, already rendered the way the cards print it: `’26`.
+    year: str = ""
+
+
+class Venture(_Frozen):
+    """One row of the Airtable `ventures` table, with its links resolved.
+
+    `sectors` and `programs` hold slugs (what a filter matches on) alongside the
+    labels the card prints, so the browser never sees an Airtable record id.
+    """
+
+    slug: str
+    name: str
+    description: str = ""
+    description_tr: str = ""
+    website: str = ""
+    # The cohort the venture is shown under — its founders'. Ventures have no
+    # year of their own in the base.
+    year: str = ""
+    logo: str = ""
+    logo_white: str = ""
+    sectors: list[str] = []
+    sector_slugs: list[str] = []
+    programs: list[str] = []
+    program_slugs: list[str] = []
+    founders: list[VentureFounder] = []
+
+
+class FounderCard(_Frozen):
+    """One card on the page's founders tab.
+
+    Built from a `people` row tagged `founder` — the same way trustees and
+    fellows are built — not from the venture link. Most founders have no
+    venture on the site yet; they are founders all the same.
+    """
+
+    slug: str
+    name: str
+    year: str = ""
+    photo: str = ""
+    linkedin: str = ""
+    # The company printed under the name: their published venture, falling back
+    # to the person's own `organisation`. Empty when neither is set.
+    venture: str = ""
+    # Set only when that company is a published venture, so the card can link.
+    venture_slug: str = ""
+    # Where clicking the card goes — their venture's site. Empty means the card
+    # is not a link.
+    website: str = ""
+    sectors: list[str] = []
+    sector_slugs: list[str] = []
+    programs: list[str] = []
+    program_slugs: list[str] = []
+
+
+class Facet(_Frozen):
+    """One filter choice, with how many ventures it would leave."""
+
+    value: str
+    label: str
+    count: int
+
+
+class PageInfo(_Frozen):
+    """Where the visitor is in the result set."""
+
+    page: int
+    per_page: int
+    total: int
+    total_pages: int
+    has_prev: bool
+    has_next: bool
+
+
+class VenturesQuery(_Frozen):
+    """The filter and page the response was built for, echoed back.
+
+    The page renders its own controls from this, so a link the visitor shares
+    reopens exactly the view they were looking at.
+    """
+
+    sectors: list[str] = []
+    programs: list[str] = []
+    years: list[str] = []
+    q: str = ""
+
+
+class VenturesCopy(_Frozen):
+    """The page's own words. Everything here comes from the committed seed.
+
+    Kept apart from the records so the two can move independently: the ventures
+    themselves are Airtable's, this text is the repository's.
+    """
+
+    seo: SEO
+    headline: str = ""
+    # The headline again, with the design's italic clause marked up.
+    headline_html: str = ""
+    intro: str = ""
+    tab_founders: str = "founders"
+    tab_ventures: str = "ventures"
+    filter_sector_label: str = "sector"
+    filter_program_label: str = "program"
+    filter_year_label: str = "year"
+    filter_all_sectors: str = "all sectors"
+    filter_all_programs: str = "all programs"
+    filter_all_years: str = "all years"
+    reset_label: str = "clear filters"
+    search_label: str = "search"
+    search_placeholder: str = "type a name"
+    empty_text: str = ""
+
+
+class VenturesContent(_Frozen):
+    """The founders & ventures page: copy, one page of ventures, and the facets."""
+
+    seo: SEO
+    headline: str = ""
+    headline_html: str = ""
+    intro: str = ""
+    tab_founders: str = "founders"
+    tab_ventures: str = "ventures"
+    filter_sector_label: str = "sector"
+    filter_program_label: str = "program"
+    filter_year_label: str = "year"
+    filter_all_sectors: str = "all sectors"
+    filter_all_programs: str = "all programs"
+    filter_all_years: str = "all years"
+    reset_label: str = "clear filters"
+    search_label: str = "search"
+    search_placeholder: str = "type a name"
+    empty_text: str = ""
+
+    # Which list `items`/`founders` and `page` describe.
+    kind: Literal["ventures", "founders"] = "ventures"
+    items: list[Venture] = []
+    founders: list[FounderCard] = []
+    page: PageInfo
+    sectors: list[Facet] = []
+    programs: list[Facet] = []
+    years: list[Facet] = []
+    selected: VenturesQuery = VenturesQuery()

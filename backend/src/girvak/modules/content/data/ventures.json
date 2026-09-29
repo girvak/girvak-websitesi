@@ -1,0 +1,21 @@
+{
+  "seo": {
+    "title": "Founders & Ventures — GİRVAK",
+    "description": "Meet the ventures built by GİRVAK founders and fellows, from early ideas to companies scaling globally."
+  },
+  "headline": "those who create impact.",
+  "headline_html": "those who create <i>impact.</i>",
+  "intro": "Meet the ventures built by our founders and fellows, from early ideas to companies scaling globally.",
+  "tab_founders": "founders",
+  "tab_ventures": "ventures",
+  "filter_sector_label": "sector",
+  "filter_program_label": "program",
+  "filter_year_label": "year",
+  "filter_all_sectors": "all sectors",
+  "filter_all_programs": "all programs",
+  "filter_all_years": "all years",
+  "reset_label": "clear filters",
+  "search_label": "search",
+  "search_placeholder": "type a name",
+  "empty_text": "Nothing matches just yet. Try tweaking your filters and see what turns up."
+}

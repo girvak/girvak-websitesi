@@ -19,7 +19,7 @@ Calls: infra/airtable/client.py, infra/cache/snapshot.py,
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol, TypeVar, cast
 
 from girvak.config import Settings
@@ -31,6 +31,7 @@ from girvak.modules.content import fellow as fellow_page
 from girvak.modules.content import home as home_page
 from girvak.modules.content import people as people_page
 from girvak.modules.content import seeds
+from girvak.modules.content import ventures as ventures_page
 from girvak.modules.content.fragments import FULL, LARGE, Fragments, collect_refs, logo_refs
 from girvak.modules.content.schemas import (
     AboutContent,
@@ -38,7 +39,9 @@ from girvak.modules.content.schemas import (
     FellowContent,
     HomeContent,
     PeopleContent,
+    VenturesContent,
 )
+from girvak.modules.content.ventures import VenturesData
 from girvak.shared.errors import ServiceUnavailableError
 from girvak.shared.logging import LoggerName, get_logger
 
@@ -52,6 +55,7 @@ HOME_KEY = "home"
 ABOUT_KEY = "about"
 FELLOW_KEY = "fellow"
 PEOPLE_KEY = "people"
+VENTURES_KEY = "ventures"
 
 ValueT = TypeVar("ValueT")
 
@@ -119,6 +123,47 @@ class ContentService:
             empty state rather than inventing names.
         """
         return await self._snapshot(PEOPLE_KEY, self._build_people, _empty_people)
+
+    async def ventures(
+        self,
+        *,
+        kind: ventures_page.Kind = "ventures",
+        sectors: Sequence[str] = (),
+        programs: Sequence[str] = (),
+        years: Sequence[str] = (),
+        q: str = "",
+        page: int = 1,
+        per_page: int = ventures_page.DEFAULT_PER_PAGE,
+    ) -> VenturesContent:
+        """One page of one tab of the founders & ventures directory.
+
+        The whole directory is mapped once per TTL and the filter and page
+        number are applied to that snapshot, so paging and filtering cost
+        Airtable nothing — only the first request after a TTL expiry reads it.
+
+        Args:
+            kind: Which tab to page through — `ventures` or `founders`.
+            sectors: Sector slugs to keep; empty means every sector.
+            programs: Programme slugs to keep; empty means every programme.
+            years: Cohort keys (`26`) to keep; empty means every cohort.
+            q: Free text over name, description and founder names.
+            page: 1-based page number, clamped to the last page.
+            per_page: Cards per page, capped by the mapping.
+
+        Returns:
+            The page payload, with facet counts and the echoed filter.
+        """
+        data = await self._snapshot(VENTURES_KEY, self._build_ventures, _empty_ventures)
+        return ventures_page.select(
+            data,
+            kind=kind,
+            sectors=sectors,
+            programs=programs,
+            years=years,
+            q=q,
+            page=page,
+            per_page=per_page,
+        )
 
     def refresh(self) -> None:
         """Drop the snapshots so the next request re-reads Airtable.
@@ -211,6 +256,22 @@ class ContentService:
         media = self._media_urls(collect_refs(records, FULL))
         return fellow_page.build(seed, Fragments(records, media))
 
+    async def _build_ventures(self) -> VenturesData:
+        copy = seeds.ventures()
+        if self._client is None:
+            return VenturesData(copy=copy, items=(), founders=())
+
+        tables = self._settings.airtable
+        venture_records = await self._client.list_records(tables.table_ventures)
+        sector_records = await self._client.list_records(tables.table_sectors)
+        program_records = await self._client.list_records(tables.table_programs)
+        people_records = await self._client.list_records(tables.table_people)
+
+        media = self._media_urls(ventures_page.media_refs(venture_records, people_records))
+        return ventures_page.build(
+            copy, venture_records, sector_records, program_records, people_records, media
+        )
+
     async def _build_people(self) -> PeopleContent:
         if self._client is None:
             return _empty_people()
@@ -246,6 +307,10 @@ class ContentService:
             if person.photo
         ]
         return people_page.spotlight(pool, SPOTLIGHT_COUNT)
+
+
+def _empty_ventures() -> VenturesData:
+    return VenturesData(copy=seeds.ventures(), items=(), founders=())
 
 
 def _empty_people() -> PeopleContent:

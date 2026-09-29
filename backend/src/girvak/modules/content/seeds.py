@@ -16,7 +16,12 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from girvak.modules.content.schemas import AboutContent, FellowContent, HomeContent
+from girvak.modules.content.schemas import (
+    AboutContent,
+    FellowContent,
+    HomeContent,
+    VenturesCopy,
+)
 
 _DATA_DIR = Path(__file__).parent / "data"
 
@@ -49,6 +54,20 @@ def fellow() -> FellowContent:
         Seed content, parsed once per process.
     """
     return FellowContent.model_validate(_read("fellow.json"))
+
+
+@lru_cache(maxsize=1)
+def ventures() -> VenturesCopy:
+    """The shipped founders & ventures copy.
+
+    Only the page's words: the ventures themselves are Airtable's, and there is
+    no seed list of them — an outage with no snapshot shows the empty state
+    rather than a stale directory of companies.
+
+    Returns:
+        Seed copy, parsed once per process.
+    """
+    return VenturesCopy.model_validate(_read("ventures.json"))
 
 
 def _read(name: str) -> object:

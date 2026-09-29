@@ -10,7 +10,15 @@
  */
 
 import { apiBaseUrl, pageCacheSeconds } from './env';
-import type { AboutContent, FellowContent, HomeContent, PeopleContent } from './types';
+import type {
+  AboutContent,
+  FellowContent,
+  HomeContent,
+  PeopleContent,
+  FounderCard,
+  Venture,
+  VenturesContent,
+} from './types';
 
 interface Entry<T> {
   value: T;
@@ -38,6 +46,39 @@ export async function getFellowContent(): Promise<FellowContent> {
 export async function getPeople(): Promise<PeopleContent> {
   return read<PeopleContent>('/v1/content/people');
 }
+
+/**
+ * Both tabs of the founders & ventures directory, whole.
+ *
+ * The page filters client-side — the design flips between a founders tab and a
+ * ventures tab over one grid — so every card has to be in the HTML. The API
+ * paginates each tab separately (a few dozen ventures against a few hundred
+ * founders), so this walks both rather than asking for an unbounded list.
+ */
+export async function getVentures(): Promise<VenturesContent> {
+  const [ventures, founders] = await Promise.all([
+    walk<Venture>('ventures', (payload) => payload.items),
+    walk<FounderCard>('founders', (payload) => payload.founders),
+  ]);
+  return { ...ventures.first, items: ventures.all, founders: founders.all };
+}
+
+/** Read one tab page by page, collecting the list the caller names. */
+async function walk<T>(
+  kind: 'ventures' | 'founders',
+  pick: (payload: VenturesContent) => T[],
+): Promise<{ first: VenturesContent; all: T[] }> {
+  const path = `/v1/content/ventures?kind=${kind}&per_page=${VENTURES_PER_PAGE}`;
+  const first = await read<VenturesContent>(path);
+  const all: T[] = [...pick(first)];
+  for (let page = 2; page <= first.page.total_pages; page += 1) {
+    all.push(...pick(await read<VenturesContent>(`${path}&page=${page}`)));
+  }
+  return { first, all };
+}
+
+/** The API's own ceiling. Asking for more is silently reduced to this. */
+const VENTURES_PER_PAGE = 48;
 
 /**
  * Fetch one content path.

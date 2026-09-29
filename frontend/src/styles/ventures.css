@@ -1,0 +1,193 @@
+/* ============================================================
+   GİRVAK — Founders & Ventures
+   Ported from the design project's fv.css, fv-reset.css and
+   search-box.css, plus the two page-shell rules this page uses
+   from apply.css (.ap / .ap-edge).
+
+   Two changes from the source, both deliberate:
+   - image paths are absolute (/images/...), because this repo's
+     CSS is bundled from src/styles while assets are served from
+     public/ — the same convention home.css already follows;
+   - the three mask shapes (caret, option circle, tab underline)
+     are inline SVG rather than PNG. They are tinted with
+     currentColor and never seen at their own size, so a vector
+     mask is the same picture with no binary asset to ship.
+   ============================================================ */
+
+/* ---------- page shell (from apply.css) ---------- */
+.ap { background: #fff; color: var(--ink-800); }
+.ap-edge { padding-left: clamp(20px,5vw,80px); padding-right: clamp(20px,5vw,80px); }
+
+/* ---------- hero ---------- */
+.fv-hero { padding-top: clamp(140px,15vw,190px); padding-bottom: clamp(20px,2.4vw,32px); }
+.fv-hero-title { margin: 0; font-size: clamp(40px,6.4vw,75px); font-weight: 500; line-height: 1.04; letter-spacing: -0.035em; color: var(--ink-800); text-wrap: balance; }
+.fv-hero-title i { font-style: italic; color: var(--turquoise); }
+.fv-hero-title .ch { transition: color .3s var(--ease-out); }
+.fv-hero-title .ch:hover { color: var(--turquoise); }
+.fv-hero-title i .ch-inv { transition: color .3s var(--ease-out); }
+.fv-hero-title i .ch-inv:hover { color: #373d42; }
+.fv-hero-sub { margin: clamp(28px,3.4vw,46px) 0 0; font-size: clamp(15px,1.28vw,19px); font-weight: 400; line-height: 1.5; color: var(--ink-800); text-wrap: pretty; }
+
+/* ---------- tabs ---------- */
+.fv-tabs { display: flex; gap: clamp(22px,3vw,44px); margin-top: clamp(30px,3.6vw,52px); }
+.fv-tab { appearance: none; background: none; border: 0; padding: 0 0 10px; cursor: pointer; font: inherit;
+  font-size: clamp(20px,2.1vw,28px); font-weight: 500; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--ink-300, #BFC3C7); position: relative; transition: color .25s var(--ease-out); }
+.fv-tab::after { content: ""; position: absolute; left: -6px; right: -8px; bottom: 2px; height: 4px; background-color: var(--fv-tab-fill, var(--coral));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='12' viewBox='0 0 280 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7C70 2 150 11 215 5s58 3 62 1' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='12' viewBox='0 0 280 12' preserveAspectRatio='none'%3E%3Cpath d='M3 7C70 2 150 11 215 5s58 3 62 1' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  transform: scaleX(0); transform-origin: left; transition: transform .38s var(--ease-out); }
+.fv-tab:hover { color: var(--fv-tabhover-fill, var(--turquoise)); }
+.fv-tab.is-on { color: var(--fv-tab-fill, var(--coral)); }
+.fv-tab.is-on::after { transform: scaleX(1); }
+
+/* ---------- filters ---------- */
+.fv-filters { display: flex; flex-wrap: wrap; gap: 0; align-items: center; margin-top: clamp(20px,2.2vw,32px); }
+.fv-filters .fv-filter { margin-right: clamp(34px,6vw,96px); }
+.fv-filters .fv-filter[data-key="year"] { margin-left: 0; }
+.fv-filters .fv-filter:first-child { margin-right: clamp(34px,6vw,96px); }
+.fv-filter { position: relative; }
+.fv-fbtn { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  display: flex; align-items: center; gap: 13px; font-size: clamp(18px,1.7vw,23px); font-weight: 400;
+  letter-spacing: -0.015em; color: var(--ink-800); white-space: nowrap; transition: color .22s var(--ease-out); }
+.fv-fbtn > .fv-fbtn-label { white-space: nowrap; }
+.fv-filters .fv-filter[data-key="sector"] .fv-fbtn > .fv-fbtn-label { max-width: none; }
+.fv-fbtn:hover { color: var(--fv-filter-fill, var(--turquoise)); }
+.fv-caret { width: 19px; height: 17px; flex: none; background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Cpath d='M2 3c4.2 3.1 7.2 5.6 9.8 7.6 2.8-2.3 6-4.9 10.2-8.2' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 14'%3E%3Cpath d='M2 3c4.2 3.1 7.2 5.6 9.8 7.6 2.8-2.3 6-4.9 10.2-8.2' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+  transition: transform .28s var(--ease-out); }
+.fv-filter.is-open .fv-caret { transform: rotate(180deg); }
+.fv-filter.has-val .fv-fbtn { color: var(--fv-filter-fill, var(--turquoise)); }
+.fv-menu { position: absolute; top: calc(100% + 12px); left: 0; z-index: 40; min-width: 250px; max-height: min(58vh, 420px); overflow-y: auto;
+  background: #fff; border: 1px solid var(--ink-200, #E2E4E7); border-radius: 5px; box-shadow: 0 16px 40px rgba(27,31,34,.13);
+  padding: 8px; display: flex; flex-direction: column;
+  opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .22s var(--ease-out), transform .28s var(--ease-out), visibility .28s; }
+.fv-filter.is-open .fv-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.fv-opt { appearance: none; background: none; border: 0; text-align: left; cursor: pointer; font: inherit;
+  padding: 9px 12px; border-radius: 4px; font-size: 15.5px; font-weight: 400; color: var(--ink-800);
+  transition: background .18s var(--ease-out), color .18s var(--ease-out); }
+.fv-opt.is-on { color: var(--fv-filter-fill, var(--turquoise)); font-weight: 500; }
+.fv-opt:hover, .fv-opt.is-on:hover { color: var(--fv-opt-fill, var(--turquoise)); }
+
+/* option marker: hand-drawn circle, filled when the option is on */
+.fv-opt { position: relative; display: flex; align-items: center; gap: 9px; }
+.fv-opt::before { content: ""; width: 11px; height: 12px; flex: none; background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.6c5.3-.4 9.3 3.8 9.2 9.1.1 5.6-3.7 9.9-9.4 9.7-5.4.1-9.2-4-9.1-9.5C2.6 6.6 6.5 2.4 12 2.6Z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.6c5.3-.4 9.3 3.8 9.2 9.1.1 5.6-3.7 9.9-9.4 9.7-5.4.1-9.2-4-9.1-9.5C2.6 6.6 6.5 2.4 12 2.6Z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / contain;
+  transition: opacity .18s var(--ease-out); }
+.fv-opt::after { content: ""; position: absolute; left: 14px; top: 50%; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+  transform: translateY(-50%) scale(0); transition: transform .18s var(--ease-out); }
+.fv-opt.is-on::after { transform: translateY(-50%) scale(1); }
+/* An option the current filter has ruled out is taken off the list — `.fv-opt`
+   sets display:flex, so [hidden] needs the extra weight to win. */
+.fv-opt[hidden] { display: none; }
+/* Every choice in this dimension is ruled out: dim the control so the visitor
+   does not open an empty menu. */
+.fv-filter.is-exhausted .fv-fbtn { opacity: .38; }
+
+/* clear-filters control */
+.fa-reset { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  font-size: clamp(14px,1.15vw,16px); font-weight: 500; color: var(--ink-500, #6b7278);
+  opacity: 0; pointer-events: none; transition: opacity .22s var(--ease-out), color .22s var(--ease-out); }
+.fa-reset.is-live { opacity: 1; pointer-events: auto; }
+.fa-reset:hover { color: var(--turquoise); }
+
+/* right-aligned search box */
+.fv-searchbox { margin-left: auto; margin-right: 0; position: relative; }
+.fv-filters .fv-searchbox { margin-right: 0 !important; }
+.fv-searchbox .fv-menu { left: auto; right: 0; }
+.ca-searchmenu { padding: 12px; min-width: 220px; overflow: visible; }
+.ca-input { width: 100%; appearance: none; font: inherit; font-size: 15.5px; color: var(--ink-800);
+  background: none; border: 1px solid var(--ink-200, #E2E4E7); border-radius: 4px; padding: 9px 12px; outline: none;
+  transition: border-color .2s var(--ease-out); }
+.ca-input:focus, .ca-input:focus-visible { outline: none; box-shadow: none; border-color: var(--accent, var(--turquoise)); caret-color: var(--accent, var(--turquoise)); }
+.ca-input::placeholder { color: var(--ink-300, #BFC3C7); }
+
+/* ---------- grid + flip cards ---------- */
+.fv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(20px,2.6vw,40px);
+  margin-top: clamp(40px,4.6vw,66px); padding-bottom: clamp(60px,7vw,110px); }
+@media (max-width: 1100px){ .fv-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 780px){ .fv-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px){ .fv-grid { grid-template-columns: 1fr; } }
+.fv-card { display: block; margin: 0; width: 100%; aspect-ratio: 1 / 1; perspective: 1200px; border: 0; background: none; padding: 0;
+  text-align: left; font: inherit; color: inherit; text-decoration: none; }
+/* Only the cards that go somewhere claim to be clickable. */
+a.fv-card { cursor: pointer; }
+a.fv-card:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; border-radius: 6px; }
+.fv-card[hidden] { display: none; }
+.fv-inner { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+  transition: transform .68s cubic-bezier(0.4,0,0.2,1); transition-delay: var(--fd, 0ms); border-radius: 5px; }
+.fv-card:hover .fv-inner, .fv-card:focus-visible .fv-inner { transform: var(--rot, rotateY(180deg)); }
+.fv-front, .fv-back { position: absolute; inset: 0; border-radius: 5px; overflow: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.fv-back { visibility: hidden; }
+.fv-front, .fv-back { transition: visibility 0s linear calc(var(--fd, 0ms) + .34s); }
+.fv-card:hover .fv-front, .fv-card:focus-visible .fv-front { visibility: hidden; }
+.fv-card:hover .fv-back, .fv-card:focus-visible .fv-back { visibility: visible; }
+.fv-front { background: var(--ink-800); display: flex; align-items: flex-end; justify-content: center; }
+.fv-back { background: var(--bcol, var(--turquoise)); transform: var(--brot, rotateY(180deg)); color: #fff;
+  display: flex; flex-direction: column; padding: clamp(16px,1.7vw,24px); }
+.fv-year { position: absolute; top: 13px; right: 17px; z-index: 3; color: #fff; font-weight: 300; line-height: 1;
+  font-size: clamp(26px,2.3vw,38px); letter-spacing: -0.01em; }
+
+/* founder face */
+.fv-front img.fv-photo { width: 96%; height: 94%; object-fit: contain; object-position: bottom center; align-self: flex-end; }
+.fv-card.no-photo .fv-front { align-items: center; }
+.fv-card.no-photo .fv-band { position: static; background: none; padding: 0 16px; text-align: center; }
+.fv-card.no-photo .fv-frontname { font-size: clamp(19px,1.12vw,21px); }
+/* venture logo — the white column, which is transparent PNG for every venture.
+   The filter still runs: one venture has a black mark in its "white" slot, and
+   flattening every logo to pure white is what the dark card front expects. */
+.fv-front .fv-logo { position: absolute; inset: 0; display: grid; place-items: center; padding: 18%; }
+.fv-front .fv-logo img { max-width: 100%; max-height: 100%; object-fit: contain; filter: brightness(0) invert(1); }
+/* a venture with no logo falls back to its own name, set large */
+.fv-front .fv-logo-text { color: #fff; font-size: clamp(17px,1.5vw,22px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-align: center; text-wrap: balance; }
+
+/* back — founder */
+.fv-name, .fv-venture, .fv-vname, .fv-vyear, .fv-vdesc, .fv-vsector, .fv-prog, .fv-year { display: block; }
+.fv-band { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: clamp(28px,9%,40px) 16px 14px; text-align: center;
+  background: linear-gradient(to top, color-mix(in srgb, var(--ink-800) 88%, transparent) 40%, transparent); }
+.fv-frontname { color: #fff; font-weight: 600; font-size: clamp(15px,1.25vw,18px); line-height: 1.16; letter-spacing: -0.01em;
+  text-wrap: balance; text-shadow: 0 1px 6px rgba(0,0,0,.18); }
+.fv-back-mid { flex: 1; margin: 0; padding: 0 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; }
+.fv-name { font-size: 19px; font-weight: 700; line-height: 1.16; letter-spacing: -0.015em; text-wrap: balance; }
+.fv-venture { font-size: 19px; font-weight: 400; line-height: 1.2; letter-spacing: -0.015em; }
+.fv-prog { position: absolute; right: clamp(16px,1.7vw,24px); bottom: clamp(16px,1.7vw,24px); text-align: right; font-size: clamp(13px,1.2vw,16px);
+  font-weight: 500; font-style: italic; line-height: 1.3; opacity: .95; }
+
+/* back — venture */
+.fv-back.fv-back-v { padding-top: clamp(20px,2.2vw,30px); }
+.fv-vhead { display: flex !important; align-items: baseline; justify-content: space-between; gap: 12px; }
+.fv-vhead .fv-vname { font-size: clamp(17px,1.5vw,22px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.fv-vhead .fv-vyear { position: absolute; top: 13px; right: 17px; z-index: 3; font-weight: 300; font-size: clamp(26px,2.3vw,38px); line-height: 1; letter-spacing: -0.01em; }
+.fv-vdesc { margin: 20% 0 0; font-size: clamp(12px,1.05vw,14px); font-weight: 400; line-height: 1.45; text-wrap: pretty; }
+.fv-vsector { margin-top: auto; font-size: clamp(11.5px,1vw,13.5px); font-weight: 500; line-height: 1.35; opacity: .95; }
+
+/* ---------- tab swap ----------
+   Leaving cards fade out together, then the arriving set rises in one card at a
+   time. The stagger is capped in ventures.js, so a 14-card tab and a 180-card
+   tab finish in about the same beat. */
+.fv-grid { transition: opacity .17s var(--ease-out); }
+.fv-grid.is-swapping { opacity: 0; }
+.fv-grid.is-entering .fv-card:not([hidden]) {
+  animation: fvIn .46s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 24ms);
+}
+@keyframes fvIn {
+  from { opacity: 0; transform: translateY(16px) scale(.965); }
+  to   { opacity: 1; transform: none; }
+}
+
+.fv-empty { grid-column: 1 / -1; padding: clamp(30px,4vw,60px) 0; font-size: 16px; font-weight: 500; color: var(--ink-500, #6b7278); }
+
+/* Without JS the tabs cannot switch, so the ventures half stays hidden and the
+   founders half shows — the same state the page loads in. */
+.fv-grid noscript { grid-column: 1 / -1; }
+.fv-noscript-note { grid-column: 1 / -1; padding-bottom: clamp(20px,2.4vw,32px); font-size: 15px; color: var(--ink-500, #6b7278); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-inner { transition: none; }
+  .fv-grid { transition: none; }
+  .fv-grid.is-entering .fv-card:not([hidden]) { animation: none; }
+}

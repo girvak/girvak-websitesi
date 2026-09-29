@@ -15,7 +15,7 @@ import pytest
 from httpx import AsyncClient
 from tests.conftest import ADMIN_TOKEN
 
-PAGES = ("home", "about", "fellow", "people")
+PAGES = ("home", "about", "fellow", "people", "ventures")
 
 
 @pytest.mark.parametrize("page", PAGES)
@@ -56,6 +56,52 @@ async def test_a_different_etag_still_returns_the_body(client: AsyncClient) -> N
     response = await client.get("/v1/content/home", headers={"If-None-Match": '"stale"'})
 
     assert response.status_code == 200
+
+
+async def test_ventures_answers_with_a_page_even_before_airtable_is_wired(
+    client: AsyncClient,
+) -> None:
+    body = (await client.get("/v1/content/ventures")).json()
+
+    assert body["seo"]["title"]
+    assert body["page"] == {
+        "page": 1,
+        "per_page": 12,
+        "total": 0,
+        "total_pages": 1,
+        "has_prev": False,
+        "has_next": False,
+    }
+
+
+async def test_ventures_caps_per_page(client: AsyncClient) -> None:
+    body = (await client.get("/v1/content/ventures?per_page=10000")).json()
+
+    assert body["page"]["per_page"] == 48
+
+
+async def test_ventures_clamps_a_page_past_the_end(client: AsyncClient) -> None:
+    body = (await client.get("/v1/content/ventures?page=99")).json()
+
+    assert body["page"]["page"] == 1
+
+
+async def test_ventures_echoes_the_filter_it_applied(client: AsyncClient) -> None:
+    body = (await client.get("/v1/content/ventures?sector=ai&sector=AI&q=+kybele+")).json()
+
+    assert body["selected"] == {
+        "sectors": ["ai"],
+        "programs": [],
+        "years": [],
+        "q": "kybele",
+    }
+
+
+async def test_a_different_filter_is_a_different_etag(client: AsyncClient) -> None:
+    plain = await client.get("/v1/content/ventures")
+    filtered = await client.get("/v1/content/ventures?sector=ai")
+
+    assert plain.headers["ETag"] != filtered.headers["ETag"]
 
 
 async def test_refresh_without_the_admin_token_is_rejected(client: AsyncClient) -> None:

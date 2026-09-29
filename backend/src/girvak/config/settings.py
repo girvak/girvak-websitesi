@@ -51,6 +51,10 @@ class AirtableSettings(BaseModel):
     table_partner: str = "partner"
     table_people: str = "people"
     table_icons: str = "icons"
+    # The founders & ventures directory and the two tables it links out to.
+    table_ventures: str = "ventures"
+    table_sectors: str = "sectors"
+    table_programs: str = "programs_detailed"
 
     connect_timeout_seconds: float = 5.0
     total_timeout_seconds: float = 15.0

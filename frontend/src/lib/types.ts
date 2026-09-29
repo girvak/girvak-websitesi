@@ -225,3 +225,96 @@ export interface FellowContent {
   challengers_headline: string;
   challengers_cta: FellowCta;
 }
+
+/** One founder on a venture card, as the Airtable `people` rows describe them. */
+export interface VentureFounder {
+  name: string;
+  title: string;
+  photo: string;
+  linkedin: string;
+  /** Cohort, already in the design's form: `’26`. */
+  year: string;
+}
+
+/** One row of the Airtable `ventures` table, with its links resolved. */
+export interface Venture {
+  slug: string;
+  name: string;
+  description: string;
+  description_tr: string;
+  website: string;
+  logo: string;
+  logo_white: string;
+  year: string;
+  sectors: string[];
+  sector_slugs: string[];
+  programs: string[];
+  program_slugs: string[];
+  founders: VentureFounder[];
+}
+
+/**
+ * One card on the founders tab — a `people` row tagged `founder`.
+ * Most founders have no venture on the site yet; `venture` is then empty.
+ */
+export interface FounderCard {
+  slug: string;
+  name: string;
+  year: string;
+  photo: string;
+  linkedin: string;
+  venture: string;
+  venture_slug: string;
+  /** Their venture's site. Empty means the card is not a link. */
+  website: string;
+  sectors: string[];
+  sector_slugs: string[];
+  programs: string[];
+  program_slugs: string[];
+}
+
+/** One choice in a filter dropdown, with how many ventures it would leave. */
+export interface Facet {
+  value: string;
+  label: string;
+  count: number;
+}
+
+/** Where the visitor is in the result set. */
+export interface PageInfo {
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+  has_prev: boolean;
+  has_next: boolean;
+}
+
+/** The founders & ventures page. */
+export interface VenturesContent {
+  seo: SEO;
+  headline: string;
+  headline_html: string;
+  intro: string;
+  tab_founders: string;
+  tab_ventures: string;
+  filter_sector_label: string;
+  filter_program_label: string;
+  filter_year_label: string;
+  filter_all_sectors: string;
+  filter_all_programs: string;
+  filter_all_years: string;
+  reset_label: string;
+  search_label: string;
+  search_placeholder: string;
+  empty_text: string;
+  /** Which list `items`/`founders` and `page` describe. */
+  kind: 'ventures' | 'founders';
+  items: Venture[];
+  founders: FounderCard[];
+  page: PageInfo;
+  sectors: Facet[];
+  programs: Facet[];
+  years: Facet[];
+  selected: { sectors: string[]; programs: string[]; years: string[]; q: string };
+}
