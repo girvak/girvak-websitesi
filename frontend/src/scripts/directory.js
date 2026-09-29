@@ -53,7 +53,9 @@ if (grid) {
 
   // How many the visitor has asked to see, the total that match, and the search
   // text as typed (the URL keeps that, not the folded form).
-  let shown = PAGE_SIZE;
+  // A page without a "load more" block (the board) shows everyone at once.
+  const FIRST = document.getElementById('faMoreBtn') ? PAGE_SIZE : Infinity;
+  let shown = FIRST;
   let matched = 0;
   let rawQuery = '';
 
@@ -68,7 +70,7 @@ if (grid) {
 
   /** A filter or the search changed: start again from the first 24. */
   function apply() {
-    shown = PAGE_SIZE;
+    shown = FIRST;
     render();
     // The same view is the same URL, so a link can be shared. Replaced, not
     // pushed: each dropdown click is not a page the back button should visit.

@@ -2,16 +2,23 @@
 /**
  * Module: src/components/PeopleDirectory.astro
  * Layer: Component
- * Purpose: A whole-cohort directory — a hero, university / department / year
- *          filters, a name search, and one flip card per person, revealed 24
- *          at a time. The body of
- *          /fellows and /alumni, which the design draws as the same page in two
- *          colours.
+ * Purpose: A directory of people — a hero, a filter bar, and one flip card per
+ *          person, revealed 24 at a time. The body of /fellows and /alumni,
+ *          which the design draws as the same page in two colours, and of
+ *          /board-of-trustees, which follows them.
+ *
+ *          Two kinds. `students` (fellows, alumni) have a filter bar by
+ *          university, department and cohort and reveal 24 at a time; the back
+ *          of a card says where they study. `board` (trustees) is the design's
+ *          page and nothing more: no filter bar, no search, no reveal — the
+ *          whole board on one page, and the back of a card says where the person
+ *          works.
  *
  *          Server-rendered like /founders-ventures: the cards and the dropdown
  *          choices are in the HTML, and the browser only toggles `hidden`.
  *
- * Called by: src/pages/fellows.astro, src/pages/alumni.astro
+ * Called by: src/pages/fellows.astro, src/pages/alumni.astro,
+ *            src/pages/board-of-trustees.astro
  * Calls: src/scripts/directory.js
  */
 import type { Person } from '../lib/types';
@@ -24,9 +31,14 @@ interface Props {
   people: Person[];
   /** What the list holds, for "showing 24 of 405 alumni". */
   noun: string;
+  /** Which kind of directory this is; see the module header. */
+  variant?: 'students' | 'board';
 }
 
-const { headlineHtml, introHtml, people, noun } = Astro.props;
+const { headlineHtml, introHtml, people, noun, variant = 'students' } = Astro.props;
+const board = variant === 'board';
+// Placed under the list: a way out of the page, such as a link back.
+const hasAfter = Astro.slots.has('after');
 
 /** Cohort key a card filters on: `’18` becomes `18`, matching the dropdown. */
 const yearKey = (year: string | undefined): string => (year?.match(/\d/g) ?? []).join('').slice(-2);
@@ -84,7 +96,8 @@ const filters = [
     <p class="fa-hero-sub" set:html={introHtml} />
   </section>
 
-  <section class="fa-body ap-edge">
+  <section class:list={['fa-body ap-edge', board && 'fa-body--plain']}>
+    {!board && (
     <div class="fv-filters" id="faFilters">
       {filters.map((f) => (
         <div class="fv-filter" data-key={f.key}>
@@ -123,6 +136,7 @@ const filters = [
         </div>
       </div>
     </div>
+    )}
 
     <div class="fv-grid" id="faGrid">
       {cohort.map((p) => {
@@ -153,8 +167,13 @@ const filters = [
                 {p.year && <div class="fv-year">{p.year}</div>}
                 <div class="fv-back-mid">
                   <div class="fv-name">{name}</div>
-                  {p.university && <div class="fv-uni">{p.university}</div>}
-                  {p.department && <div class="fv-dept">{p.department}</div>}
+                  {/* Where they study, or — on the board — where they work. */}
+                  {(board ? p.company : p.university) && (
+                    <div class="fv-uni">{board ? p.company : p.university}</div>
+                  )}
+                  {(board ? p.position : p.department) && (
+                    <div class="fv-dept">{board ? p.position : p.department}</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -167,13 +186,21 @@ const filters = [
       </p>
     </div>
 
-    <div class="lm" id="faMore" data-noun={noun}>
-      <p class="lm-status" id="faStatus" aria-live="polite" tabindex="-1"></p>
-      <button class="h3btn lm-btn" id="faMoreBtn" type="button" hidden>
-        <span class="h3btn-label">load more</span>
-        <span class="cta-arrow" aria-hidden="true"></span>
-      </button>
-    </div>
+    {!board && (
+      <div class="lm" id="faMore" data-noun={noun}>
+        <p class="lm-status" id="faStatus" aria-live="polite" tabindex="-1"></p>
+        <button class="h3btn lm-btn" id="faMoreBtn" type="button" hidden>
+          <span class="h3btn-label">load more</span>
+          <span class="cta-arrow" aria-hidden="true"></span>
+        </button>
+      </div>
+    )}
+
+    {hasAfter && (
+      <div class="fa-after">
+        <slot name="after" />
+      </div>
+    )}
   </section>
 </main>
 

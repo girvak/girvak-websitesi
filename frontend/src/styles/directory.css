@@ -9,6 +9,7 @@
    ============================================================ */
 .fa { --fellow: #BA1818; }
 .al { --fellow: #281858; }
+.bt { --fellow: #373D42; }  /* the board: GİRVAK ink, as its cards are on the About page */
 .al ::selection { background: #281858; color: #fff; }
 .al ::-moz-selection { background: #281858; color: #fff; }
 
@@ -66,3 +67,14 @@
 /* Cards revealed by "load more" rise in one after another, like a tab swap. */
 .lm-new { animation: fvIn .46s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 24ms); }
 @media (prefers-reduced-motion: reduce) { .lm-new { animation: none; } }
+
+/* ---------- the board page: the design's page and nothing more ----------
+   No filter bar and no "load more", so the grid starts where the bar would, and a
+   link back to About sits under it, right-aligned. */
+.fa-body--plain .fv-grid { margin-top: clamp(34px,4.4vw,64px); }
+.fa-after { display: flex; justify-content: flex-end; margin-top: clamp(34px,4vw,52px);
+  padding-bottom: clamp(60px,7vw,110px); }
+.fa-back { display: inline-flex; align-items: center; padding: 15px 34px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); color: var(--fg-1); font-weight: 600; font-size: clamp(15px,1.4vw,17px);
+  text-decoration: none; transition: transform .25s var(--ease-out), color .25s var(--ease-out); }
+.fa-back:hover, .fa-back:focus-visible { transform: translateY(-2px); color: var(--fellow); }

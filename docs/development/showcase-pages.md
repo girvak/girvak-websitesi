@@ -1,15 +1,15 @@
 # Showcase pages
 
-`/founders-ventures`, `/fellows`, `/alumni` and `/challengers` are the site's
-directories: a hero, a filter bar, and a list of people or ventures. They share
-one filter bar and one set of behaviours, so a change to it is a change to all
-four. This page says where each piece lives and which rules are deliberate.
+`/founders-ventures`, `/fellows`, `/alumni`, `/challengers` and
+`/board-of-trustees` are the site's directories: a hero and a list of people or
+ventures, and — on all but the board — a filter bar. They share one filter bar and
+one set of behaviours, so a change to it is a change to all of them. This page says where each piece lives and which rules are deliberate.
 
 ## Where things are
 
 | Piece | File |
 |---|---|
-| Fellows and alumni body (hero, filter bar, cards) | `src/components/PeopleDirectory.astro` |
+| Fellows, alumni and trustees body (hero, filter bar, cards) | `src/components/PeopleDirectory.astro` |
 | Challengers page (a list, not cards) | `src/pages/challengers.astro` |
 | Founders & ventures page (two tabs) | `src/pages/founders-ventures.astro` |
 | Shared filter bar behaviour | `src/scripts/filters-multi.js` — `wire`, `wireSearch`, `pruneOptions`, `fold`, `hits` |
@@ -21,7 +21,21 @@ four. This page says where each piece lives and which rules are deliberate.
 
 Fellows and alumni are the same page in two colours, so they are one component
 with a `noun` and the colour from the page's body class (`--fellow`: red by
-default, indigo under `.al`). Challengers is drawn differently in the design —
+default, indigo under `.al`, GİRVAK ink under `.bt`).
+
+The board is the same component with `variant="board"`, and it is the design's
+page and nothing more: the hero, the cards and a link back to About (the
+component's `after` slot) — **no filter bar, no search, no "load more"**, all
+trustees on one page. Those are things the other directories have and the design
+of this page does not, so they were left off. The back of a card says where the
+person works instead of where they study. The page's words are written in the
+page, not read from Airtable; the people and their count are the `people` table's.
+
+The design draws `/board-of-trustees` with the About page's card grid (`.bcard`).
+It takes the other directories' hero and flip cards instead, so the people pages
+read as one. The
+About page itself still shows its ten trustees, and the directors and team, in
+the design's grid. Challengers is drawn differently in the design —
 no photos, rows instead of cards — but its filter bar is the same.
 
 ## Data
@@ -57,7 +71,8 @@ challengers prints cohorts as `2025` where the others print `’25`.
 
 The design shows everyone at once. With a few hundred portraits that is tens of
 megabytes as the visitor scrolls (alumni: 376 photos of about 220 KB), so
-`/fellows`, `/alumni` and `/challengers` reveal **24** at a time
+`/fellows`, `/alumni` and `/challengers` (not the board, which is short and shows
+everyone) reveal **24** at a time
 (`PAGE_SIZE` in `pager.js`).
 
 - Everything is in the HTML; the script only toggles `hidden`. A `hidden` card
