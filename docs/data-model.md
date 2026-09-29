@@ -128,7 +128,11 @@ Airtable attachment URLs expire within hours; a page that hands them to the
 browser starts serving 403s the next day.
 
 - Key: Airtable `attachment_id` — stable and immutable
-- Stored: on disk under the media directory, filename `<attachment_id>_<size>.<ext>`
+- Stored: on disk under the media directory, filename `<attachment_id>_<size>.<ext>`.
+  Portraits (the `large` rendition of a PNG or JPEG) are converted to WebP at
+  quality 85 — `<attachment_id>_large.webp`, about 25 KB against 225 KB as PNG.
+  Logos (`orig`) and vectors keep their own format and exact bytes. An image
+  Pillow cannot read is kept as it arrived, never dropped
 - Served: `/media/<filename>`, immutable cache headers
 - Written: once, on first read of a fragment that carries the attachment
 

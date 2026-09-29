@@ -8,8 +8,16 @@ Purpose: Copy an Airtable attachment to disk once and hand out a URL that never
          Filenames are `<attachment id>_<variant>.<ext>` — the attachment id is
          stable, so a replaced image in Airtable is a new id and a new file.
 
+         Portraits (the `large` rendition of a PNG or JPEG) are stored as WebP.
+         They are 512px cut-outs with a transparency channel, which PNG stores
+         at about 220 KB and WebP at about 26 KB — the difference between a
+         400-person page costing 83 MB of photos and costing 10. Logos (`orig`)
+         and anything vector keep their own format. A file that will not convert
+         is kept as it arrived, so a bad image never becomes a missing one.
+
 Dependencies:
     - Settings: mirror on/off, directory, URL prefix, timeout
+    - Pillow: the WebP conversion
 
 Called by: modules/content/service.py
 Calls: nothing
@@ -30,6 +38,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import httpx
+from PIL import Image, ImageOps
 
 from girvak.config import Settings
 from girvak.shared.logging import LoggerName, get_logger
@@ -40,6 +49,15 @@ _UNSAFE = re.compile(r"[^A-Za-z0-9_.-]")
 _MAX_BYTES = 10 * 1024 * 1024
 _ALLOWED_HOST_SUFFIXES = (".airtableusercontent.com", ".airtable.com")
 _ALLOWED_HOSTS = frozenset({"dl.airtable.com", "airtableusercontent.com"})
+
+# Which files become WebP, and how. Only the `large` rendition: that is the
+# portrait size; logos ask for `orig` and must keep their exact pixels.
+_WEBP_VARIANT = "large"
+_WEBP_SOURCE_EXTENSIONS = frozenset({".png", ".jpg"})
+_WEBP_QUALITY = 85
+# Airtable's `large` is 512px; when it has none the original arrives instead, and
+# a 3000px portrait has no business on a card.
+_WEBP_MAX_SIDE = 1024
 
 
 @dataclass(frozen=True)
@@ -78,14 +96,13 @@ class MediaMirror:
             ref: The attachment and variant.
 
         Returns:
-            A `/media/...` URL, or None when the file is not on disk.
+            A `/media/...` URL, or None when the file is not on disk. A portrait
+            not yet converted answers with its PNG until the WebP exists.
         """
-        name = self._filename(ref)
-        if not name:
-            return None
-        path = self._directory / name
-        if path.is_file() and path.stat().st_size > 0:
-            return f"{self._url_prefix}/{name}"
+        for name in self._names(ref):
+            path = self._directory / name
+            if path.is_file() and path.stat().st_size > 0:
+                return f"{self._url_prefix}/{name}"
         return None
 
     def resolve(self, refs: list[AttachmentRef]) -> tuple[dict[str, str], list[AttachmentRef]]:
@@ -110,6 +127,10 @@ class MediaMirror:
             local = self.public_url(ref) if self._enabled else None
             if local:
                 resolved[key] = local
+                # A portrait still on disk as PNG is served as it is, and queued
+                # so its WebP is made next — from the file, not from Airtable.
+                if self._is_unconverted(ref, local) and self._filename(ref) not in self._failed:
+                    missing.append(ref)
                 continue
             resolved[key] = ref.remote_url
             if self._enabled and self._filename(ref) not in self._failed:
@@ -194,13 +215,22 @@ class MediaMirror:
 
     async def _download(self, http_client: httpx.AsyncClient, ref: AttachmentRef) -> str | None:
         name = self._filename(ref)
+        if name and self._converts(ref):
+            converted = await self._convert_existing(ref, name)
+            if converted:
+                return f"{self._url_prefix}/{name}"
+            if (self._directory / self._original_filename(ref)).is_file():
+                return None  # kept as it is; the failure is already logged
         if not name or not ref.remote_url or not _host_allowed(ref.remote_url):
             if ref.remote_url:
                 _logger.warning("media_host_rejected", extra={"attachment_id": ref.attachment_id})
             return None
 
         destination = self._directory / name
-        partial = destination.with_name(f"{destination.name}.part")
+        # Named for the format it arrives in, not the one it is stored as: the
+        # WebP conversion writes its own `.part` beside the target, and the two
+        # must never be the same file.
+        partial = self._directory / f"{self._original_filename(ref)}.part"
 
         try:
             written = 0
@@ -214,8 +244,7 @@ class MediaMirror:
                         if written > _MAX_BYTES:
                             raise ValueError("attachment too large")
                         handle.write(chunk)
-            # Atomic: a reader never sees a half-written file.
-            os.replace(partial, destination)
+            name = await self._finish(ref, partial, destination)
         except (httpx.HTTPError, ValueError, OSError) as exc:
             self._failed.add(name)
             _logger.warning(
@@ -227,12 +256,79 @@ class MediaMirror:
 
         return f"{self._url_prefix}/{name}"
 
-    def _filename(self, ref: AttachmentRef) -> str:
+    async def _finish(self, ref: AttachmentRef, partial: Path, destination: Path) -> str:
+        """Move a downloaded file into place, as WebP when it is a portrait.
+
+        Returns:
+            The name it was stored under: the WebP, or — when the image would not
+            convert — the original, so the page still gets a picture.
+        """
+        if not self._converts(ref):
+            # Atomic: a reader never sees a half-written file.
+            os.replace(partial, destination)
+            return destination.name
+        try:
+            await asyncio.to_thread(_convert_to_webp, partial, destination)
+        except (OSError, ValueError, Image.DecompressionBombError) as exc:
+            original = self._directory / self._original_filename(ref)
+            os.replace(partial, original)
+            _logger.warning(
+                "media_convert_failed",
+                extra={"attachment_id": ref.attachment_id, "reason": str(exc)},
+            )
+            return original.name
+        await asyncio.to_thread(partial.unlink, missing_ok=True)
+        return destination.name
+
+    async def _convert_existing(self, ref: AttachmentRef, name: str) -> bool:
+        """Make the WebP from the PNG or JPEG already on disk — no download."""
+        original = self._directory / self._original_filename(ref)
+        if not original.is_file() or original.stat().st_size == 0:
+            return False
+        try:
+            await asyncio.to_thread(_convert_to_webp, original, self._directory / name)
+        except (OSError, ValueError, Image.DecompressionBombError) as exc:
+            self._failed.add(name)
+            _logger.warning(
+                "media_convert_failed",
+                extra={"attachment_id": ref.attachment_id, "reason": str(exc)},
+            )
+            return False
+        return True
+
+    def _converts(self, ref: AttachmentRef) -> bool:
+        """Is this attachment stored as WebP?"""
+        return ref.requested == _WEBP_VARIANT and _extension(ref) in _WEBP_SOURCE_EXTENSIONS
+
+    def _is_unconverted(self, ref: AttachmentRef, url: str) -> bool:
+        return self._converts(ref) and not url.endswith(".webp")
+
+    def _names(self, ref: AttachmentRef) -> list[str]:
+        """File names that may hold this attachment, best first."""
+        name = self._filename(ref)
+        if not name:
+            return []
+        if self._converts(ref):
+            return [name, self._original_filename(ref)]
+        return [name]
+
+    def _stem(self, ref: AttachmentRef) -> str:
         attachment_id = _UNSAFE.sub("", ref.attachment_id)
         if not attachment_id:
             return ""
         variant = _UNSAFE.sub("", ref.variant) or "orig"
-        return f"{attachment_id}_{variant}{_extension(ref)}"
+        return f"{attachment_id}_{variant}"
+
+    def _filename(self, ref: AttachmentRef) -> str:
+        stem = self._stem(ref)
+        if not stem:
+            return ""
+        return f"{stem}.webp" if self._converts(ref) else f"{stem}{_extension(ref)}"
+
+    def _original_filename(self, ref: AttachmentRef) -> str:
+        """The name a file has in its own format — how mirrors stored it before WebP."""
+        stem = self._stem(ref)
+        return f"{stem}{_extension(ref)}" if stem else ""
 
 
 def cache_key(attachment_id: str, requested_variant: str) -> str:
@@ -295,6 +391,34 @@ def _extension(ref: AttachmentRef) -> str:
     if extension in (".jpe", ".jpeg"):
         extension = ".jpg"
     return _UNSAFE.sub("", extension)
+
+
+def _convert_to_webp(source: Path, destination: Path) -> None:
+    """Write `destination` as WebP from any image Pillow reads.
+
+    Keeps the transparency channel where there is one — portraits are cut-outs —
+    and turns a phone photo the right way up. Written beside the target and moved
+    into place, like every other file here.
+
+    Raises:
+        OSError: The file is not an image Pillow can read.
+        ValueError: The image is unusable.
+        Image.DecompressionBombError: The pixel count is absurd.
+    """
+    partial = destination.with_name(f"{destination.name}.part")
+    try:
+        with Image.open(source) as opened:
+            image = ImageOps.exif_transpose(opened) or opened
+            image.thumbnail((_WEBP_MAX_SIDE, _WEBP_MAX_SIDE))
+            has_alpha = image.mode in ("RGBA", "LA") or (
+                image.mode == "P" and "transparency" in image.info
+            )
+            image.convert("RGBA" if has_alpha else "RGB").save(
+                partial, "WEBP", quality=_WEBP_QUALITY, method=4
+            )
+        os.replace(partial, destination)
+    finally:
+        partial.unlink(missing_ok=True)
 
 
 def _host_allowed(url: str) -> bool:

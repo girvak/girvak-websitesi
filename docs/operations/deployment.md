@@ -194,3 +194,20 @@ and the newsletter form must answer with a message rather than a network error.
 Logs: `docker compose logs -f backend` — one JSON object per line, with
 `request_id`. A page that fails to render logs `content_source_unavailable` with
 what it served instead (`stale` or `seed`).
+
+## Portraits as WebP (one-time notes)
+
+Mirrored portraits are converted to WebP by the backend (Pillow, installed from
+`uv.lock` in the image — a normal `docker compose build`). On the first content
+request after this ships, every `*_large.png` already in the media volume is
+converted **from the file on disk**, not from Airtable, in a few seconds.
+
+The old PNGs are left in place on purpose: a page cached in a browser can still
+point at one. Once a day or more has passed they are dead weight (about 115 MB)
+and can be removed from the media volume:
+
+```bash
+find <media dir> -name '*_large.png' -delete
+```
+
+Only `*_large.png` — logos are `*_orig.png` and are still served as they are.
