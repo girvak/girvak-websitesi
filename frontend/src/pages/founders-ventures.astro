@@ -1,0 +1,243 @@
+---
+/**
+ * Module: src/pages/founders-ventures.astro
+ * Layer: Page
+ * Purpose: The founders & ventures directory. Two tabs over one grid — a card
+ *          per founder, and a card per venture — filtered by sector, programme,
+ *          cohort and free text.
+ *
+ *          Every card is server-rendered: the API paginates, `getVentures`
+ *          walks those pages, and the browser only toggles `hidden`. That keeps
+ *          the design's instant tab switch without a second round trip, and it
+ *          means the whole directory is in the HTML a crawler sees.
+ *
+ * Called by: visitors at /founders-ventures
+ * Calls: src/lib/api.ts
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import { getHomeContent, getVentures } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import type { Venture } from '../lib/types';
+import '../styles/ventures.css';
+
+const [home, fv] = await Promise.all([getHomeContent(), getVentures()]);
+const apiBase = publicApiBase;
+
+/** Cohort key a card filters on: `’26` becomes `26`, matching the API's facets. */
+const yearKey = (year: string): string => (year.match(/\d/g) ?? []).join('').slice(-2);
+
+/**
+ * The blurb, with its subject.
+ *
+ * Editors write these as predicates — "is a consultancy…", "creates delicious…"
+ * — so a description that opens lowercase needs the venture's name in front of
+ * it to be a sentence. The few that are already noun phrases are left alone.
+ */
+function blurb(v: Venture): string {
+  const text = v.description || v.description_tr;
+  if (!text) return '';
+  return /^[a-zçğıioöşü]/.test(text) ? `${v.name} ${text}` : text;
+}
+
+/**
+ * Shuffle a copy, Fisher-Yates.
+ *
+ * Display order only, never a secret — `Math.random` is the right tool.
+ */
+function shuffled<T>(list: T[]): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+// The founders grid is reshuffled on every render, so no one is permanently
+// stuck on the last row behind an alphabet. It happens here rather than in the
+// API on purpose: the payload stays byte-identical across requests, so its ETag
+// still earns a 304 and paging through it stays consistent. Only this page's
+// own ordering moves. Ventures keep their Turkish A–Z — they are a catalogue
+// people look things up in, not a cohort.
+const founders = shuffled(fv.founders);
+
+// A response whose whole point is to differ each time must not be reused from a
+// cache, or the first 30 seconds of reloads would all show one shuffle. This
+// overrides the site-wide HTML caching in src/middleware.ts, which only fills
+// the header in when a page has not already decided for itself. The API
+// response behind it is still cached, so this costs a render, not a round trip.
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const filters = [
+  { key: 'sector', label: fv.filter_sector_label, all: fv.filter_all_sectors, facets: fv.sectors },
+  { key: 'program', label: fv.filter_program_label, all: fv.filter_all_programs, facets: fv.programs },
+  { key: 'year', label: fv.filter_year_label, all: fv.filter_all_years, facets: fv.years },
+];
+---
+
+<BaseLayout title={fv.seo.title} description={fv.seo.description} bodyClass="hm ap fv">
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="fv-hero ap-edge" id="top">
+      <h1 class="fv-hero-title" set:html={fv.headline_html || fv.headline} />
+      <p class="fv-hero-sub">{fv.intro}</p>
+      <div class="fv-tabs" role="tablist" aria-label={fv.headline}>
+        <button class="fv-tab is-on" type="button" role="tab" aria-selected="true" data-tab="founders">
+          {fv.tab_founders}
+        </button>
+        <button class="fv-tab" type="button" role="tab" aria-selected="false" data-tab="ventures">
+          {fv.tab_ventures}
+        </button>
+      </div>
+    </section>
+
+    <section class="fv-body ap-edge">
+      <div class="fv-filters" id="fvFilters">
+        {filters.map((f) => (
+          <div class="fv-filter" data-key={f.key}>
+            <button class="fv-fbtn" type="button" aria-expanded="false">
+              <span class="fv-fbtn-label">{f.label}</span>
+              <span class="fv-caret" aria-hidden="true"></span>
+            </button>
+            <div class="fv-menu" role="listbox" aria-label={f.label}>
+              <button class="fv-opt is-on" type="button" role="option" aria-selected="true" data-val="">
+                {f.all}
+              </button>
+              {f.facets.map((facet) => (
+                <button class="fv-opt" type="button" role="option" aria-selected="false" data-val={facet.value}>
+                  <span class="fv-opt-label">{facet.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <button class="fa-reset" id="fvReset" type="button">{fv.reset_label}</button>
+
+        <div class="fv-filter ca-search fv-searchbox" data-key="q">
+          <button class="fv-fbtn" type="button" aria-expanded="false">
+            <span class="fv-fbtn-label">{fv.search_label}</span>
+            <span class="fv-caret" aria-hidden="true"></span>
+          </button>
+          <div class="fv-menu ca-searchmenu">
+            <input
+              class="ca-input"
+              id="fvSearch"
+              type="text"
+              placeholder={fv.search_placeholder}
+              aria-label={fv.search_label}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="fv-grid" id="fvGrid">
+        <noscript>
+          <p class="fv-noscript-note">
+            Showing every founder. Switching to ventures and filtering need JavaScript.
+          </p>
+        </noscript>
+
+        {founders.map((founder) => {
+          // A founder card goes to the person first — their LinkedIn — and to
+          // their venture's site when they have no profile on file. With
+          // neither it stays a plain figure rather than pretending to be
+          // clickable. `Tag` is capitalised so Astro treats it as the element.
+          const href = founder.linkedin || founder.website;
+          const Tag = href ? 'a' : 'figure';
+          return (
+          <Tag
+            class:list={['fv-card', !founder.photo && 'no-photo']}
+            {...(href
+              ? { href, target: '_blank', rel: 'noopener noreferrer' }
+              : { tabindex: '0' })}
+            data-kind="founders"
+            data-sector={founder.sector_slugs.join(';')}
+            data-program={founder.program_slugs.join(';')}
+            data-year={yearKey(founder.year)}
+          >
+            <div class="fv-inner">
+              <div class="fv-front">
+                {founder.year && <div class="fv-year">{founder.year}</div>}
+                {founder.photo && (
+                  <img class="fv-photo" src={founder.photo} alt={founder.name} loading="lazy" decoding="async" />
+                )}
+                <div class="fv-band"><span class="fv-frontname">{founder.name}</span></div>
+              </div>
+              <div class="fv-back">
+                {founder.year && <div class="fv-year">{founder.year}</div>}
+                <div class="fv-back-mid">
+                  <div class="fv-name">{founder.name}</div>
+                  {founder.venture && <div class="fv-venture">{founder.venture}</div>}
+                </div>
+                {founder.programs.length > 0 && <div class="fv-prog">{founder.programs[0]}</div>}
+              </div>
+            </div>
+          </Tag>
+          );
+        })}
+
+        {fv.items.map((venture) => {
+          const Tag = venture.website ? 'a' : 'figure';
+          return (
+          <Tag
+            class="fv-card"
+            hidden
+            {...(venture.website
+              ? { href: venture.website, target: '_blank', rel: 'noopener noreferrer' }
+              : { tabindex: '0' })}
+            data-kind="ventures"
+            data-sector={venture.sector_slugs.join(';')}
+            data-program={venture.program_slugs.join(';')}
+            data-year={yearKey(venture.year)}
+          >
+            <div class="fv-inner">
+              <div class="fv-front">
+                {venture.year && <div class="fv-year">{venture.year}</div>}
+                <div class="fv-logo">
+                  {venture.logo_white || venture.logo ? (
+                    <img
+                      src={venture.logo_white || venture.logo}
+                      alt={venture.name}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <span class="fv-logo-text">{venture.name}</span>
+                  )}
+                </div>
+              </div>
+              <div class="fv-back fv-back-v">
+                <div class="fv-vhead">
+                  <div class="fv-vname">{venture.name}</div>
+                  {venture.year && <div class="fv-vyear">{venture.year}</div>}
+                </div>
+                <div class="fv-vdesc">{blurb(venture)}</div>
+                <div class="fv-vsector">
+                  {venture.sectors.map((sector, index) => (
+                    <>{index > 0 && <br />}{sector}</>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Tag>
+          );
+        })}
+
+        <p class="fv-empty" id="fvEmpty" hidden>{fv.empty_text}</p>
+      </div>
+    </section>
+  </main>
+
+  <Footer footer={home.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+  import '../scripts/ventures.js';
+</script>

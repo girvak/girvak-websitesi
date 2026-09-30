@@ -1,0 +1,55 @@
+---
+/**
+ * Module: src/pages/alumni.astro
+ * Layer: Page
+ * Purpose: Every alumnus of the Fellow Program as a flip card, filtered by
+ *          university, department and cohort, or found by name. Indigo.
+ *
+ * Called by: visitors at /alumni
+ * Calls: src/lib/api.ts, src/components/PeopleDirectory.astro
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import PeopleDirectory from '../components/PeopleDirectory.astro';
+import { getHomeContent, getPeople } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import '../styles/ventures.css';
+import '../styles/directory.css';
+
+const [home, people] = await Promise.all([getHomeContent(), getPeople()]);
+const apiBase = publicApiBase;
+
+// A page whose point is to differ on every reload must not be reused from a cache,
+// or the first 30 seconds of reloads would all show one shuffle. This overrides the
+// site-wide HTML caching in src/middleware.ts, which only fills the header in when a
+// page has not decided for itself. The API response behind it is still cached, so
+// this costs a render, not a round trip.
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+// The page's own words. Airtable has no copy table for this page, and the design
+// fixes them, so they live here rather than in a seed nobody edits.
+const seo = {
+  title: 'All Alumni · GİRVAK',
+  description: 'Meet the GİRVAK alumni — still finding their way, just further along the road.',
+};
+---
+
+<BaseLayout title={seo.title} description={seo.description} bodyClass="hm ap fv fa al">
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <PeopleDirectory
+    headlineHtml="those we <i>grew</i> with."
+    introHtml="Meet the <em>alumni</em> still finding their way, just further along the road."
+    people={people.alumni}
+    noun="alumni"
+  />
+
+  <Footer footer={home.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+</script>

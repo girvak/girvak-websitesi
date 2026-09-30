@@ -1,45 +1,55 @@
 ---
+/**
+ * Module: src/pages/board-of-trustees.astro
+ * Layer: Page
+ * Purpose: Every trustee. The same page as /fellows and /alumni — the hero, the
+ *          filter bar (here the search alone), a flip card per person revealed
+ *          24 at a time — in GİRVAK ink, with a link back to About underneath.
+ *
+ *          The words are the design's, written here — they do not come from
+ *          Airtable. The people do: name, company, position, photo and LinkedIn
+ *          on every card, are the `people` table's. No count is shown anywhere.
+ *
+ *          The design draws this page with the About page's card grid. It follows
+ *          the other directories instead, so the site's people pages read as one.
+ *
+ * Called by: visitors at /board-of-trustees, and the "see all" on /about
+ * Calls: src/lib/api.ts, src/components/PeopleDirectory.astro
+ */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
 import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
-import PeopleGrid from '../components/about/PeopleGrid.astro';
-import { getAboutContent, getHomeContent, getPeople } from '../lib/api';
+import PeopleDirectory from '../components/PeopleDirectory.astro';
+import { getHomeContent, getPeople } from '../lib/api';
 import { publicApiBase } from '../lib/env';
-import '../styles/about.css';
+import '../styles/ventures.css';
+import '../styles/directory.css';
 
-const [content, about, livePeople] = await Promise.all([
-  getHomeContent(),
-  getAboutContent(),
-  getPeople(),
-]);
+const [content, people] = await Promise.all([getHomeContent(), getPeople()]);
 const apiBase = publicApiBase;
 
 // The API already ordered them (Turkish alphabetical).
-const trusteesAll = livePeople.trustees;
+const trustees = people.trustees;
 ---
 
 <BaseLayout
-  title={`${about.trustees.subheadline} · GİRVAK`}
+  title="Board of Trustees · GİRVAK"
   description="Full Board of Trustees of the Entrepreneurship Foundation of Türkiye (GİRVAK)."
-  bodyClass="hm ab"
+  bodyClass="hm ap fv fa bt"
 >
   <Nav logoHref="/" scrolled />
   <NavMenu pathPrefix="/" />
 
-  <main>
-    <section class="ab-hero ab-hero--home ab-hero--compact">
-      <div class="ab-hero-in">
-        <a class="ab-back" href="/about#trustees">← back to about</a>
-        <h1 class="ab-hero-title ab-hero-title--page">{about.trustees.headline}</h1>
-        <p class="ab-hero-sub">{about.trustees.subheadline}</p>
-      </div>
-    </section>
-
-    <section class="people tint" id="trustees">
-      <PeopleGrid id="trustees-grid-full" people={trusteesAll} forceColor="#373D42" />
-    </section>
-  </main>
+  <PeopleDirectory
+    variant="board"
+    headlineHtml="Our Board of <i>Trustees</i>"
+    introHtml="Those who choose to give back"
+    people={trustees}
+    noun="trustees"
+  >
+    <a slot="after" class="fa-back" href="/about">Back to About</a>
+  </PeopleDirectory>
 
   <Footer footer={content.footer} apiBase={apiBase} />
 </BaseLayout>

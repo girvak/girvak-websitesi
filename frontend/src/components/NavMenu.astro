@@ -31,13 +31,27 @@ const home = (hash: string) => `${pathPrefix}${hash}`;
         </div></div>
       </li>
       <li class="nm-item">
+        <a href="/founders-ventures" class="nm-head">founders &amp; ventures</a>
+        <div class="nm-sub"><div class="nm-sub-inner">
+          <a href="/founders-ventures#founders">founders</a>
+          <a href="/founders-ventures#ventures">ventures</a>
+        </div></div>
+      </li>
+      <li class="nm-item">
         <a href="/fellow-program" class="nm-head">fellow program</a>
         <div class="nm-sub"><div class="nm-sub-inner">
           <a href="/fellow-program">about</a>
-          <a href="/fellow-program#fellows">fellows</a>
-          <a href="/fellow-program#alumni">alumni</a>
+          <a href="/fellows">fellows</a>
+          <a href="/alumni">alumni</a>
           <a href="/fellow-program#challengers">challenger program</a>
+          <a href="/challengers">challengers</a>
         </div></div>
+      </li>
+      <li class="nm-item">
+        <a href={home('#partners')} class="nm-head">get involved</a>
+      </li>
+      <li class="nm-item">
+        <a href="/investing" class="nm-head">investing</a>
       </li>
     </ul>
   </nav>

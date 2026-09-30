@@ -145,6 +145,20 @@ curl -X POST -H "X-Admin-Token: $ADMIN_API_KEY" https://girisimcilikvakfi.org/ap
 Each API container holds its own snapshot, so with more than one backend replica
 the call must reach each of them — or wait out the TTL.
 
+## Start-up
+
+When the API starts with `CONTENT__SOURCE=airtable` it fills every content
+snapshot in the background (`content_warmed` in the log, with the seconds it
+took — about 13 on the current base). It answers health checks meanwhile, so a
+deploy never waits on it. A page requested during those seconds waits on the
+same read, and the site gives up on the API after 5 seconds, so a visitor who
+arrives in the first few seconds of a fresh start can still get an error page;
+the next request works. Ordinary TTL expiry no longer does this.
+
+`content_warm_failed` means one page could not be built (the others still
+filled); `content_rebuild_failed` means a rebuild after expiry failed and the
+last copy is still being served, with a retry in 30 seconds.
+
 A cold `/media` mirror does not slow a deploy: the first render hands out
 Airtable's own URLs and the files download in the background (measured: a full
 mirror is ~650 files / ~140 MB and fills in about twenty seconds).
@@ -194,3 +208,20 @@ and the newsletter form must answer with a message rather than a network error.
 Logs: `docker compose logs -f backend` — one JSON object per line, with
 `request_id`. A page that fails to render logs `content_source_unavailable` with
 what it served instead (`stale` or `seed`).
+
+## Portraits as WebP (one-time notes)
+
+Mirrored portraits are converted to WebP by the backend (Pillow, installed from
+`uv.lock` in the image — a normal `docker compose build`). On the first content
+request after this ships, every `*_large.png` already in the media volume is
+converted **from the file on disk**, not from Airtable, in a few seconds.
+
+The old PNGs are left in place on purpose: a page cached in a browser can still
+point at one. Once a day or more has passed they are dead weight (about 115 MB)
+and can be removed from the media volume:
+
+```bash
+find <media dir> -name '*_large.png' -delete
+```
+
+Only `*_large.png` — logos are `*_orig.png` and are still served as they are.

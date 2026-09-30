@@ -1,0 +1,55 @@
+/* ============================================================
+   All Challengers — photo-less flip cards, grey in front, yellow behind.
+
+   Ported from the design project's challenger-cards.css, challenger-cards-rect.css
+   and challenger-cards-grey.css ("All Challengers -grey rectangle cards-"). The
+   hero, filter bar, cards' flip and "load more" are the fellows and alumni
+   pages' own (directory.css, ventures.css); this file is what makes them
+   challenger cards: smaller 3:2 rectangles, five to a row, no photo.
+
+   The page is `hm ap fv fa ca cr cg`. Selectors that compete with directory.css's
+   `.fa …` rules at the same weight are written `.fa.ca …`, so which one wins does
+   not depend on the order the stylesheets load in.
+   ============================================================ */
+.ca { --chal: #f3c00c; }
+/* Everything directory.css colours with the page's accent — the headline's italic
+   word and its hover, the description's word, filter hovers, the option ticks —
+   is the challenger yellow. */
+.fa.ca { --fellow: var(--chal); }
+
+/* Selected text takes the page's full yellow. White on that yellow would not read,
+   so the text is GİRVAK grey. Solid, so overlapping lines never stack into darker
+   bands. */
+.ca ::selection { background: var(--chal); color: #373d42; }
+.ca ::-moz-selection { background: var(--chal); color: #373d42; }
+
+/* Yellow text does not read on white: the button stays ink and its arrow turns yellow. */
+.ca .lm-btn:hover, .ca .lm-btn:focus-visible { color: #373d42; }
+.ca .lm-btn:hover .cta-arrow, .ca .lm-btn:focus-visible .cta-arrow { background-color: var(--chal); }
+
+/* ---------- the cards ---------- */
+.ca .ca-searchmenu { padding: 12px; min-width: 220px; }
+
+/* grey front (no photo, the name in the middle), yellow back */
+.fa.ca .fv-front { background: var(--ink-800); align-items: center; }
+.fa.ca .fv-back { background: var(--chal); color: #fff; }
+.fa.ca .fv-front .fv-band { position: static; background: none; text-align: center; }
+.fa.ca .fv-frontname { font-weight: 500; text-shadow: none; color: #fff; }
+.ca .fv-year { color: #fff; }
+.fa.ca .fv-uni { font-weight: 500; font-style: italic; }
+
+/* smaller landscape rectangles, five to a row */
+.cr .fv-grid { grid-template-columns: repeat(5, 1fr); gap: clamp(14px,1.7vw,26px); }
+@media (max-width: 1240px){ .cr .fv-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 940px){ .cr .fv-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 680px){ .cr .fv-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px){ .cr .fv-grid { grid-template-columns: 1fr; } }
+.cr .fv-card { aspect-ratio: 3 / 2; }
+.cr .fv-year { top: 8px; right: 11px; font-size: clamp(15px,1.35vw,21px); }
+.fa.cr .fv-front .fv-band { padding: 0 12px; }
+.fa.cr .fv-card.no-photo .fv-frontname { font-size: clamp(13px,1.05vw,15px); line-height: 1.25; }
+.fa.cr .fv-back { padding: clamp(10px,1.05vw,15px); }
+.fa.cr .fv-back-mid { gap: 3px; padding: 14px 10px 0; }
+.fa.cr .fv-name { font-size: clamp(12.5px,1vw,14.5px); line-height: 1.2; font-weight: 700; }
+.fa.cr .fv-uni { font-size: clamp(10.5px,.84vw,12px); line-height: 1.2; }
+.fa.cr .fv-dept { font-size: clamp(9.5px,.78vw,11px); line-height: 1.2; }

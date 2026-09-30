@@ -1,0 +1,60 @@
+---
+/**
+ * Module: src/pages/challengers.astro
+ * Layer: Page
+ * Purpose: Every challenger as a flip card — grey in front with the name, yellow
+ *          behind with the university and department — filtered by university,
+ *          department and cohort, or found by name. The same page as /fellows and
+ *          /alumni, in yellow, without photos: the design ("All Challengers -grey
+ *          rectangle cards-") draws its cards as smaller 3:2 rectangles.
+ *
+ * Called by: visitors at /challengers
+ * Calls: src/lib/api.ts, src/components/PeopleDirectory.astro
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import PeopleDirectory from '../components/PeopleDirectory.astro';
+import { getHomeContent, getPeople } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import '../styles/ventures.css';
+import '../styles/directory.css';
+import '../styles/challengers.css';
+
+const [home, people] = await Promise.all([getHomeContent(), getPeople()]);
+const apiBase = publicApiBase;
+
+// A page whose point is to differ on every reload must not be reused from a cache,
+// or the first 30 seconds of reloads would all show one shuffle. This overrides the
+// site-wide HTML caching in src/middleware.ts, which only fills the header in when a
+// page has not decided for itself. The API response behind it is still cached, so
+// this costs a render, not a round trip. (PeopleDirectory does the shuffling.)
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+// The page's own words. Airtable has no copy table for this page, and the design
+// fixes them, so they live here rather than in a seed nobody edits.
+const seo = {
+  title: 'All Challengers · GİRVAK',
+  description: 'Meet the GİRVAK challengers discovering what drives them.',
+};
+---
+
+<BaseLayout title={seo.title} description={seo.description} bodyClass="hm ap fv fa ca cr cg">
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <PeopleDirectory
+    headlineHtml="those finding their <i>spark.</i>"
+    introHtml="Meet the <em>challengers</em> discovering what drives them."
+    people={people.challengers}
+    noun="challengers"
+    fullYears
+  />
+
+  <Footer footer={home.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+</script>

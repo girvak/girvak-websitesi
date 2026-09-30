@@ -7,6 +7,12 @@ const c = footer.contact;
 // One place decides where the form posts. Empty apiBase means same origin, and
 // the reverse proxy forwards /api to FastAPI — so no API hostname is in the page.
 const newsletterEndpoint = apiBase ? `${apiBase}/v1/newsletter` : '/api/v1/newsletter';
+
+// The footer is on every page, but a link like `#wwd` or `#partners` names a
+// section of the home page. From any other page it leads nowhere, so a bare
+// anchor is sent to the home page's. A lone `#` (a link not written yet) is left
+// as it is.
+const href = (link: string): string => (/^#.+/.test(link) ? `/${link}` : link);
 ---
 <footer class="ft" id="footer">
   <div class="ft-news">
@@ -34,7 +40,7 @@ const newsletterEndpoint = apiBase ? `${apiBase}/v1/newsletter` : '/api/v1/newsl
     <div class="ft-col">
       <h4>Explore</h4>
       <div class="ft-contact">
-        {footer.explore_links.map((l) => (<a href={l.href}>{l.label}</a>))}
+        {footer.explore_links.map((l) => (<a href={href(l.href)}>{l.label}</a>))}
       </div>
     </div>
     <div class="ft-col">
