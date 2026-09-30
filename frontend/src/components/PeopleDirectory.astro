@@ -22,6 +22,7 @@
  * Calls: src/scripts/directory.js
  */
 import type { Person } from '../lib/types';
+import { shuffled } from '../lib/shuffle';
 
 interface Props {
   /** Hero headline. Trusted markup written in the page, never editor content. */
@@ -33,9 +34,11 @@ interface Props {
   noun: string;
   /** Which kind of directory this is; see the module header. */
   variant?: 'students' | 'board';
+  /** Print the year dropdown in full (`2025`) rather than as the cards do (`’25`). */
+  fullYears?: boolean;
 }
 
-const { headlineHtml, introHtml, people, noun, variant = 'students' } = Astro.props;
+const { headlineHtml, introHtml, people, noun, variant = 'students', fullYears = false } = Astro.props;
 const board = variant === 'board';
 // Placed under the list: a way out of the page, such as a link back.
 const hasAfter = Astro.slots.has('after');
@@ -45,11 +48,10 @@ const yearKey = (year: string | undefined): string => (year?.match(/\d/g) ?? [])
 
 const nameOf = (p: Person): string => `${p.first} ${p.last ?? ''}`.trim();
 
-// Newest cohort first. The API hands people over Turkish A–Z and `sort` is
-// stable, so within a cohort that order is kept.
-const cohort = [...people].sort(
-  (a, b) => Number(yearKey(b.year) || -1) - Number(yearKey(a.year) || -1),
-);
+// Fellows and alumni are a cohort, not a catalogue: in a new random order on every
+// render, so nobody is stuck at the end of an alphabet (the page says `no-store`).
+// The board is a short list people look names up in, and keeps the API's Turkish A–Z.
+const cohort = board ? [...people] : shuffled(people);
 
 /** Distinct non-empty values, in Turkish alphabetical order. */
 function distinct(pick: (p: Person) => string | undefined): string[] {
@@ -84,8 +86,10 @@ const filters = [
     key: 'year',
     label: 'year',
     all: 'all years',
-    // Already newest first: `cohort` is sorted that way and Map keeps insertion order.
-    options: [...years].map(([value, label]) => ({ value, label })),
+    // Newest cohort first, whatever order the cards are in.
+    options: [...years]
+      .sort(([a], [b]) => Number(b) - Number(a))
+      .map(([value, label]) => ({ value, label: fullYears ? `20${value}` : label })),
   },
 ];
 ---

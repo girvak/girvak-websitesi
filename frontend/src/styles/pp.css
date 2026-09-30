@@ -1,0 +1,23 @@
+/* ============================================================
+   The heading and shell of the Programs & Projects family of pages
+   (Investing today; Programs when it is built).
+
+   Ported from the design project's programs.css — only what these pages share:
+   the page shell, the hero heading with its teal italic accent, and the link
+   reset. The category tiles, cards and panels in that file belong to the
+   Programs page and come with it. `.ap` is the two-line page shell from
+   apply.css, which every one of these pages also loads.
+
+   One change from the source: no image path here, so nothing to rewrite.
+   ============================================================ */
+.ap { background: #fff; color: var(--ink-800); }
+.pp { --edge: clamp(20px, 5vw, 80px); background: #fff; }
+
+/* shared page heading — same as other pages */
+.pp-hero { padding: clamp(130px, 15vw, 190px) var(--edge) clamp(34px, 4vw, 56px); }
+.pp-h1 { margin: 0; font-size: clamp(40px, 6.4vw, 75px); font-weight: 500; line-height: 1.04; letter-spacing: -0.035em; color: #373D42; text-wrap: balance; }
+.pp-h1 .ch { transition: color .3s var(--ease-out); }
+.pp-h1 .ch:hover { color: #19BAD1; }
+.pp-h1 .ch.pp-accent { color: #19BAD1; font-style: italic; }
+.pp-h1 .ch.pp-accent:hover { color: #373D42; }
+.pp a, .pp a:hover { color: inherit; text-decoration: none; }

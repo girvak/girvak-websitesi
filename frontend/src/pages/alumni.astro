@@ -21,6 +21,13 @@ import '../styles/directory.css';
 const [home, people] = await Promise.all([getHomeContent(), getPeople()]);
 const apiBase = publicApiBase;
 
+// A page whose point is to differ on every reload must not be reused from a cache,
+// or the first 30 seconds of reloads would all show one shuffle. This overrides the
+// site-wide HTML caching in src/middleware.ts, which only fills the header in when a
+// page has not decided for itself. The API response behind it is still cached, so
+// this costs a render, not a round trip.
+Astro.response.headers.set('Cache-Control', 'no-store');
+
 // The page's own words. Airtable has no copy table for this page, and the design
 // fixes them, so they live here rather than in a seed nobody edits.
 const seo = {

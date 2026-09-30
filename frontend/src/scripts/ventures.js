@@ -10,6 +10,7 @@
 // tabs and filtering only toggles `hidden`, so nothing is re-fetched.
 // ============================================================
 import { fold, hits, pruneOptions, wire, wireSearch } from './filters-multi.js';
+import { parseFilters } from './pager.js';
 import './hero-letters.js';
 
 const grid = document.getElementById('fvGrid');
@@ -182,6 +183,13 @@ if (grid) {
     roll(c);
     c.addEventListener('mouseenter', () => roll(c));
   });
+
+  // ---------- a link can open the directory already filtered ----------
+  // /founders-ventures?program=founder-one — the slugs the API's own filters use.
+  // A value that is not an option on this page is dropped, so a link to a
+  // programme the base does not have yet shows everything rather than nothing.
+  const linked = parseFilters(location.search, DIMS.map((d) => d.key));
+  DIMS.forEach((d) => multi.set(d.key, linked.values[d.key]));
 
   // ---------- deep link: /founders-ventures#ventures opens that tab ----------
   // Opened directly, not switched to — so it is already there when the page

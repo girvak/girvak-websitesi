@@ -10,8 +10,18 @@
 .fa { --fellow: #BA1818; }
 .al { --fellow: #281858; }
 .bt { --fellow: #373D42; }  /* the board: GİRVAK ink, as its cards are on the About page */
+/* The headline is not ink: its italic word is turquoise and letters turn turquoise
+   under the pointer, as on the About hero. Left to `--fellow` both would be the
+   ink of the text around them, so neither would show. */
+.bt .fa-hero-title i { color: var(--turquoise); }
+.bt .fa-hero-title .ch:hover { color: var(--turquoise); }
 .al ::selection { background: #281858; color: #fff; }
 .al ::-moz-selection { background: #281858; color: #fff; }
+/* Selected text (Ctrl+A, dragging) takes the page's full colour, as on alumni:
+   the fellows' red with white text. Solid, not translucent, so overlapping lines
+   never stack into darker bands. */
+.fl ::selection { background: var(--fellow); color: #fff; }
+.fl ::-moz-selection { background: var(--fellow); color: #fff; }
 
 /* ---------- hero ---------- */
 .fa-hero { padding-top: clamp(140px,15vw,190px); padding-bottom: clamp(20px,2.4vw,32px); }
@@ -50,12 +60,15 @@
 .fa .fv-dept { display: block; font-size: clamp(11.5px,.98vw,13.5px); font-weight: 400; line-height: 1.25; opacity: .92; }
 
 /* ---------- load more ----------
-   The button and the "showing 24 of 405" line under the list. `.lm` also carries
+   The button under the list, and a "showing 24 of 405" line that only a screen
+   reader gets: how many people there are and how many are loaded is not something
+   the page shows. `.lm` also carries
    the space the grid's own bottom padding used to, so the page ends the same
    whether or not there is a button. */
 .lm { display: flex; flex-direction: column; align-items: center; gap: clamp(14px,1.6vw,22px);
   padding: clamp(40px,4.6vw,66px) 0 clamp(60px,7vw,110px); }
-.lm-status { margin: 0; font-size: clamp(14px,1.15vw,16px); color: var(--ink-500, #6b7278); }
+.lm-status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .lm-status:focus { outline: none; }
 .lm-btn { cursor: pointer; padding: clamp(18px,1.8vw,24px) 0; }
 .lm-btn[hidden] { display: none; }

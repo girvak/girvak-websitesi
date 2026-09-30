@@ -1,0 +1,88 @@
+---
+/**
+ * Module: src/pages/investing.astro
+ * Layer: Page
+ * Purpose: Founder One, Türkiye's first impact investment fund — what it is, what
+ *          it backs, and the way on to its founders, its ventures and its own site.
+ *
+ *          Written as the design has it, word for word, and — like the design —
+ *          with no footer. None of it comes from Airtable. The header is the
+ *          design's plain `hm-nav`: clear at the top of the page, a white bar once
+ *          scrolled (home.js toggles it), not locked into the bar as on pages whose
+ *          design says `scrolled`.
+ *
+ *          The founders and ventures links open the directory filtered to the
+ *          Founder One programme (`?program=founder-one`). That filter does
+ *          something once the base has a programme of that name; until then the
+ *          directory shows everyone.
+ *
+ * Called by: visitors at /investing
+ * Calls: nothing
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import '../styles/pp.css';
+import '../styles/investing.css';
+---
+
+<BaseLayout
+  title="Investing — GİRVAK"
+  description="Founder One — Türkiye's first impact investment fund, founded by GİRVAK and Türkiye Informatics Foundation."
+  bodyClass="hm ap pp"
+>
+  <Nav logoHref="/" />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="pp-hero">
+      <h1 class="pp-h1"><span class="pp-accent">Backing impact</span>, from the very start.</h1>
+    </section>
+    <section class="iv-photo">
+      <img
+        class="iv-photo-img"
+        src="/images/investing-hero.jpg"
+        alt="Founders and investors in conversation at a GİRVAK gathering"
+      />
+      <div class="iv-photo-in">
+        <p>
+          Founder One is <strong>Türkiye's first impact investment fund</strong>, founded by
+          <strong>GİRVAK</strong> and <strong>Türkiye Informatics Foundation</strong>. With a fund size of 300
+          million TL, Founder One supports early-stage, technology-driven startups that aim to build a more
+          livable, inclusive, and sustainable world.
+        </p>
+        <p>
+          By investing in entrepreneurs focused on societal and environmental impact, we contribute to the
+          growth of Türkiye's social impact economy. Since 2023, we've backed <strong>45 ventures</strong>
+          building toward that future.
+        </p>
+      </div>
+    </section>
+    <hr class="iv-rule" />
+    <section class="iv-back">
+      <p class="iv-label">what we back</p>
+      <ul class="iv-list">
+        <li>Inclusive Society</li>
+        <li>Healthy and Safe Living</li>
+        <li>Climate and Environmental Sustainability</li>
+      </ul>
+    </section>
+    <hr class="iv-rule" />
+    <nav class="iv-links" aria-label="Founder One links">
+      <a class="iv-link" href="/founders-ventures?program=founder-one#founders"
+        >founders<span class="cta-arrow" aria-hidden="true"></span></a
+      >
+      <a class="iv-link" href="/founders-ventures?program=founder-one#ventures"
+        >ventures<span class="cta-arrow" aria-hidden="true"></span></a
+      >
+      <a class="iv-link" href="https://www.founderone.com/" target="_blank" rel="noopener"
+        >discover more<span class="cta-arrow" aria-hidden="true"></span></a
+      >
+    </nav>
+  </main>
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+  import '../scripts/investing.js';
+</script>

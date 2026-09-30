@@ -5,8 +5,8 @@ Airtable; the site shows it on the next page load — no build, no deploy.
 
 ## What it is for
 
-Eight pages — home, about, fellow program, founders & ventures, fellows,
-alumni, challengers, board of trustees — plus a newsletter form. Editors work in Airtable and never touch
+Nine pages — home, about, fellow program, founders & ventures, fellows,
+alumni, challengers, board of trustees, investing — plus a newsletter form. Editors work in Airtable and never touch
 this repo.
 
 ## Architecture in a few lines
@@ -63,7 +63,7 @@ More: [docs/development/testing.md](docs/development/testing.md) once it exists.
 
 ```
 backend/     FastAPI: content API, newsletter, Airtable adapter, media mirror
-frontend/    Astro SSR: eight pages, layouts, styles, browser behaviour
+frontend/    Astro SSR: nine pages, layouts, styles, browser behaviour
 docs/        architecture, data model, setup, API
 coding-playbook/  the rules; read AGENTS.md if you are an AI coding agent
 ```

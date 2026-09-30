@@ -8,7 +8,7 @@
  *
  *          The words are the design's, written here — they do not come from
  *          Airtable. The people do: name, company, position, photo and LinkedIn
- *          on every card, and the member count, are the `people` table's.
+ *          on every card, are the `people` table's. No count is shown anywhere.
  *
  *          The design draws this page with the About page's card grid. It follows
  *          the other directories instead, so the site's people pages read as one.
@@ -44,7 +44,7 @@ const trustees = people.trustees;
   <PeopleDirectory
     variant="board"
     headlineHtml="Our Board of <i>Trustees</i>"
-    introHtml={`Those who choose to give back · ${trustees.length} members`}
+    introHtml="Those who choose to give back"
     people={trustees}
     noun="trustees"
   >

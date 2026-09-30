@@ -81,7 +81,7 @@
     "newsletter_text": "Program calls, founder stories and ecosystem news — once a month, no noise.",
     "brand_text": "Girişimcilik Vakfı - the Entrepreneurship Foundation of Türkiye. Investing in people since 2014.",
     "explore_links": [
-      { "label": "About GİRVAK", "href": "#" },
+      { "label": "About GİRVAK", "href": "/about" },
       { "label": "Fellow Program", "href": "/fellow-program" },
       { "label": "Programs & Projects", "href": "#wwd" },
       { "label": "Giveback", "href": "#" },
