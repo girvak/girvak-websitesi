@@ -53,7 +53,7 @@
   "giveback_cta": { "label": "You can access the full Fellow Program Impact Report here.", "href": "#" },
   "challenger_hero_image": "",
   "challenger_hero_headline": "Your first step into the entrepreneurial world",
-  "challenger_hero_headline_html": "<span style=\"color: #f2a81d\">Your first step</span><br /><span style=\"color: #373d42\">into the entrepreneurial world</span>",
+  "challenger_hero_headline_html": "<span class=\"fchal-em\">Your first step</span><br /><span class=\"fchal-rest\">into the entrepreneurial world</span>",
   "challenger_paragraphs": [
     "The <span class=\"chl\">Challenger Program</span> introduces <span class=\"chl\">first and second-year university students</span> to the wide horizon of opportunities that life, careers, and entrepreneurship have to offer.",
     "Designed as an <span class=\"chl\">early discovery track</span>, the program inspires young talents to explore different paths, gain foundational entrepreneurial skills, and start shaping their own future."

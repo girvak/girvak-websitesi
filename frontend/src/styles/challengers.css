@@ -11,7 +11,7 @@
    `.fa …` rules at the same weight are written `.fa.ca …`, so which one wins does
    not depend on the order the stylesheets load in.
    ============================================================ */
-.ca { --chal: #f3c00c; }
+.ca { --chal: var(--challenger); }
 /* Everything directory.css colours with the page's accent — the headline's italic
    word and its hover, the description's word, filter hovers, the option ticks —
    is the challenger yellow. */
