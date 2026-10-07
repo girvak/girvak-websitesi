@@ -147,7 +147,7 @@ A link can also open `/founders-ventures` already filtered, with the same slugs
 the API's filters use: `?program=tskb-co-venture#ventures` (repeat a key to widen
 it; `sector`, `program` and `year` are read). A value that is not an option on the
 page is dropped, so a link to something the base does not have shows everyone. The
-Investing page links this way to `program=founder-one`, which starts to filter the
+A deep link such as `?program=founder-one` starts to filter the directory the
 day the `programs` table has a "Founder One" row.
 
 ## Tests

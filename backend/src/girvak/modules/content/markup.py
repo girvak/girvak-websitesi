@@ -280,8 +280,8 @@ def challenger_hero_html(value: str) -> str:
         left, right = " ".join(words[:3]), " ".join(words[3:])
 
     return (
-        f'<span style="color: #f2a81d">{html.escape(left)}</span><br />'
-        f'<span style="color: #373d42">{html.escape(right)}</span>'
+        f'<span class="fchal-em">{html.escape(left)}</span><br />'
+        f'<span class="fchal-rest">{html.escape(right)}</span>'
     )
 
 

@@ -5,8 +5,8 @@ Airtable; the site shows it on the next page load — no build, no deploy.
 
 ## What it is for
 
-Nine pages — home, about, fellow program, founders & ventures, fellows,
-alumni, challengers, board of trustees, investing — plus a newsletter form. Editors work in Airtable and never touch
+Eight pages — home, about, fellow program, founders & ventures, fellows,
+alumni, challengers, board of trustees — plus a newsletter form. Editors work in Airtable and never touch
 this repo.
 
 ## Architecture in a few lines

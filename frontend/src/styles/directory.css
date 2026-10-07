@@ -7,16 +7,15 @@
    only holds what is particular to these two pages: the hero, the coloured
    faces and the photo-filled front. Fellows are red, alumni override to indigo.
    ============================================================ */
-.fa { --fellow: #BA1818; }
-.al { --fellow: #281858; }
+.al { --fellow: var(--alumni); }
 .bt { --fellow: #373D42; }  /* the board: GİRVAK ink, as its cards are on the About page */
 /* The headline is not ink: its italic word is turquoise and letters turn turquoise
    under the pointer, as on the About hero. Left to `--fellow` both would be the
    ink of the text around them, so neither would show. */
 .bt .fa-hero-title i { color: var(--turquoise); }
 .bt .fa-hero-title .ch:hover { color: var(--turquoise); }
-.al ::selection { background: #281858; color: #fff; }
-.al ::-moz-selection { background: #281858; color: #fff; }
+.al ::selection { background: var(--alumni); color: #fff; }
+.al ::-moz-selection { background: var(--alumni); color: #fff; }
 /* Selected text (Ctrl+A, dragging) takes the page's full colour, as on alumni:
    the fellows' red with white text. Solid, not translucent, so overlapping lines
    never stack into darker bands. */
