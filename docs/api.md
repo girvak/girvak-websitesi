@@ -19,6 +19,7 @@ Data shapes: [data-model.md](data-model.md). Architecture: [architecture/overvie
 | `GET` | `/v1/content/fellow` | fellow-program page payload |
 | `GET` | `/v1/content/people` | trustees, directors, team, fellows, alumni, challengers |
 | `GET` | `/v1/content/ventures` | one page of one tab of the founders & ventures directory |
+| `GET` | `/v1/content/programs` | the `/programs` tiles (`programs` table) and their approved programs (`programs_detailed`) |
 | `GET` | `/v1/content/apply` | the open calls on `/apply`: approved `applications` rows, Airtable order |
 | `POST` | `/v1/newsletter` | subscribe one email address |
 | `POST` | `/v1/content/refresh` | operator: drop the content snapshot |

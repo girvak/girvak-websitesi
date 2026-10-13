@@ -16,6 +16,7 @@ import type {
   FellowContent,
   HomeContent,
   PeopleContent,
+  ProgramsContent,
   FounderCard,
   Venture,
   VenturesContent,
@@ -46,6 +47,10 @@ export async function getFellowContent(): Promise<FellowContent> {
 
 export async function getApply(): Promise<ApplyContent> {
   return read<ApplyContent>('/v1/content/apply');
+}
+
+export async function getPrograms(): Promise<ProgramsContent> {
+  return read<ProgramsContent>('/v1/content/programs');
 }
 
 export async function getPeople(): Promise<PeopleContent> {

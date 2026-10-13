@@ -338,3 +338,29 @@ export interface RatedCall extends OpenCall {
 export interface ApplyContent {
   calls: OpenCall[];
 }
+
+/** One program card on /programs. `href` is empty when it has no site of its own. */
+export interface ProgramCard {
+  slug: string;
+  name: string;
+  text: string;
+  photo: string;
+  href: string;
+  sectors: string[];
+  targets: string[];
+  stages: string[];
+  current: boolean;
+}
+
+/** One tile on /programs and its programs. */
+export interface ProgramCategory {
+  slug: string;
+  name: string;
+  description: string;
+  photo: string;
+  programs: ProgramCard[];
+}
+
+export interface ProgramsContent {
+  categories: ProgramCategory[];
+}

@@ -46,6 +46,9 @@ from girvak.modules.content.fragments import (
     tags,
     text,
 )
+from girvak.modules.content.fragments import labels as _labels
+from girvak.modules.content.fragments import linked_ids as _linked_ids
+from girvak.modules.content.fragments import linked_labels as _linked_labels
 from girvak.modules.content.people import sort_key, year_of
 from girvak.modules.content.schemas import (
     Facet,
@@ -555,47 +558,6 @@ def _year_facets(pool: Sequence[_Card]) -> list[Facet]:
         Facet(value=key, label=labels[key], count=counts[key])
         for key in sorted(counts, reverse=True)
     ]
-
-
-def _labels(records: Sequence[AirtableRecord], names: Sequence[str]) -> dict[str, str]:
-    """Record id -> that row's label, for a linked table."""
-    resolved: dict[str, str] = {}
-    for record in records:
-        label = text(field(record.fields, *names))
-        if label:
-            resolved[record.id] = label
-    return resolved
-
-
-def _linked_ids(fields: Fields, names: Sequence[str]) -> list[str]:
-    """Record ids of a link or lookup column.
-
-    A lookup gives plain id strings and a link column gives the same, but a
-    lookup configured to return objects gives dicts — both are read here so a
-    change in the base does not empty the column.
-    """
-    value = field(fields, *names)
-    if not isinstance(value, list):
-        return []
-    ids: list[str] = []
-    for item in value:
-        if isinstance(item, str) and item.startswith("rec"):
-            ids.append(item)
-        elif isinstance(item, dict):
-            candidate = item.get("id")
-            if isinstance(candidate, str) and candidate.startswith("rec"):
-                ids.append(candidate)
-    return ids
-
-
-def _linked_labels(fields: Fields, names: Sequence[str], labels: Mapping[str, str]) -> list[str]:
-    """Labels of a link column, duplicates dropped and order kept."""
-    resolved: list[str] = []
-    for record_id in _linked_ids(fields, names):
-        label = labels.get(record_id)
-        if label and label not in resolved:
-            resolved.append(label)
-    return resolved
 
 
 def _logo(fields: Fields, media: Mapping[str, str], names: Sequence[str]) -> str:

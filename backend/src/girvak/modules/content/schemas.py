@@ -478,3 +478,37 @@ class ApplyContent(_Frozen):
     """The `/apply` page: every approved call, in Airtable order."""
 
     calls: list[OpenCall] = []
+
+
+class ProgramCard(_Frozen):
+    """One program on /programs: a `programs_detailed` row.
+
+    `href` is the program's own site ("discover more"), empty when it has none —
+    the card is then not a link. The three lists are what the filter bar reads.
+    """
+
+    slug: str
+    name: str
+    text: str = ""
+    photo: str = ""
+    href: str = ""
+    sectors: list[str] = []
+    targets: list[str] = []
+    stages: list[str] = []
+    current: bool = True
+
+
+class ProgramCategory(_Frozen):
+    """One tile on /programs — a row of the `programs` table — and its programs."""
+
+    slug: str
+    name: str
+    description: str = ""
+    photo: str = ""
+    programs: list[ProgramCard] = []
+
+
+class ProgramsContent(_Frozen):
+    """The `/programs` page."""
+
+    categories: list[ProgramCategory] = []

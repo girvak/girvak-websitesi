@@ -31,6 +31,7 @@ from girvak.modules.content.schemas import (
     FellowContent,
     HomeContent,
     PeopleContent,
+    ProgramsContent,
     VenturesContent,
 )
 from girvak.modules.content.service import ContentService, build_service
@@ -76,6 +77,12 @@ async def people(request: Request, settings: SettingsDep) -> Response:
 async def apply(request: Request, settings: SettingsDep) -> Response:
     """Content for `/apply`: every approved call, in Airtable order."""
     return _page(request, await _service(settings).apply(), settings)
+
+
+@router.get("/programs", response_model=ProgramsContent, summary="Programs page")
+async def programs(request: Request, settings: SettingsDep) -> Response:
+    """Content for `/programs`: the category tiles and every approved program."""
+    return _page(request, await _service(settings).programs(), settings)
 
 
 @router.get("/ventures", response_model=VenturesContent, summary="Founders & ventures page")

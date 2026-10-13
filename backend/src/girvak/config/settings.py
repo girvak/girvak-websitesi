@@ -55,6 +55,9 @@ class AirtableSettings(BaseModel):
     table_ventures: str = "ventures"
     table_sectors: str = "sectors"
     table_programs: str = "programs_detailed"
+    # The three program categories (/programs tiles); `programs_detailed` rows
+    # link to them.
+    table_program_categories: str = "programs"
     # The open calls on /apply.
     table_applications: str = "applications"
 

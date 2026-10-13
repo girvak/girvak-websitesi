@@ -30,7 +30,7 @@ The base's shape is fixed by what editors already use — this system adapts to
 it, it does not migrate it.
 
 Tables: `home`, `about`, `fellow`, `partner`, `people`, `icons` — plus the
-record tables `ventures`, `sectors`, `programs_detailed` and `applications` (below).
+record tables `ventures`, `sectors`, `programs`, `programs_detailed` and `applications` (below).
 
 `ContentFragment` (one Airtable row):
 
@@ -68,6 +68,20 @@ Links arrive as Airtable record ids, so `modules/content/ventures.py` reads
 `AirtableRecord` directly rather than through `Fragments`, which keeps only
 fields. Ids are resolved to labels and slugs during mapping: **no `rec…` id ever
 reaches the browser.**
+
+### `programs` and `programs_detailed` — the `/programs` page
+
+`programs` holds the three categories (`Name`, `description`, `photo`): one tile
+each, drawn in the design's order — entrepreneurship support, development,
+talent — whatever order Airtable returns them in.
+
+`programs_detailed` holds the programs. A row shows under the category its
+`programs` link names, when `onay` is ticked; one with no category (Fellow,
+Challenger) is not on this page. The card reads `name (en)`, `text`, `photo`
+and `discover more` (the program's own site; without it the card is not a
+link). The filter bar reads `sectors` (link to `sectors`), `target group` and
+`stage` (multi-selects) and `current/past`; a dropdown with fewer than two
+choices is left off. Current programs come before past ones, which are dimmed.
 
 ### `applications` — the open calls on `/apply`
 

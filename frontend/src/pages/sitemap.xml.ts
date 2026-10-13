@@ -11,7 +11,7 @@
 import type { APIRoute } from 'astro';
 import { siteUrl } from '../lib/env';
 
-const PATHS = ['/', '/about', '/fellow-program', '/founders-ventures', '/fellows', '/alumni', '/challengers', '/board-of-trustees', '/apply'];
+const PATHS = ['/', '/about', '/fellow-program', '/founders-ventures', '/fellows', '/alumni', '/challengers', '/board-of-trustees', '/apply', '/programs'];
 
 export const GET: APIRoute = () => {
   const urls = PATHS.map((path) => `  <url><loc>${siteUrl}${path}</loc></url>`).join('\n');
