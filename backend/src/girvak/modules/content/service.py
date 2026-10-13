@@ -20,7 +20,7 @@ Dependencies:
 
 Called by: modules/content/router.py
 Calls: infra/airtable/client.py, infra/cache/snapshot.py,
-       infra/storage/media_mirror.py, modules/content/{home,about,fellow,people,seeds}.py
+       infra/storage/media_mirror.py, modules/content/{home,about,fellow,people,apply,seeds}.py
 """
 
 from __future__ import annotations
@@ -36,6 +36,7 @@ from girvak.infra.airtable.client import client as airtable_client
 from girvak.infra.cache.snapshot import SnapshotCache, cache
 from girvak.infra.storage.media_mirror import AttachmentRef, MediaMirror, mirror
 from girvak.modules.content import about as about_page
+from girvak.modules.content import apply as apply_page
 from girvak.modules.content import fellow as fellow_page
 from girvak.modules.content import home as home_page
 from girvak.modules.content import people as people_page
@@ -44,6 +45,7 @@ from girvak.modules.content import ventures as ventures_page
 from girvak.modules.content.fragments import FULL, LARGE, Fragments, collect_refs, logo_refs
 from girvak.modules.content.schemas import (
     AboutContent,
+    ApplyContent,
     Fellow,
     FellowContent,
     HomeContent,
@@ -65,6 +67,7 @@ ABOUT_KEY = "about"
 FELLOW_KEY = "fellow"
 PEOPLE_KEY = "people"
 VENTURES_KEY = "ventures"
+APPLY_KEY = "apply"
 
 ValueT = TypeVar("ValueT")
 
@@ -146,6 +149,16 @@ class ContentService:
             empty state rather than inventing names.
         """
         return await self._snapshot(PEOPLE_KEY, self._build_people, _empty_people)
+
+    async def apply(self) -> ApplyContent:
+        """The open calls on /apply.
+
+        Returns:
+            Apply content. There is no seed of calls: a deadline and a form link
+            in the repo would go stale, so an outage with no previous snapshot
+            shows no cards rather than invented ones.
+        """
+        return await self._snapshot(APPLY_KEY, self._build_apply, ApplyContent)
 
     async def ventures(
         self,
@@ -315,6 +328,12 @@ class ContentService:
         media = self._media_urls(collect_refs(records, FULL))
         return fellow_page.build(seed, Fragments(records, media))
 
+    async def _build_apply(self) -> ApplyContent:
+        if self._client is None:
+            return ApplyContent()
+        records = await self._client.list_records(self._settings.airtable.table_applications)
+        return apply_page.build(records)
+
     async def _build_ventures(self) -> VenturesData:
         copy = seeds.ventures()
         if self._client is None:
@@ -396,6 +415,7 @@ async def warm_up(service: ContentService) -> None:
         (ABOUT_KEY, service.about),
         (FELLOW_KEY, service.fellow_program),
         (VENTURES_KEY, service.ventures),
+        (APPLY_KEY, service.apply),
     )
     for name, read in pages:
         try:

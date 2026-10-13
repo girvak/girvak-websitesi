@@ -367,6 +367,7 @@ async def test_warm_up_fills_every_snapshot(
         airtable.table_about,
         airtable.table_fellow,
         airtable.table_ventures,
+        airtable.table_applications,
     ):
         assert table in source.calls
 
@@ -375,6 +376,7 @@ async def test_warm_up_fills_every_snapshot(
     await service.fellow_program()
     await service.people()
     await service.ventures()
+    await service.apply()
     assert len(source.calls) == read  # the first visitor reads nothing
 
 

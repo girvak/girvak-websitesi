@@ -30,7 +30,7 @@ The base's shape is fixed by what editors already use — this system adapts to
 it, it does not migrate it.
 
 Tables: `home`, `about`, `fellow`, `partner`, `people`, `icons` — plus the
-record tables `ventures`, `sectors` and `programs_detailed` (below).
+record tables `ventures`, `sectors`, `programs_detailed` and `applications` (below).
 
 `ContentFragment` (one Airtable row):
 
@@ -68,6 +68,26 @@ Links arrive as Airtable record ids, so `modules/content/ventures.py` reads
 `AirtableRecord` directly rather than through `Fragments`, which keeps only
 fields. Ids are resolved to labels and slugs during mapping: **no `rec…` id ever
 reaches the browser.**
+
+### `applications` — the open calls on `/apply`
+
+Also a record table: one row is one call (programme, event, award).
+
+| Field | Meaning |
+|---|---|
+| `headline` | the card's title |
+| `text` | the card's one-line description |
+| `link` | where "apply" goes — usually an Airtable, Google or partner form |
+| `deadline` | last day applications are taken. **Empty means always open**: the card comes first and turns red on hover (the Fellow Program) |
+| `onay` | the publish gate. An unticked row is a draft and never renders |
+
+The API returns the approved rows in Airtable order with the deadline as a
+date. Open, closing soon (seven days or fewer) and closed are worked out by the
+page on every request, in İstanbul time (`frontend/src/scripts/open-calls.js`),
+so a snapshot never keeps a call open past its deadline. The base's
+`Deadline Passed?` formula is not read. A closed call stays on the page, greyed
+out and last. There is no seed of calls: an outage with no snapshot shows an
+empty grid rather than stale deadlines.
 
 ### Founders are people, not venture links
 
@@ -111,6 +131,7 @@ These are Pydantic models, not tables.
 - `FellowContent` — CTA, "how it works" blocks, expectation cards, "what you do" items
 - `PeopleContent` — people grouped by tag: trustees, directors, fellows
 - `Partners` — logos, ordered, featured flag
+- `ApplyContent` — the open calls, undated: the page rates them per request
 - `VenturesContent` — one page of one tab of the founders & ventures directory,
   plus facets covering both. Both whole lists are the snapshot; the tab, filter
   and page number are applied to it per request, so a page-3 visit reads

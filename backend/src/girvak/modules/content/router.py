@@ -27,6 +27,7 @@ from girvak.config import Settings
 from girvak.http.deps import SettingsDep, require_admin
 from girvak.modules.content.schemas import (
     AboutContent,
+    ApplyContent,
     FellowContent,
     HomeContent,
     PeopleContent,
@@ -69,6 +70,12 @@ async def fellow(request: Request, settings: SettingsDep) -> Response:
 async def people(request: Request, settings: SettingsDep) -> Response:
     """Trustees, directors, team, fellows, alumni, and challengers."""
     return _page(request, await _service(settings).people(), settings)
+
+
+@router.get("/apply", response_model=ApplyContent, summary="Open calls")
+async def apply(request: Request, settings: SettingsDep) -> Response:
+    """Content for `/apply`: every approved call, in Airtable order."""
+    return _page(request, await _service(settings).apply(), settings)
 
 
 @router.get("/ventures", response_model=VenturesContent, summary="Founders & ventures page")

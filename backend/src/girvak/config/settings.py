@@ -55,6 +55,8 @@ class AirtableSettings(BaseModel):
     table_ventures: str = "ventures"
     table_sectors: str = "sectors"
     table_programs: str = "programs_detailed"
+    # The open calls on /apply.
+    table_applications: str = "applications"
 
     connect_timeout_seconds: float = 5.0
     total_timeout_seconds: float = 15.0

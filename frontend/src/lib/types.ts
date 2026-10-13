@@ -318,3 +318,15 @@ export interface VenturesContent {
   years: Facet[];
   selected: { sectors: string[]; programs: string[]; years: string[]; q: string };
 }
+
+/** One card on /apply. `deadline` is `YYYY-MM-DD`, or null when always open. */
+export interface OpenCall {
+  title: string;
+  text: string;
+  href: string;
+  deadline: string | null;
+}
+
+export interface ApplyContent {
+  calls: OpenCall[];
+}

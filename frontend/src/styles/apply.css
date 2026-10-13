@@ -1,0 +1,93 @@
+/* ============================================================
+   GİRVAK — Apply / Open calls
+   Ink cards on white, brand-colour hover fills.
+
+   Ported from the design project's apply.css. Left out: the fellow interest
+   form modal (the Fellow card links straight to its Airtable form, so the
+   design never opens it) and the random selection colour. The hero's inline
+   styles are rules here, and the arrow image path is absolute.
+   ============================================================ */
+
+.ap { background: #fff; color: var(--ink-800); }
+.ap-edge { padding-left: clamp(20px,5vw,80px); padding-right: clamp(20px,5vw,80px); }
+
+/* ---------- our one arrow icon (same as home/about .cta-arrow) ---------- */
+.ap-arrow { flex: none; width: clamp(44px,3.6vw,52px); height: clamp(15px,1.2vw,18px); background-color: currentColor; -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain; mask: url(/images/cta-arrow.png) no-repeat center / contain; transition: transform .25s var(--ease-out); }
+.ap-arrow-lg { width: clamp(66px,6.6vw,94px); height: clamp(22px,2.2vw,31px); }
+
+/* ---------- HERO ---------- */
+.ap-hero { padding-top: clamp(140px,15vw,190px); padding-bottom: clamp(28px,3.4vw,46px); }
+.ap-hero-title { margin: 0; font-size: clamp(40px,6.4vw,75px); font-weight: 500; line-height: 1.04; letter-spacing: -0.035em; color: var(--ink-800); text-wrap: balance; }
+.ap-hero-title i { color: var(--turquoise); }
+.ap-hero-title .ch { transition: color .3s var(--ease-out); }
+.ap-hero-title .ch:hover { color: var(--turquoise); }
+.ap-hero-title i .ch-inv { transition: color .3s var(--ease-out); }
+.ap-hero-title i .ch-inv:hover { color: var(--ink-800); }
+.ap-hero-sub { margin: clamp(28px,3.4vw,46px) 0 0; padding: 30px 0; max-width: none; font-size: clamp(15px,1.28vw,19px); font-weight: 400; line-height: 1.5; color: var(--ink-800); text-wrap: pretty; }
+
+/* ---------- SECTION HEADER (arrow + title, sub below) ---------- */
+.ap-shead { padding-top: 0; padding-bottom: clamp(28px,3.4vw,46px); }
+.ap-shead-top { display: flex; align-items: center; gap: clamp(16px,1.8vw,26px); color: var(--ink-800); }
+.ap-shead-h { margin: 0; font-size: clamp(26px,3vw,40px); font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; color: var(--ink-800); transition: color .34s cubic-bezier(0.4,0,0.2,1); }
+.ap-shead-sub { margin: clamp(12px,1.4vw,18px) 0 0; padding-top: 15px; max-width: none; font-size: clamp(15px,1.28vw,19px); font-weight: 400; line-height: 1.5; color: var(--ink-800); text-wrap: pretty; }
+.ap-inline-link { font-weight: 700; font-style: italic; color: var(--turquoise); text-decoration: none; }
+.ap-inline-link:hover { color: var(--coral); }
+
+/* ---------- GRID ---------- */
+.ap-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(10px,1.1vw,18px); padding-bottom: clamp(24px,3vw,40px); }
+.ap-empty { margin: 0; padding-bottom: clamp(24px,3vw,40px); font-size: clamp(15px,1.28vw,19px); color: var(--ink-800); }
+
+/* ---------- CARD ---------- */
+.ap-card {
+  --fill: var(--turquoise);
+  position: relative; display: flex; flex-direction: column; min-height: clamp(230px,20vw,278px);
+  padding: clamp(20px,1.9vw,26px); border: 0; border-radius: 5px;
+  background: var(--ink-800); color: #fff; text-decoration: none; overflow: hidden;
+  transition: background-color .34s cubic-bezier(0.4,0,0.2,1);
+}
+.ap-card:hover, .ap-card:focus-visible { background: var(--fill); outline: none; }
+.ap-card.is-pinned { --fill: #BA1818; }
+
+.ap-card-title { margin: 0; font-size: clamp(17px,1.35vw,20px); font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; color: #fff; text-wrap: balance; }
+.ap-card-desc { margin: clamp(14px,1.5vw,20px) 0 0; font-size: clamp(13.5px,1.08vw,16px); font-weight: 400; line-height: 1.45; color: #fff; text-wrap: pretty; }
+
+.ap-card-foot { margin-top: auto; padding-top: clamp(20px,2.4vw,34px); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.ap-date { font-size: clamp(13.5px,1.08vw,16px); font-weight: 400; letter-spacing: -0.01em; color: #fff; }
+.ap-date-open { font-size: clamp(19px,1.6vw,23px); line-height: 1; }
+/* urgent: 7 days or fewer left */
+.ap-card.is-urgent .ap-date { color: var(--coral); font-weight: 600; transition: color .34s cubic-bezier(0.4,0,0.2,1); }
+.ap-card.is-urgent:hover .ap-date, .ap-card.is-urgent:focus-visible .ap-date { color: #fff; }
+.ap-apply { display: inline-flex; align-items: center; gap: 0; transition: gap .28s cubic-bezier(0.4,0,0.2,1); font-size: clamp(13.5px,1.08vw,16px); font-weight: 400; color: #fff; }
+.ap-apply .ap-arrow { width: 0; opacity: 0; transition: width .28s cubic-bezier(0.4,0,0.2,1), opacity .22s cubic-bezier(0.4,0,0.2,1), transform .28s cubic-bezier(0.4,0,0.2,1); }
+.ap-card:hover .ap-apply, .ap-card:focus-visible .ap-apply { gap: 10px; }
+.ap-card:hover .ap-apply .ap-arrow, .ap-card:focus-visible .ap-apply .ap-arrow { width: clamp(44px,3.6vw,52px); opacity: 1; }
+
+/* ---------- CLOSED STATE ---------- */
+.ap-card.is-closed { background: var(--ink-800); }
+.ap-card.is-closed > * { opacity: .42; }
+.ap-card.is-closed .ap-arrow { display: none; }
+
+/* ---------- PROGRESSIVE DISCLOSURE ---------- */
+.ap-card[hidden] { display: none; }
+.ap-more-wrap { display: flex; justify-content: flex-end; padding-top: 15px; padding-bottom: clamp(40px,5vw,72px); }
+.ap-more { display: inline-flex; align-items: center; gap: clamp(18px,2vw,30px); padding: 0; border: 0; background: none; font: inherit; font-size: clamp(20px,2.1vw,30px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; color: var(--ink-800); cursor: pointer; transition: color .22s cubic-bezier(0.4,0,0.2,1); }
+.ap-more:hover { color: var(--fill, var(--turquoise)); }
+.ap-more:hover .ap-arrow { transform: translateX(7px); }
+.ap-more .ap-arrow { width: clamp(58px,5.6vw,80px); height: clamp(19px,1.9vw,27px); }
+.ap-more[hidden] { display: none; }
+
+/* ---------- NO MATCH ---------- */
+.ap-nomatch { padding-top: clamp(26px,3.4vw,46px); padding-bottom: clamp(64px,8vw,112px); }
+.ap-nomatch .ap-shead-top { transition: color .34s cubic-bezier(0.4,0,0.2,1); cursor: default; }
+.ap-nomatch .ap-shead-top:hover { color: var(--fill, var(--turquoise)); }
+.ap-nomatch .ap-shead-top:hover .ap-arrow { transform: translateX(7px); }
+.ap-nomatch .ap-shead-h { cursor: default; color: inherit; }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1100px) { .ap-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 820px)  { .ap-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px)  { .ap-grid { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-card, .ap-arrow, .ap-more, .ap-shead-h { transition: none; }
+}

@@ -1,0 +1,124 @@
+---
+/**
+ * Module: src/pages/apply.astro
+ * Layer: Page
+ * Purpose: Every call GİRVAK has open — programmes, events, awards — as a grid
+ *          of cards, with a pointer to the newsletter for anyone who finds
+ *          nothing that fits.
+ *
+ *          The cards are the Airtable `applications` table's approved rows. A
+ *          row with no deadline is always open: it comes first and turns red on
+ *          hover (the Fellow Program). The rest are sorted by the nearest
+ *          deadline; seven days or fewer left prints the date in coral, and a
+ *          passed deadline greys the card out, says "closed" and moves it last.
+ *          All of that is worked out here, per request, in İstanbul time
+ *          (`scripts/open-calls.js`) — not in the API's snapshot, which would
+ *          keep a call open past its deadline, and not in the browser, whose
+ *          clock is the visitor's.
+ *
+ *          The page's own words are the design's, written here.
+ *
+ * Called by: visitors at /apply, and "apply" in the menu
+ * Calls: src/lib/api.ts, src/scripts/open-calls.js
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import { getApply, getHomeContent } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import { arrange, formatDeadline, todayIn } from '../scripts/open-calls.js';
+import '../styles/apply.css';
+
+const [content, apply] = await Promise.all([getHomeContent(), getApply()]);
+const apiBase = publicApiBase;
+
+const today = todayIn();
+const calls = arrange(apply.calls, today);
+const isExternal = (href: string): boolean => /^https?:/i.test(href);
+---
+
+<BaseLayout
+  title="Apply · See what's open — GİRVAK"
+  description="Open calls at GİRVAK — fellowships, talent programs, funds and awards. Find the one that fits and apply."
+  bodyClass="hm ap"
+>
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="ap-hero ap-edge" id="top">
+      <h1 class="ap-hero-title">Find <i>your place</i> in the ecosystem.</h1>
+      <p class="ap-hero-sub">
+        Wherever you stand as a founder, tech talent or driven student, there is a place for you in the GİRVAK ecosystem.
+      </p>
+    </section>
+
+    <section class="ap-programs" aria-label="Open calls">
+      {calls.length === 0 ? (
+        <p class="ap-empty ap-edge">Nothing is open right now — new calls are announced in our newsletter.</p>
+      ) : (
+        <div class="ap-grid ap-edge" id="apGrid">
+          {calls.map((call) => {
+            const foot = (
+              <div class="ap-card-foot">
+                {call.state === 'always' ? (
+                  <span class="ap-date ap-date-open" aria-label="always open">∞</span>
+                ) : (
+                  <time class="ap-date" datetime={call.deadline}>{formatDeadline(call.deadline!, today)}</time>
+                )}
+                <span class="ap-apply">
+                  <span class="ap-arrow" aria-hidden="true"></span>{call.state === 'closed' ? 'closed' : 'apply'}
+                </span>
+              </div>
+            );
+            return call.state === 'closed' ? (
+              <div class="ap-card is-closed" aria-disabled="true">
+                <h3 class="ap-card-title">{call.title}</h3>
+                {call.text && <p class="ap-card-desc">{call.text}</p>}
+                {foot}
+              </div>
+            ) : (
+              <a
+                class:list={['ap-card', call.state === 'always' && 'is-pinned', call.state === 'urgent' && 'is-urgent']}
+                href={call.href}
+                {...(isExternal(call.href) ? { target: '_blank', rel: 'noopener' } : {})}
+              >
+                <h3 class="ap-card-title">{call.title}</h3>
+                {call.text && <p class="ap-card-desc">{call.text}</p>}
+                {foot}
+              </a>
+            );
+          })}
+        </div>
+      )}
+
+      <div class="ap-more-wrap ap-edge">
+        <button type="button" class="ap-more" id="apMore" hidden>
+          <span class="ap-more-label">see more</span><span class="ap-arrow" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="ap-nomatch ap-edge">
+      <div class="ap-shead">
+        <div class="ap-shead-top">
+          <span class="ap-arrow ap-arrow-lg" aria-hidden="true"></span>
+          <h2 class="ap-shead-h" id="apNoMatch">no open match right now?</h2>
+        </div>
+        <p class="ap-shead-sub">
+          Don't see a program for you right now? Fill out <a class="ap-inline-link" href="#footer">our interest form</a> so
+          we can invite you first to upcoming opportunities, events, and calls.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <Footer footer={content.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+  import '../scripts/hero-letters.js';
+  import '../scripts/apply.js';
+</script>

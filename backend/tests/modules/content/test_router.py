@@ -15,7 +15,7 @@ import pytest
 from httpx import AsyncClient
 from tests.conftest import ADMIN_TOKEN
 
-PAGES = ("home", "about", "fellow", "people", "ventures")
+PAGES = ("home", "about", "fellow", "people", "ventures", "apply")
 
 
 @pytest.mark.parametrize("page", PAGES)

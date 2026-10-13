@@ -12,6 +12,7 @@ Calls: nothing
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -455,3 +456,23 @@ class VenturesContent(_Frozen):
     programs: list[Facet] = []
     years: list[Facet] = []
     selected: VenturesQuery = VenturesQuery()
+
+
+class OpenCall(_Frozen):
+    """One card on /apply: a programme, event or award taking applications.
+
+    `deadline` is the last day applications are taken; none means the call is
+    always open. Whether it is still open is not decided here: that depends on
+    the day a visitor reads the page, which the snapshot must not freeze.
+    """
+
+    title: str
+    text: str = ""
+    href: str = "#"
+    deadline: date | None = None
+
+
+class ApplyContent(_Frozen):
+    """The `/apply` page: every approved call, in Airtable order."""
+
+    calls: list[OpenCall] = []
