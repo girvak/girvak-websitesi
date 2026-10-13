@@ -123,6 +123,17 @@ async def test_a_dead_source_falls_back_to_the_seed(
     assert content == seeds.about()
 
 
+async def test_a_dead_source_shows_no_open_calls_rather_than_invented_ones(
+    app_settings: Settings, cache: SnapshotCache, media: MediaMirror
+) -> None:
+    source = FakeSource()
+    source.fail = True
+
+    content = await _service(app_settings, cache, media, source).apply()
+
+    assert content.calls == []
+
+
 async def test_a_source_that_dies_later_keeps_serving_the_last_good_snapshot(
     app_settings: Settings, cache: SnapshotCache, media: MediaMirror
 ) -> None:

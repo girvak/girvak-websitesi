@@ -10,7 +10,9 @@ Purpose: Map the `applications` table onto the open calls on /apply.
          Open, closing soon or closed is left to the page. It depends on the
          day the visitor reads it, and a snapshot built yesterday must not keep
          a call open past its deadline. The base's own `Deadline Passed?`
-         formula is ignored for the same reason.
+         formula is ignored for the same reason. An empty deadline means the
+         call is always open; one that cannot be read drops the row, so a typo
+         never pins a call to the top as always open.
 
 Dependencies: none
 Called by: modules/content/service.py
@@ -23,8 +25,11 @@ from collections.abc import Sequence
 from datetime import date
 
 from girvak.infra.airtable.client import AirtableRecord
-from girvak.modules.content.fragments import Fields, field, link_of, text
+from girvak.modules.content.fragments import field, link_of, text
 from girvak.modules.content.schemas import ApplyContent, OpenCall
+from girvak.shared.logging import LoggerName, get_logger
+
+_logger = get_logger(LoggerName.SYSTEM)
 
 _APPROVED_FIELDS = ("onay", "approved", "active")
 _TITLE_FIELDS = ("headline", "name", "title")
@@ -41,28 +46,36 @@ def build(records: Sequence[AirtableRecord]) -> ApplyContent:
     Returns:
         The calls in Airtable order; the page sorts them for the day it is read.
     """
-    calls = [
-        OpenCall(
-            title=title,
-            text=text(field(record.fields, *_TEXT_FIELDS)),
-            href=link_of(record.fields),
-            deadline=_deadline(record.fields),
+    calls: list[OpenCall] = []
+    for record in records:
+        fields = record.fields
+        title = text(field(fields, *_TITLE_FIELDS))
+        if field(fields, *_APPROVED_FIELDS) is not True or not title:
+            continue
+        raw = text(field(fields, *_DEADLINE_FIELDS))
+        deadline = _deadline(raw)
+        if raw and deadline is None:
+            # An empty deadline means "always open", which pins the card first
+            # in red. A deadline that cannot be read must not land there.
+            _logger.warning("application_deadline_unreadable", extra={"record": record.id})
+            continue
+        calls.append(
+            OpenCall(
+                title=title,
+                text=text(field(fields, *_TEXT_FIELDS)),
+                href=link_of(fields),
+                deadline=deadline,
+            )
         )
-        for record in records
-        if field(record.fields, *_APPROVED_FIELDS) is True
-        and (title := text(field(record.fields, *_TITLE_FIELDS)))
-    ]
     return ApplyContent(calls=calls)
 
 
-def _deadline(fields: Fields) -> date | None:
-    """The deadline as a date, or None when the call is always open.
+def _deadline(raw: str) -> date | None:
+    """The deadline as a date, or None when it is empty or unreadable.
 
     Airtable sends a date field as `2026-09-05`. A datetime column would send
-    a full timestamp; its date part is what the card prints. Anything else is
-    treated as no deadline rather than failing the page.
+    a full timestamp; its date part is what the card prints.
     """
-    raw = text(field(fields, *_DEADLINE_FIELDS))
     try:
         return date.fromisoformat(raw[:10]) if raw else None
     except ValueError:

@@ -56,10 +56,18 @@ def test_a_call_without_a_deadline_is_always_open() -> None:
     assert call.deadline is None
 
 
-def test_an_unreadable_deadline_does_not_fail_the_page() -> None:
-    [call] = apply.build([row("Bozuk", deadline="next week")]).calls
+def test_an_unreadable_deadline_drops_the_row_rather_than_pinning_it_open() -> None:
+    content = apply.build(
+        [row("Bozuk", deadline="next week"), row("Sağlam", deadline="2026-09-05")]
+    )
 
-    assert call.deadline is None
+    assert [call.title for call in content.calls] == ["Sağlam"]
+
+
+def test_a_datetime_deadline_keeps_its_date() -> None:
+    [call] = apply.build([row("Saatli", deadline="2026-09-05T00:00:00.000Z")]).calls
+
+    assert call.deadline == date(2026, 9, 5)
 
 
 def test_an_unsafe_link_is_dropped() -> None:

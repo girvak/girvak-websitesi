@@ -66,6 +66,8 @@
 .ap-card.is-closed { background: var(--ink-800); }
 .ap-card.is-closed > * { opacity: .42; }
 .ap-card.is-closed .ap-arrow { display: none; }
+/* reached only by "see more" moving focus onto it */
+.ap-card.is-closed:focus-visible { outline: 2px solid var(--ink-800); outline-offset: 3px; }
 
 /* ---------- PROGRESSIVE DISCLOSURE ---------- */
 .ap-card[hidden] { display: none; }

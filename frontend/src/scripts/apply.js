@@ -31,8 +31,13 @@ if (grid) {
       const firstNew = cards[shown];
       shown += PAGE_SIZE;
       render();
-      // Keep a keyboard user's place instead of dropping focus with the button.
-      if (firstNew && !firstNew.matches('.is-closed')) firstNew.focus();
+      // Keep a keyboard user's place instead of dropping focus with the button,
+      // which hides once nothing is left. Closed cards are not links, so they
+      // take focus only from here (tabindex -1), never from Tab.
+      if (firstNew) {
+        if (!firstNew.matches('a')) firstNew.setAttribute('tabindex', '-1');
+        firstNew.focus();
+      }
     });
   }
   render();
