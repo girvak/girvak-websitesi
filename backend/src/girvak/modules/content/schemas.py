@@ -470,6 +470,8 @@ class OpenCall(_Frozen):
     text: str = ""
     href: str = "#"
     deadline: date | None = None
+    # Ticked `popup`: also shown in the home page popup while it is open.
+    popup: bool = False
 
 
 class ApplyContent(_Frozen):

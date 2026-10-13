@@ -10,13 +10,18 @@ import WhatWeDo from '../components/WhatWeDo.astro';
 import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
 import Partners from '../components/Partners.astro';
 import Footer from '../components/Footer.astro';
-import { getHomeContent, getPeople } from '../lib/api';
+import OpenCallsPopup from '../components/OpenCallsPopup.astro';
+import { getApply, getHomeContent, getPeople } from '../lib/api';
+import type { OpenCall } from '../lib/types';
 import { publicApiBase } from '../lib/env';
 
 // Rendered per request: an Airtable edit shows up on the next reload, with no
 // build step. Both calls hit the API's snapshot, so this is one round trip each
 // at most once per cache window.
 const [content, peopleApi] = await Promise.all([getHomeContent(), getPeople()]);
+// The popup is extra: if the calls cannot be read, the home page still renders,
+// just without it.
+const popupSource: OpenCall[] = await getApply().then((apply) => apply.calls, () => []);
 const { seo, hero, impact, impact_image, what_we_do, fellows_headline, fellows_cta, partners, footer } = content;
 const apiBase = publicApiBase;
 
@@ -58,8 +63,10 @@ function fellowsHeadlineHtml(text: string): string {
   </section>
   <Partners partners={partners} />
   <Footer footer={footer} apiBase={apiBase} />
+  <OpenCallsPopup calls={popupSource} />
 </BaseLayout>
 
 <script>
   import '../scripts/home.js';
+  import '../scripts/popup.js';
 </script>

@@ -25,9 +25,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
 import NavMenu from '../components/NavMenu.astro';
 import Footer from '../components/Footer.astro';
+import OpenCallCard from '../components/OpenCallCard.astro';
 import { getApply, getHomeContent } from '../lib/api';
 import { publicApiBase } from '../lib/env';
-import { arrange, formatDeadline, todayIn } from '../scripts/open-calls.js';
+import { arrange, todayIn } from '../scripts/open-calls.js';
 import '../styles/apply.css';
 
 const [content, apply] = await Promise.all([getHomeContent(), getApply()]);
@@ -35,7 +36,6 @@ const apiBase = publicApiBase;
 
 const today = todayIn();
 const calls = arrange(apply.calls, today);
-const isExternal = (href: string): boolean => /^https?:/i.test(href);
 ---
 
 <BaseLayout
@@ -59,37 +59,7 @@ const isExternal = (href: string): boolean => /^https?:/i.test(href);
         <p class="ap-empty ap-edge">Nothing is open right now — new calls are announced in our newsletter.</p>
       ) : (
         <div class="ap-grid ap-edge" id="apGrid">
-          {calls.map((call) => {
-            const foot = (
-              <div class="ap-card-foot">
-                {call.state === 'always' ? (
-                  <span class="ap-date ap-date-open" aria-label="always open">∞</span>
-                ) : (
-                  <time class="ap-date" datetime={call.deadline}>{formatDeadline(call.deadline!, today)}</time>
-                )}
-                <span class="ap-apply">
-                  <span class="ap-arrow" aria-hidden="true"></span>{call.state === 'closed' ? 'closed' : 'apply'}
-                </span>
-              </div>
-            );
-            return call.state === 'closed' ? (
-              <div class="ap-card is-closed" aria-disabled="true">
-                <h3 class="ap-card-title">{call.title}</h3>
-                {call.text && <p class="ap-card-desc">{call.text}</p>}
-                {foot}
-              </div>
-            ) : (
-              <a
-                class:list={['ap-card', call.state === 'always' && 'is-pinned', call.state === 'urgent' && 'is-urgent']}
-                href={call.href}
-                {...(isExternal(call.href) ? { target: '_blank', rel: 'noopener' } : {})}
-              >
-                <h3 class="ap-card-title">{call.title}</h3>
-                {call.text && <p class="ap-card-desc">{call.text}</p>}
-                {foot}
-              </a>
-            );
-          })}
+          {calls.map((call) => <OpenCallCard call={call} today={today} />)}
         </div>
       )}
 

@@ -1,0 +1,48 @@
+---
+/**
+ * Module: src/components/OpenCallCard.astro
+ * Layer: Component
+ * Purpose: One open call as a card — the /apply grid and the home page popup
+ *          draw the same card. A closed call is not a link: greyed out, its
+ *          date kept, "closed" where "apply" would be.
+ *
+ * Called by: src/pages/apply.astro, src/components/OpenCallsPopup.astro
+ * Calls: src/scripts/open-calls.js
+ */
+import { formatDeadline } from '../scripts/open-calls.js';
+import type { RatedCall } from '../lib/types';
+
+interface Props {
+  call: RatedCall;
+  /** Today in İstanbul, `YYYY-MM-DD`: decides whether the year is printed. */
+  today: string;
+}
+
+const { call, today } = Astro.props;
+const external = /^https?:/i.test(call.href) ? { target: '_blank', rel: 'noopener' } : {};
+const classes = ['ap-card', call.state === 'always' && 'is-pinned', call.state === 'urgent' && 'is-urgent'];
+---
+
+{call.state === 'closed' ? (
+  <div class="ap-card is-closed" aria-disabled="true">
+    <h3 class="ap-card-title">{call.title}</h3>
+    {call.text && <p class="ap-card-desc">{call.text}</p>}
+    <div class="ap-card-foot">
+      <time class="ap-date" datetime={call.deadline!}>{formatDeadline(call.deadline!, today)}</time>
+      <span class="ap-apply"><span class="ap-arrow" aria-hidden="true"></span>closed</span>
+    </div>
+  </div>
+) : (
+  <a class:list={classes} href={call.href} {...external}>
+    <h3 class="ap-card-title">{call.title}</h3>
+    {call.text && <p class="ap-card-desc">{call.text}</p>}
+    <div class="ap-card-foot">
+      {call.state === 'always' ? (
+        <span class="ap-date ap-date-open" aria-label="always open">∞</span>
+      ) : (
+        <time class="ap-date" datetime={call.deadline!}>{formatDeadline(call.deadline!, today)}</time>
+      )}
+      <span class="ap-apply"><span class="ap-arrow" aria-hidden="true"></span>apply</span>
+    </div>
+  </a>
+)}

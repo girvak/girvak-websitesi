@@ -80,6 +80,7 @@ Also a record table: one row is one call (programme, event, award).
 | `link` | where "apply" goes — usually an Airtable, Google or partner form |
 | `deadline` | last day applications are taken. **Empty means always open**: the card comes first and turns red on hover (the Fellow Program) |
 | `onay` | the publish gate. An unticked row is a draft and never renders |
+| `popup` | also show the call in the home page popup, for as long as it is open. Several ticked calls sit side by side; a visitor who closes the popup sees it again only when the set of ticked calls changes |
 
 The API returns the approved rows in Airtable order with the deadline as a
 date. Open, closing soon (seven days or fewer) and closed are worked out by the

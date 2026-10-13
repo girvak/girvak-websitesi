@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { URGENT_DAYS, arrange, daysLeft, formatDeadline, rate, todayIn } from '../src/scripts/open-calls.js';
+import { URGENT_DAYS, arrange, daysLeft, formatDeadline, popupCalls, rate, todayIn } from '../src/scripts/open-calls.js';
 
-const call = (title, deadline = null) => ({ title, text: '', href: '#', deadline });
+const call = (title, deadline = null, popup = false) => ({ title, text: '', href: '#', deadline, popup });
 
 test('today is the date in İstanbul, not UTC', () => {
   // 22:30 UTC on 13 October is already 14 October in İstanbul (UTC+3).
@@ -50,4 +50,19 @@ test('always-open first, then nearest deadline, then most recently closed', () =
 test('the year is printed only when it is not this one', () => {
   assert.equal(formatDeadline('2026-09-05', '2026-10-13'), '5 September');
   assert.equal(formatDeadline('2027-01-15', '2026-10-13'), '15 January 2027');
+});
+
+test('the popup shows ticked calls that are still open, in page order', () => {
+  const shown = popupCalls(
+    [
+      call('not ticked', '2026-10-20'),
+      call('ticked, later', '2026-12-01', true),
+      call('ticked, closed', '2026-10-12', true),
+      call('ticked, deadline today', '2026-10-13', true),
+      call('ticked fellow', null, true),
+    ],
+    '2026-10-13',
+  ).map((c) => c.title);
+
+  assert.deepEqual(shown, ['ticked fellow', 'ticked, deadline today', 'ticked, later']);
 });

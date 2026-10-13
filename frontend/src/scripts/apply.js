@@ -7,12 +7,12 @@
 //   - "see more": 8 cards at a time. Without JavaScript every card shows and
 //     the button stays hidden.
 //   - hover fills: the pinned (always-open) card is red, set in CSS; the others
-//     alternate blue and coral on each hover, as do "see more" and the
-//     "no open match" heading.
+//     alternate blue and coral on each hover (`card-fill.js`), as do
+//     "see more" and the "no open match" heading.
 // ============================================================
 
-const BLUE = '#19BAD1';
-const CORAL = '#F76C53';
+import { BLUE, CORAL, alternateFill } from './card-fill.js';
+
 const PAGE_SIZE = 8;
 
 const grid = document.getElementById('apGrid');
@@ -42,17 +42,7 @@ if (grid) {
   }
   render();
 
-  // ---- hover fills ----
-  cards.forEach((card) => {
-    if (card.classList.contains('is-pinned') || card.classList.contains('is-closed')) return;
-    let n = 0;
-    const toggle = () => {
-      card.style.setProperty('--fill', n % 2 === 0 ? BLUE : CORAL);
-      n += 1;
-    };
-    card.addEventListener('mouseenter', toggle);
-    card.addEventListener('focus', toggle);
-  });
+  cards.forEach(alternateFill);
 }
 
 let altIdx = 0;

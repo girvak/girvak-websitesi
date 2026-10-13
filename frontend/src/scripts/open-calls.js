@@ -34,7 +34,7 @@ export function daysLeft(deadline, today) {
 }
 
 /**
- * @typedef {{ title: string, text: string, href: string, deadline: string | null }} OpenCall
+ * @typedef {{ title: string, text: string, href: string, deadline: string | null, popup: boolean }} OpenCall
  * @typedef {'always' | 'open' | 'urgent' | 'closed'} CallState
  * @typedef {OpenCall & { state: CallState, days: number }} RatedCall
  */
@@ -69,6 +69,17 @@ export function arrange(calls, today) {
       if (a.state === 'always') return 0;
       return a.state === 'closed' ? b.days - a.days : a.days - b.days;
     });
+}
+
+/**
+ * The calls the home page popup shows: ticked `popup` and not closed, in the
+ * page's order. A call whose deadline passes drops out the next day by itself.
+ * @param {OpenCall[]} calls
+ * @param {string} today
+ * @returns {RatedCall[]}
+ */
+export function popupCalls(calls, today) {
+  return arrange(calls, today).filter((c) => c.popup && c.state !== 'closed');
 }
 
 /**

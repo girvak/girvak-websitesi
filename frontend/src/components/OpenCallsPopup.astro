@@ -1,0 +1,75 @@
+---
+/**
+ * Module: src/components/OpenCallsPopup.astro
+ * Layer: Component
+ * Purpose: The home page popup: every call ticked `popup` in the Airtable
+ *          `applications` table that is still open, side by side. More than fit
+ *          the screen scroll sideways.
+ *
+ *          Renders nothing when no call qualifies. It is in the HTML hidden and
+ *          opened by `scripts/popup.js` a moment after load — so without
+ *          JavaScript it never covers the page — and a visitor who closes it
+ *          does not see it again until the set of popup calls changes.
+ *
+ *          The design has no popup of its own. This one is drawn lighter than
+ *          the /apply cards, in the brand's parts: ink type on white, a hairline
+ *          between calls, a short colour mark per call (fellow red for the
+ *          always-open one, coral when the deadline is close, turquoise
+ *          otherwise), and the hand-drawn arrow and ×.
+ *
+ * Called by: src/pages/index.astro
+ * Calls: src/scripts/open-calls.js
+ */
+import { formatDeadline, popupCalls, todayIn } from '../scripts/open-calls.js';
+import type { OpenCall, RatedCall } from '../lib/types';
+import '../styles/popup.css';
+
+interface Props {
+  calls: OpenCall[];
+}
+
+const today = todayIn();
+const calls = popupCalls(Astro.props.calls, today);
+// What "already seen" is remembered against: a new call, or a changed deadline,
+// shows the popup again to someone who closed the previous one.
+const signature = calls.map((call) => `${call.title}|${call.deadline ?? ''}`).join('\n');
+
+const when = (call: RatedCall): string => {
+  if (call.state === 'always') return 'always open';
+  if (call.days === 0) return 'closes today';
+  return `${call.state === 'urgent' ? 'closes' : 'until'} ${formatDeadline(call.deadline!, today)}`;
+};
+const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank', rel: 'noopener' } : {});
+---
+
+{calls.length > 0 && (
+  <div class="cp" id="callPopup" role="dialog" aria-modal="true" aria-labelledby="callPopupTitle" data-signature={signature} hidden>
+    <div class="cp-backdrop" data-cp-close></div>
+    <div class="cp-panel" tabindex="-1" style={`--n: ${calls.length}`}>
+      <header class="cp-head">
+        <h2 class="cp-title" id="callPopupTitle">applications are <i>open</i></h2>
+        <button type="button" class="cp-close" data-cp-close aria-label="Close"><span class="cp-x" aria-hidden="true"></span></button>
+      </header>
+
+      <ul class="cp-row">
+        {calls.map((call) => (
+          <li class="cp-item">
+            <a class:list={['cp-call', `is-${call.state}`]} href={call.href} {...external(call.href)}>
+              <span class="cp-mark" aria-hidden="true"></span>
+              <h3 class="cp-call-title">{call.title}</h3>
+              {call.text && <p class="cp-call-text">{call.text}</p>}
+              <span class="cp-call-foot">
+                <span class="cp-when">{when(call)}</span>
+                <span class="cp-go">apply<span class="cp-arrow" aria-hidden="true"></span></span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <footer class="cp-foot">
+        <a class="cp-all" href="/apply">see all open calls<span class="cp-arrow" aria-hidden="true"></span></a>
+      </footer>
+    </div>
+  </div>
+)}

@@ -14,6 +14,9 @@ Purpose: Map the `applications` table onto the open calls on /apply.
          call is always open; one that cannot be read drops the row, so a typo
          never pins a call to the top as always open.
 
+         A ticked `popup` also puts the call in the home page popup; whether it
+         is still open enough to show there is, again, the page's decision.
+
 Dependencies: none
 Called by: modules/content/service.py
 Calls: modules/content/{fragments,schemas}.py
@@ -35,6 +38,7 @@ _APPROVED_FIELDS = ("onay", "approved", "active")
 _TITLE_FIELDS = ("headline", "name", "title")
 _TEXT_FIELDS = ("text", "description")
 _DEADLINE_FIELDS = ("deadline", "son başvuru", "due")
+_POPUP_FIELDS = ("popup", "pop-up", "pop up")
 
 
 def build(records: Sequence[AirtableRecord]) -> ApplyContent:
@@ -65,6 +69,7 @@ def build(records: Sequence[AirtableRecord]) -> ApplyContent:
                 text=text(field(fields, *_TEXT_FIELDS)),
                 href=link_of(fields),
                 deadline=deadline,
+                popup=field(fields, *_POPUP_FIELDS) is True,
             )
         )
     return ApplyContent(calls=calls)

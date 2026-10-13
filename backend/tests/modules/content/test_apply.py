@@ -80,3 +80,10 @@ def test_a_row_without_a_headline_is_skipped_and_order_is_kept() -> None:
     content = apply.build([row("B"), row(""), row("A")])
 
     assert [call.title for call in content.calls] == ["B", "A"]
+
+
+def test_a_ticked_popup_is_carried_and_an_unticked_one_is_not() -> None:
+    # Airtable leaves an unticked checkbox out of the row entirely.
+    content = apply.build([row("Fellow Program", popup=True), row("Airpreneurs")])
+
+    assert [call.popup for call in content.calls] == [True, False]

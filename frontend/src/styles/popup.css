@@ -1,0 +1,107 @@
+/* ============================================================
+   GİRVAK — home page popup of open calls (OpenCallsPopup.astro).
+
+   Quiet on purpose: ink type on white, hairlines between calls, one short
+   colour mark per call, the hand-drawn arrow and ×. Brand tokens only.
+   The panel is as wide as its calls (`--n`, set by the component), never
+   narrower than the heading; more than the screen holds scroll sideways.
+   ============================================================ */
+
+.cp { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: clamp(16px,4vw,48px); }
+.cp[hidden] { display: none; }
+.cp-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(27,31,34,.38);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  animation: cpFade .3s var(--ease-out);
+}
+
+.cp-panel {
+  --col-w: clamp(230px, 19vw, 262px);
+  --pad: clamp(26px, 3vw, 44px);
+  --head-w: 420px;
+  position: relative; display: flex; flex-direction: column;
+  width: min(100%, calc(max(var(--head-w), var(--n) * var(--col-w)) + 2 * var(--pad)));
+  max-height: 100%; overflow: auto;
+  padding: var(--pad) var(--pad) calc(var(--pad) * .8);
+  border-radius: 5px; background: var(--white); color: var(--ink-800);
+  box-shadow: var(--shadow-3);
+  animation: cpRise .42s var(--ease-soft);
+}
+.cp-panel:focus { outline: none; } /* takes focus on open so a screen reader starts at the dialog */
+@keyframes cpFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes cpRise { from { opacity: 0; transform: translateY(10px) scale(.985) } to { opacity: 1; transform: none } }
+
+/* ---------- head ---------- */
+.cp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: clamp(22px,2.4vw,30px); }
+.cp-title { margin: 0; font-size: clamp(22px,2vw,28px); font-weight: 500; line-height: 1.15; letter-spacing: -0.03em; color: var(--ink-800); }
+.cp-title i { color: var(--turquoise); }
+
+.cp-close { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -10px 0 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-500); cursor: pointer; transition: color .2s var(--ease-out), background-color .2s var(--ease-out); }
+.cp-close:hover { color: var(--ink-800); background: var(--ink-100); }
+.cp-close:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 2px; }
+.cp-x { width: 11px; height: 22px; background-color: currentColor; -webkit-mask: url(/images/close-x.png) no-repeat center / contain; mask: url(/images/close-x.png) no-repeat center / contain; transition: transform .35s var(--ease-out); }
+.cp-close:hover .cp-x { transform: rotate(90deg); }
+
+/* ---------- the calls, side by side ---------- */
+.cp-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--col-w), 1fr);
+  margin: 0; padding: 0; list-style: none;
+  border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200);
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.cp-row::-webkit-scrollbar { display: none; }
+.cp-row:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 4px; }
+
+.cp-item { display: flex; scroll-snap-align: start; }
+.cp-item + .cp-item { border-left: 1px solid var(--ink-200); }
+
+.cp-call {
+  --c: var(--turquoise);
+  flex: 1; display: flex; flex-direction: column;
+  padding: clamp(22px,2.2vw,28px) clamp(18px,1.8vw,24px) clamp(18px,1.8vw,22px);
+  color: var(--ink-800); text-decoration: none;
+}
+.cp-item:first-child .cp-call { padding-left: 0; }
+.cp-item:last-child .cp-call { padding-right: 0; }
+.cp-call.is-always { --c: var(--fellow); }
+.cp-call.is-urgent { --c: var(--coral); }
+
+.cp-mark { width: 26px; height: 3px; border-radius: 2px; background: var(--c); transition: width .35s var(--ease-out); }
+.cp-call-title { margin: 16px 0 0; font-size: clamp(16px,1.25vw,18px); font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; color: var(--ink-800); transition: color .25s var(--ease-out); text-wrap: balance; }
+.cp-call-text {
+  margin: 10px 0 0; font-size: 13.5px; font-weight: 400; line-height: 1.55; color: var(--ink-700); text-wrap: pretty;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden;
+}
+
+.cp-call-foot { margin-top: auto; padding-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cp-when { font-size: 12.5px; font-weight: 400; color: var(--ink-500); letter-spacing: .005em; }
+.cp-call.is-urgent .cp-when { color: var(--coral); font-weight: 500; }
+.cp-go { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--ink-800); transition: color .25s var(--ease-out); }
+
+.cp-arrow { flex: none; width: 34px; height: 12px; background-color: currentColor; -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain; mask: url(/images/cta-arrow.png) no-repeat center / contain; transition: transform .3s var(--ease-out); }
+
+.cp-call:hover .cp-mark, .cp-call:focus-visible .cp-mark { width: 44px; }
+.cp-call:hover .cp-call-title, .cp-call:hover .cp-go,
+.cp-call:focus-visible .cp-call-title, .cp-call:focus-visible .cp-go { color: var(--c); }
+.cp-call:hover .cp-arrow, .cp-call:focus-visible .cp-arrow { transform: translateX(5px); }
+.cp-call:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; border-radius: 3px; }
+
+/* ---------- foot ---------- */
+.cp-foot { display: flex; justify-content: flex-end; padding-top: clamp(16px,1.8vw,22px); }
+.cp-all { display: inline-flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: var(--ink-700); text-decoration: none; transition: color .25s var(--ease-out); }
+.cp-all:hover, .cp-all:focus-visible { color: var(--turquoise); }
+.cp-all:hover .cp-arrow { transform: translateX(5px); }
+
+/* the page behind does not scroll while it is open */
+body.cp-open { overflow: hidden; }
+
+@media (max-width: 520px) {
+  .cp { padding: 12px; }
+  .cp-panel { --col-w: min(74vw, 262px); --head-w: 0px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-backdrop, .cp-panel { animation: none; }
+  .cp-x, .cp-arrow, .cp-mark { transition: none; }
+}

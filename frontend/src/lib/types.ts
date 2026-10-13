@@ -325,6 +325,14 @@ export interface OpenCall {
   text: string;
   href: string;
   deadline: string | null;
+  /** Also shown in the home page popup while it is open. */
+  popup: boolean;
+}
+
+/** A call rated for one day by `scripts/open-calls.js`. */
+export interface RatedCall extends OpenCall {
+  state: 'always' | 'open' | 'urgent' | 'closed';
+  days: number;
 }
 
 export interface ApplyContent {
