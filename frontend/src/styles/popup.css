@@ -3,8 +3,11 @@
 
    Quiet on purpose: ink type on white, hairlines between calls, one short
    colour mark per call, the hand-drawn arrow and ×. Brand tokens only.
-   The panel is as wide as its calls (`--n`, set by the component), never
-   narrower than the heading; more than the screen holds scroll sideways.
+   The panel is as wide as the calls in view (`--v`: up to three, set by the
+   component; one on a phone), never narrower than the heading. Any more slide
+   in, one call per step (scripts/popup.js): the row moves by transform, not
+   by scrolling, so at rest every call in view is whole and there is no
+   scrollbar anywhere in the popup.
    ============================================================ */
 
 .cp { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: clamp(16px,4vw,48px); }
@@ -17,12 +20,12 @@
 }
 
 .cp-panel {
-  --col-w: clamp(230px, 19vw, 262px);
+  --col-w: clamp(250px, 21vw, 290px);
   --pad: clamp(26px, 3vw, 44px);
-  --head-w: 420px;
+  --gut: clamp(18px, 1.8vw, 24px);  /* each call's inner side padding */
+  --head-w: 440px;
   position: relative; display: flex; flex-direction: column;
-  width: min(100%, calc(max(var(--head-w), var(--n) * var(--col-w)) + 2 * var(--pad)));
-  max-height: 100%; overflow: auto;
+  width: min(100%, calc(max(var(--head-w), var(--v) * var(--col-w)) + 2 * var(--pad)));
   padding: var(--pad) var(--pad) calc(var(--pad) * .8);
   border-radius: 5px; background: var(--white); color: var(--ink-800);
   box-shadow: var(--shadow-3);
@@ -37,33 +40,48 @@
 .cp-title { margin: 0; font-size: clamp(22px,2vw,28px); font-weight: 500; line-height: 1.15; letter-spacing: -0.03em; color: var(--ink-800); }
 .cp-title i { color: var(--turquoise); }
 
-.cp-close { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -10px 0 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-500); cursor: pointer; transition: color .2s var(--ease-out), background-color .2s var(--ease-out); }
+.cp-tools { flex: none; display: flex; align-items: center; gap: 6px; margin: -6px -10px 0 0; }
+.cp-nav { display: flex; align-items: center; gap: 2px; padding-right: 8px; margin-right: 4px; border-right: 1px solid var(--ink-200); }
+.cp-nav[hidden] { display: none; }
+.cp-step { display: grid; place-items: center; width: 40px; height: 36px; padding: 0; border: 0; border-radius: 18px; background: none; color: var(--ink-800); cursor: pointer; transition: color .2s var(--ease-out), background-color .2s var(--ease-out), opacity .2s var(--ease-out); }
+.cp-step .cp-arrow { width: 26px; height: 10px; }
+.cp-prev .cp-arrow { transform: scaleX(-1); }
+.cp-step:hover:not(:disabled) { background: var(--ink-100); color: var(--turquoise); }
+.cp-next:hover:not(:disabled) .cp-arrow { transform: translateX(3px); }
+.cp-prev:hover:not(:disabled) .cp-arrow { transform: scaleX(-1) translateX(3px); }
+.cp-step:disabled { opacity: .28; cursor: default; }
+.cp-step:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 2px; }
+
+.cp-close { flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-500); cursor: pointer; transition: color .2s var(--ease-out), background-color .2s var(--ease-out); }
 .cp-close:hover { color: var(--ink-800); background: var(--ink-100); }
 .cp-close:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 2px; }
 .cp-x { width: 11px; height: 22px; background-color: currentColor; -webkit-mask: url(/images/close-x.png) no-repeat center / contain; mask: url(/images/close-x.png) no-repeat center / contain; transition: transform .35s var(--ease-out); }
 .cp-close:hover .cp-x { transform: rotate(90deg); }
 
 /* ---------- the calls, side by side ---------- */
+/* carries the hairlines above and below, and shows exactly the panel's content
+   width of the row: calls out of view, and the gutters either side, are cut */
+.cp-track { overflow: hidden; border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200); touch-action: pan-y; }
 .cp-row {
-  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--col-w), 1fr);
-  margin: 0; padding: 0; list-style: none;
-  border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200);
-  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+  /* exactly --v columns in view; the row reaches one gutter past the track on
+     each side, so every call has the same inner padding and every position
+     lines up with the heading. `--at` is the first call in view. */
+  display: grid; grid-auto-flow: column; grid-auto-columns: calc(100% / var(--v));
+  margin: 0 calc(-1 * var(--gut)); padding: 0; list-style: none;
+  transform: translateX(calc(var(--at, 0) * -100% / var(--v)));
+  transition: transform .6s var(--ease-soft);
 }
-.cp-row::-webkit-scrollbar { display: none; }
-.cp-row:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 4px; }
 
-.cp-item { display: flex; scroll-snap-align: start; }
+.cp-item { display: flex; transition: opacity .45s var(--ease-out); }
+.cp-item[inert] { opacity: .35; }
 .cp-item + .cp-item { border-left: 1px solid var(--ink-200); }
 
 .cp-call {
   --c: var(--turquoise);
   flex: 1; display: flex; flex-direction: column;
-  padding: clamp(22px,2.2vw,28px) clamp(18px,1.8vw,24px) clamp(18px,1.8vw,22px);
+  padding: clamp(22px,2.2vw,28px) var(--gut) clamp(18px,1.8vw,22px);
   color: var(--ink-800); text-decoration: none;
 }
-.cp-item:first-child .cp-call { padding-left: 0; }
-.cp-item:last-child .cp-call { padding-right: 0; }
 .cp-call.is-always { --c: var(--fellow); }
 .cp-call.is-urgent { --c: var(--coral); }
 
@@ -85,10 +103,16 @@
 .cp-call:hover .cp-call-title, .cp-call:hover .cp-go,
 .cp-call:focus-visible .cp-call-title, .cp-call:focus-visible .cp-go { color: var(--c); }
 .cp-call:hover .cp-arrow, .cp-call:focus-visible .cp-arrow { transform: translateX(5px); }
-.cp-call:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; border-radius: 3px; }
+/* the row is clipped at its edges, so focus is drawn inside the call, not around it */
+.cp-call:focus-visible { outline: none; }
+.cp-call:focus-visible .cp-call-title { text-decoration: underline 2px; text-underline-offset: 5px; }
 
 /* ---------- foot ---------- */
-.cp-foot { display: flex; justify-content: flex-end; padding-top: clamp(16px,1.8vw,22px); }
+.cp-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: clamp(16px,1.8vw,22px); }
+.cp-dots { display: flex; align-items: center; gap: 6px; min-height: 3px; }
+.cp-dot { width: 14px; height: 3px; padding: 0; border: 0; border-radius: 2px; background: var(--ink-200); cursor: pointer; transition: width .35s var(--ease-out), background-color .35s var(--ease-out); }
+.cp-dot.is-on { width: 30px; background: var(--turquoise); }
+.cp-dot:hover:not(.is-on) { background: var(--ink-300); }
 .cp-all { display: inline-flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; color: var(--ink-700); text-decoration: none; transition: color .25s var(--ease-out); }
 .cp-all:hover, .cp-all:focus-visible { color: var(--turquoise); }
 .cp-all:hover .cp-arrow { transform: translateX(5px); }
@@ -98,10 +122,13 @@ body.cp-open { overflow: hidden; }
 
 @media (max-width: 520px) {
   .cp { padding: 12px; }
-  .cp-panel { --col-w: min(74vw, 262px); --head-w: 0px; }
+  .cp-panel { --v: 1 !important; width: 100%; }
+  .cp-nav { padding-right: 4px; }
+  .cp-foot { flex-wrap: wrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cp-backdrop, .cp-panel { animation: none; }
-  .cp-x, .cp-arrow, .cp-mark { transition: none; }
+  .cp-x, .cp-arrow, .cp-mark, .cp-dot { transition: none; }
+  .cp-row, .cp-item { transition: none; }
 }

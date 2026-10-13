@@ -3,8 +3,10 @@
  * Module: src/components/OpenCallsPopup.astro
  * Layer: Component
  * Purpose: The home page popup: every call ticked `popup` in the Airtable
- *          `applications` table that is still open, side by side. More than fit
- *          the screen scroll sideways.
+ *          `applications` table that is still open, side by side — up to three
+ *          at a time on a wide screen, one on a phone. More than that slide:
+ *          the hand-drawn arrows, a swipe, or on their own every few seconds
+ *          (`scripts/popup.js`), with a mark under the row for each position.
  *
  *          Renders nothing when no call qualifies. It is in the HTML hidden and
  *          opened by `scripts/popup.js` a moment after load — so without
@@ -33,6 +35,8 @@ const calls = popupCalls(Astro.props.calls, today);
 // What "already seen" is remembered against: a new call, or a changed deadline,
 // shows the popup again to someone who closed the previous one.
 const signature = calls.map((call) => `${call.title}|${call.deadline ?? ''}`).join('\n');
+// Calls in view at once on a wide screen; a phone shows one (popup.css).
+const visible = Math.min(calls.length, 3);
 
 const when = (call: RatedCall): string => {
   if (call.state === 'always') return 'always open';
@@ -45,12 +49,19 @@ const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank',
 {calls.length > 0 && (
   <div class="cp" id="callPopup" role="dialog" aria-modal="true" aria-labelledby="callPopupTitle" data-signature={signature} hidden>
     <div class="cp-backdrop" data-cp-close></div>
-    <div class="cp-panel" tabindex="-1" style={`--n: ${calls.length}`}>
+    <div class="cp-panel" tabindex="-1" style={`--v: ${visible}`}>
       <header class="cp-head">
         <h2 class="cp-title" id="callPopupTitle">applications are <i>open</i></h2>
-        <button type="button" class="cp-close" data-cp-close aria-label="Close"><span class="cp-x" aria-hidden="true"></span></button>
+        <div class="cp-tools">
+          <div class="cp-nav" hidden>
+            <button type="button" class="cp-step cp-prev" aria-label="Previous call"><span class="cp-arrow" aria-hidden="true"></span></button>
+            <button type="button" class="cp-step cp-next" aria-label="Next call"><span class="cp-arrow" aria-hidden="true"></span></button>
+          </div>
+          <button type="button" class="cp-close" data-cp-close aria-label="Close"><span class="cp-x" aria-hidden="true"></span></button>
+        </div>
       </header>
 
+      <div class="cp-track">
       <ul class="cp-row">
         {calls.map((call) => (
           <li class="cp-item">
@@ -66,8 +77,10 @@ const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank',
           </li>
         ))}
       </ul>
+      </div>
 
       <footer class="cp-foot">
+        <div class="cp-dots" aria-hidden="true"></div>
         <a class="cp-all" href="/apply">see all open calls<span class="cp-arrow" aria-hidden="true"></span></a>
       </footer>
     </div>
