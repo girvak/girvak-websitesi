@@ -123,6 +123,17 @@ async def test_a_dead_source_falls_back_to_the_seed(
     assert content == seeds.about()
 
 
+async def test_a_dead_source_shows_no_open_calls_rather_than_invented_ones(
+    app_settings: Settings, cache: SnapshotCache, media: MediaMirror
+) -> None:
+    source = FakeSource()
+    source.fail = True
+
+    content = await _service(app_settings, cache, media, source).apply()
+
+    assert content.calls == []
+
+
 async def test_a_source_that_dies_later_keeps_serving_the_last_good_snapshot(
     app_settings: Settings, cache: SnapshotCache, media: MediaMirror
 ) -> None:
@@ -367,6 +378,8 @@ async def test_warm_up_fills_every_snapshot(
         airtable.table_about,
         airtable.table_fellow,
         airtable.table_ventures,
+        airtable.table_applications,
+        airtable.table_program_categories,
     ):
         assert table in source.calls
 
@@ -375,6 +388,8 @@ async def test_warm_up_fills_every_snapshot(
     await service.fellow_program()
     await service.people()
     await service.ventures()
+    await service.apply()
+    await service.programs()
     assert len(source.calls) == read  # the first visitor reads nothing
 
 

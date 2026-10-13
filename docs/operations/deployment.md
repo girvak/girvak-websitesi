@@ -198,6 +198,8 @@ curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/about
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/fellow-program
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/board-of-trustees
+curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/apply
+curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/programs
 curl -fsS https://girisimcilikvakfi.org/api/v1/content/home | head -c 200
 ```
 

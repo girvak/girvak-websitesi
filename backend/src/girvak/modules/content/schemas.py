@@ -12,6 +12,7 @@ Calls: nothing
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -455,3 +456,59 @@ class VenturesContent(_Frozen):
     programs: list[Facet] = []
     years: list[Facet] = []
     selected: VenturesQuery = VenturesQuery()
+
+
+class OpenCall(_Frozen):
+    """One card on /apply: a programme, event or award taking applications.
+
+    `deadline` is the last day applications are taken; none means the call is
+    always open. Whether it is still open is not decided here: that depends on
+    the day a visitor reads the page, which the snapshot must not freeze.
+    """
+
+    title: str
+    text: str = ""
+    href: str = "#"
+    deadline: date | None = None
+    # Ticked `popup`: also shown in the home page popup while it is open.
+    popup: bool = False
+
+
+class ApplyContent(_Frozen):
+    """The `/apply` page: every approved call, in Airtable order."""
+
+    calls: list[OpenCall] = []
+
+
+class ProgramCard(_Frozen):
+    """One program on /programs: a `programs_detailed` row.
+
+    `href` is the program's own site ("discover more"), empty when it has none —
+    the card is then not a link. The three lists are what the filter bar reads.
+    """
+
+    slug: str
+    name: str
+    text: str = ""
+    photo: str = ""
+    href: str = ""
+    sectors: list[str] = []
+    targets: list[str] = []
+    stages: list[str] = []
+    current: bool = True
+
+
+class ProgramCategory(_Frozen):
+    """One tile on /programs — a row of the `programs` table — and its programs."""
+
+    slug: str
+    name: str
+    description: str = ""
+    photo: str = ""
+    programs: list[ProgramCard] = []
+
+
+class ProgramsContent(_Frozen):
+    """The `/programs` page."""
+
+    categories: list[ProgramCategory] = []

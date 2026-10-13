@@ -149,6 +149,52 @@ def paragraphs(value: str) -> list[str]:
     return [line for line in lines if line]
 
 
+# ---------- record tables: resolving link columns ----------
+# A link column arrives as Airtable record ids. These turn them into the linked
+# rows' labels. Used by the record-table pages (ventures, programs).
+
+
+def labels(records: Sequence[AirtableRecord], names: Sequence[str]) -> dict[str, str]:
+    """Record id -> that row's label, for a linked table."""
+    resolved: dict[str, str] = {}
+    for record in records:
+        label = text(field(record.fields, *names))
+        if label:
+            resolved[record.id] = label
+    return resolved
+
+
+def linked_ids(fields: Fields, names: Sequence[str]) -> list[str]:
+    """Record ids of a link or lookup column.
+
+    A lookup gives plain id strings and a link column gives the same, but a
+    lookup configured to return objects gives dicts — both are read here so a
+    change in the base does not empty the column.
+    """
+    value = field(fields, *names)
+    if not isinstance(value, list):
+        return []
+    ids: list[str] = []
+    for item in value:
+        if isinstance(item, str) and item.startswith("rec"):
+            ids.append(item)
+        elif isinstance(item, dict):
+            candidate = item.get("id")
+            if isinstance(candidate, str) and candidate.startswith("rec"):
+                ids.append(candidate)
+    return ids
+
+
+def linked_labels(fields: Fields, names: Sequence[str], labels: Mapping[str, str]) -> list[str]:
+    """Labels of a link column, duplicates dropped and order kept."""
+    resolved: list[str] = []
+    for record_id in linked_ids(fields, names):
+        label = labels.get(record_id)
+        if label and label not in resolved:
+            resolved.append(label)
+    return resolved
+
+
 class Fragments:
     """One Airtable table, indexed the way the mapping needs it."""
 

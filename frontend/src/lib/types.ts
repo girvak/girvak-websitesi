@@ -318,3 +318,49 @@ export interface VenturesContent {
   years: Facet[];
   selected: { sectors: string[]; programs: string[]; years: string[]; q: string };
 }
+
+/** One card on /apply. `deadline` is `YYYY-MM-DD`, or null when always open. */
+export interface OpenCall {
+  title: string;
+  text: string;
+  href: string;
+  deadline: string | null;
+  /** Also shown in the home page popup while it is open. */
+  popup: boolean;
+}
+
+/** A call rated for one day by `scripts/open-calls.js`. */
+export interface RatedCall extends OpenCall {
+  state: 'always' | 'open' | 'urgent' | 'closed';
+  days: number;
+}
+
+export interface ApplyContent {
+  calls: OpenCall[];
+}
+
+/** One program card on /programs. `href` is empty when it has no site of its own. */
+export interface ProgramCard {
+  slug: string;
+  name: string;
+  text: string;
+  photo: string;
+  href: string;
+  sectors: string[];
+  targets: string[];
+  stages: string[];
+  current: boolean;
+}
+
+/** One tile on /programs and its programs. */
+export interface ProgramCategory {
+  slug: string;
+  name: string;
+  description: string;
+  photo: string;
+  programs: ProgramCard[];
+}
+
+export interface ProgramsContent {
+  categories: ProgramCategory[];
+}

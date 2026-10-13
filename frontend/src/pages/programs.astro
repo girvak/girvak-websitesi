@@ -1,0 +1,185 @@
+---
+/**
+ * Module: src/pages/programs.astro
+ * Layer: Page
+ * Purpose: Programs & Projects. Three category tiles — Entrepreneurship
+ *          Support, Development, Talent — each opening a panel under the row
+ *          with a filter bar and its programs, three cards to a row.
+ *
+ *          Ported from the design's `programs-projects -3 per row-.html`. The
+ *          design hard-codes a few sample programs; here the tiles are the
+ *          Airtable `programs` table and the cards are `programs_detailed`
+ *          (approved rows, linked to a category). The design sends the Talent
+ *          tile to a page of its own that does not exist; the base has its
+ *          programs, so it opens a panel like the other two.
+ *
+ *          The words of the page — the headline and each tile's one-line lede —
+ *          are the design's, written here; a tile's description is Airtable's.
+ *          A dropdown is drawn only when it has two or more choices, since one
+ *          choice filters nothing. `/programs#<category-slug>` opens that tile.
+ *
+ * Called by: visitors at /programs, "programs" in the menu
+ * Calls: src/lib/api.ts, src/scripts/programs.js
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Nav from '../components/Nav.astro';
+import NavMenu from '../components/NavMenu.astro';
+import Footer from '../components/Footer.astro';
+import { getHomeContent, getPrograms } from '../lib/api';
+import { publicApiBase } from '../lib/env';
+import type { ProgramCard, ProgramCategory } from '../lib/types';
+import '../styles/ventures.css';
+import '../styles/pp.css';
+import '../styles/programs.css';
+
+const [content, data] = await Promise.all([getHomeContent(), getPrograms()]);
+const apiBase = publicApiBase;
+
+// Each tile's italic first line, from the design, matched on the start of the
+// category's name so a small rename in Airtable keeps it.
+const LEDES: [string, string][] = [
+  ['entrepreneurship', 'Empowering entrepreneurs with the right connections.'],
+  ['development', 'Driving inclusive growth through an entrepreneurship mindset.'],
+  ['talent', 'Building the skills the innovation economy demands.'],
+];
+const ledeOf = (c: ProgramCategory) => LEDES.find(([prefix]) => c.slug.startsWith(prefix))?.[1] ?? '';
+
+const collator = new Intl.Collator('tr');
+const distinct = (values: string[]) => [...new Set(values)].sort(collator.compare);
+
+interface Dim {
+  key: 'sectors' | 'targets' | 'stages' | 'status';
+  label: string;
+  all: string;
+  options: string[];
+}
+
+/** The dropdowns a category's programs can actually be filtered by. */
+function dimsOf(programs: ProgramCard[]): Dim[] {
+  const status = distinct(programs.map((p) => (p.current ? 'current' : 'past'))).reverse();
+  const dims: Dim[] = [
+    { key: 'sectors', label: 'sector', all: 'all sectors', options: distinct(programs.flatMap((p) => p.sectors)) },
+    { key: 'targets', label: 'target group', all: 'all groups', options: distinct(programs.flatMap((p) => p.targets)) },
+    { key: 'stages', label: 'stage', all: 'all stages', options: distinct(programs.flatMap((p) => p.stages)) },
+    { key: 'status', label: 'status', all: 'all programs', options: status },
+  ];
+  return dims.filter((d) => d.options.length > 1);
+}
+
+const categories = data.categories;
+---
+
+<BaseLayout
+  title="Programs & Projects · GİRVAK"
+  description="GİRVAK programs and projects, across entrepreneur support, development and talent."
+  bodyClass="hm ap pp"
+>
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="pp-hero">
+      <h1 class="pp-h1">We don't teach entrepreneurship; we grow <span class="pp-accent">the mindset</span> that makes it possible.</h1>
+    </section>
+
+    {categories.length > 0 && (
+      <section class="pp-cats" aria-label="Program categories">
+        {categories.map((c) => (
+          <button class="pp-cat" type="button" id={`tile-${c.slug}`} data-slug={c.slug} aria-expanded="false" aria-controls={`panel-${c.slug}`}>
+            {c.photo && <img src={c.photo} alt="" loading="eager" decoding="async" />}
+            <span class="pp-cat-copy">
+              {ledeOf(c) && <span class="pp-cat-lede">{ledeOf(c)}</span>}
+              {c.description && <span class="pp-cat-text">{c.description}</span>}
+            </span>
+            <span class="pp-cat-name">{c.name}<span class="cta-arrow" aria-hidden="true"></span></span>
+          </button>
+        ))}
+      </section>
+    )}
+
+    {categories.map((c) => {
+      const dims = dimsOf(c.programs);
+      return (
+        <section class="pp-panel" id={`panel-${c.slug}`} data-pp-panel aria-label={c.name} hidden>
+          <div class="pp-body">
+            <div class="fv-filters">
+              {dims.map((d) => (
+                <div class="fv-filter" data-key={d.key}>
+                  <button class="fv-fbtn" type="button" aria-expanded="false">
+                    <span class="fv-fbtn-label">{d.label}</span>
+                    <span class="fv-caret" aria-hidden="true"></span>
+                  </button>
+                  <div class="fv-menu" role="listbox" aria-label={d.label}>
+                    <button class="fv-opt is-on" type="button" role="option" aria-selected="true" data-val="">{d.all}</button>
+                    {d.options.map((o) => (
+                      <button class="fv-opt" type="button" role="option" aria-selected="false" data-val={o}>
+                        <span class="fv-opt-label">{o}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <button class="fa-reset" type="button" data-pp-reset>clear filters</button>
+
+              <div class="fv-filter ca-search fv-searchbox" data-key="q">
+                <button class="fv-fbtn" type="button" aria-expanded="false">
+                  <span class="fv-fbtn-label">search</span>
+                  <span class="fv-caret" aria-hidden="true"></span>
+                </button>
+                <div class="fv-menu ca-searchmenu">
+                  <input class="ca-input" type="text" placeholder="type a program" aria-label={`Search ${c.name}`} data-pp-search />
+                </div>
+              </div>
+            </div>
+
+            <div class="pp-grid" data-pp-grid>
+              {c.programs.map((p) => {
+                const Tag = p.href ? 'a' : 'div';
+                const link = p.href
+                  ? { href: p.href, ...(/^https?:/i.test(p.href) ? { target: '_blank', rel: 'noopener' } : {}) }
+                  : {};
+                return (
+                  <Tag
+                    class:list={['pp-card', !p.current && 'is-closed']}
+                    {...link}
+                    data-sectors={p.sectors.join(';')}
+                    data-targets={p.targets.join(';')}
+                    data-stages={p.stages.join(';')}
+                    data-status={p.current ? 'current' : 'past'}
+                  >
+                    <div class:list={['pp-shot', !p.photo && 'is-blank']}>
+                      {p.photo && <img src={p.photo} alt="" loading="lazy" decoding="async" />}
+                    </div>
+                    {!p.current && <span class="pp-closed">past program</span>}
+                    <div class="pp-cbody">
+                      <h3 class="pp-cname">{p.name}</h3>
+                      <div class="pp-swap">
+                        <p class="pp-desc">{p.text}</p>
+                        {p.sectors.length > 0 && (
+                          <ul class="pp-focus" aria-label="Sectors">
+                            {p.sectors.map((s) => <li>{s}</li>)}
+                          </ul>
+                        )}
+                      </div>
+                      {p.href && <span class="pp-more"><span class="cta-arrow" aria-hidden="true"></span></span>}
+                    </div>
+                  </Tag>
+                );
+              })}
+              <p class="pp-empty" hidden>nothing matches these filters yet.</p>
+            </div>
+          </div>
+        </section>
+      );
+    })}
+  </main>
+
+  <Footer footer={content.footer} apiBase={apiBase} />
+</BaseLayout>
+
+<script>
+  import '../scripts/home.js';
+  import '../scripts/pp-heading.js';
+  import '../scripts/programs.js';
+</script>

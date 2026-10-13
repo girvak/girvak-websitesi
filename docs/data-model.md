@@ -30,7 +30,7 @@ The base's shape is fixed by what editors already use — this system adapts to
 it, it does not migrate it.
 
 Tables: `home`, `about`, `fellow`, `partner`, `people`, `icons` — plus the
-record tables `ventures`, `sectors` and `programs_detailed` (below).
+record tables `ventures`, `sectors`, `programs`, `programs_detailed` and `applications` (below).
 
 `ContentFragment` (one Airtable row):
 
@@ -68,6 +68,41 @@ Links arrive as Airtable record ids, so `modules/content/ventures.py` reads
 `AirtableRecord` directly rather than through `Fragments`, which keeps only
 fields. Ids are resolved to labels and slugs during mapping: **no `rec…` id ever
 reaches the browser.**
+
+### `programs` and `programs_detailed` — the `/programs` page
+
+`programs` holds the three categories (`Name`, `description`, `photo`): one tile
+each, drawn in the design's order — entrepreneurship support, development,
+talent — whatever order Airtable returns them in.
+
+`programs_detailed` holds the programs. A row shows under the category its
+`programs` link names, when `onay` is ticked; one with no category (Fellow,
+Challenger) is not on this page. The card reads `name (en)`, `text`, `photo`
+and `discover more` (the program's own site; without it the card is not a
+link). The filter bar reads `sectors` (link to `sectors`), `target group` and
+`stage` (multi-selects) and `current/past`; a dropdown with fewer than two
+choices is left off. Current programs come before past ones, which are dimmed.
+
+### `applications` — the open calls on `/apply`
+
+Also a record table: one row is one call (programme, event, award).
+
+| Field | Meaning |
+|---|---|
+| `headline` | the card's title |
+| `text` | the card's one-line description |
+| `link` | where "apply" goes — usually an Airtable, Google or partner form |
+| `deadline` | last day applications are taken. **Empty means always open**: the card comes first and turns red on hover (the Fellow Program) |
+| `onay` | the publish gate. An unticked row is a draft and never renders |
+| `popup` | also show the call in the home page popup, for as long as it is open. Ticked calls sit side by side, three at a time on a wide screen and one on a phone; any more slide in (arrows, swipe, or by themselves every 5 s), never scroll. A visitor who closes the popup sees it again only when the set of ticked calls changes |
+
+The API returns the approved rows in Airtable order with the deadline as a
+date. Open, closing soon (seven days or fewer) and closed are worked out by the
+page on every request, in İstanbul time (`frontend/src/scripts/open-calls.js`),
+so a snapshot never keeps a call open past its deadline. The base's
+`Deadline Passed?` formula is not read. A closed call stays on the page, greyed
+out and last. There is no seed of calls: an outage with no snapshot shows an
+empty grid rather than stale deadlines.
 
 ### Founders are people, not venture links
 
@@ -111,6 +146,7 @@ These are Pydantic models, not tables.
 - `FellowContent` — CTA, "how it works" blocks, expectation cards, "what you do" items
 - `PeopleContent` — people grouped by tag: trustees, directors, fellows
 - `Partners` — logos, ordered, featured flag
+- `ApplyContent` — the open calls, undated: the page rates them per request
 - `VenturesContent` — one page of one tab of the founders & ventures directory,
   plus facets covering both. Both whole lists are the snapshot; the tab, filter
   and page number are applied to it per request, so a page-3 visit reads

@@ -12,9 +12,11 @@
 import { apiBaseUrl, pageCacheSeconds } from './env';
 import type {
   AboutContent,
+  ApplyContent,
   FellowContent,
   HomeContent,
   PeopleContent,
+  ProgramsContent,
   FounderCard,
   Venture,
   VenturesContent,
@@ -41,6 +43,14 @@ export async function getAboutContent(): Promise<AboutContent> {
 
 export async function getFellowContent(): Promise<FellowContent> {
   return read<FellowContent>('/v1/content/fellow');
+}
+
+export async function getApply(): Promise<ApplyContent> {
+  return read<ApplyContent>('/v1/content/apply');
+}
+
+export async function getPrograms(): Promise<ProgramsContent> {
+  return read<ProgramsContent>('/v1/content/programs');
 }
 
 export async function getPeople(): Promise<PeopleContent> {
