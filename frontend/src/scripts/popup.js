@@ -2,9 +2,10 @@
 // GİRVAK — home page popup of open calls.
 //
 // Opens a moment after the page loads whenever the visitor arrives from
-// outside the site — a typed address, a search result, a link elsewhere, a
-// reload — on every visit and every device, closed before or not. Coming back
-// to the home page from another page of the site does not open it again.
+// outside the site — a typed address, a search result, a link elsewhere — on
+// every visit and every device, closed before or not. A reload, the back /
+// forward buttons, or coming back to the home page from another page of the
+// site do not open it again.
 // Nothing is stored in the browser. Closes on the ×, the backdrop, Escape, or a
 // call being followed.
 // While open, Tab stays inside it and the page behind does not scroll; on
@@ -39,10 +40,13 @@ if (popup) {
   let at = 0;
 
   /**
-   * Did the visitor arrive from outside the site? A reload keeps the referrer it
-   * was first opened with, so a reload counts as arriving too.
+   * Did the visitor just arrive from outside the site? A reload or a back /
+   * forward step keeps the referrer the page was first opened with, so those
+   * are ruled out by the navigation type first.
    */
   const fromOutside = () => {
+    const [entry] = performance.getEntriesByType?.('navigation') ?? [];
+    if (entry && entry.type !== 'navigate') return false;
     if (!document.referrer) return true;
     try { return new URL(document.referrer).origin !== location.origin; } catch { return true; }
   };
