@@ -1,9 +1,12 @@
 // ============================================================
 // GİRVAK — home page popup of open calls.
 //
-// Opens a moment after the page loads, unless this browser already closed the
-// same set of calls (`data-signature`; a new call or a changed deadline shows
-// it again). Closes on the ×, the backdrop, Escape, or a call being followed.
+// Opens a moment after the page loads whenever the visitor arrives from
+// outside the site — a typed address, a search result, a link elsewhere, a
+// reload — on every visit and every device, closed before or not. Coming back
+// to the home page from another page of the site does not open it again.
+// Nothing is stored in the browser. Closes on the ×, the backdrop, Escape, or a
+// call being followed.
 // While open, Tab stays inside it and the page behind does not scroll; on
 // close, focus goes back where it was.
 //
@@ -17,14 +20,12 @@
 // `inert`, so Tab never lands on one.
 // ============================================================
 
-const SEEN_KEY = 'girvak:popup-seen';
 const OPEN_DELAY_MS = 1200;
 const AUTOPLAY_MS = 5000;
 const SWIPE_PX = 40;
 
 const popup = document.getElementById('callPopup');
 if (popup) {
-  const signature = popup.dataset.signature ?? '';
   const panel = popup.querySelector('.cp-panel');
   const row = popup.querySelector('.cp-row');
   const nav = popup.querySelector('.cp-nav');
@@ -37,11 +38,13 @@ if (popup) {
   let lastFocus = null;
   let at = 0;
 
-  const seen = () => {
-    try { return localStorage.getItem(SEEN_KEY) === signature; } catch { return false; }
-  };
-  const remember = () => {
-    try { localStorage.setItem(SEEN_KEY, signature); } catch { /* private mode: it shows again next time */ }
+  /**
+   * Did the visitor arrive from outside the site? A reload keeps the referrer it
+   * was first opened with, so a reload counts as arriving too.
+   */
+  const fromOutside = () => {
+    if (!document.referrer) return true;
+    try { return new URL(document.referrer).origin !== location.origin; } catch { return true; }
   };
 
   // ---- the slider ----
@@ -184,7 +187,6 @@ if (popup) {
     timer = null;
     document.body.classList.remove('cp-open');
     document.removeEventListener('keydown', onKey);
-    remember();
     if (lastFocus instanceof HTMLElement) lastFocus.focus();
   }
 
@@ -193,5 +195,5 @@ if (popup) {
   // new tab, so the popup is closed for when the visitor comes back.
   popup.querySelectorAll('.cp-panel a[href]').forEach((a) => a.addEventListener('click', close));
 
-  if (!seen()) setTimeout(open, OPEN_DELAY_MS);
+  if (fromOutside()) setTimeout(open, OPEN_DELAY_MS);
 }

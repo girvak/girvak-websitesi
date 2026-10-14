@@ -10,8 +10,9 @@
  *
  *          Renders nothing when no call qualifies. It is in the HTML hidden and
  *          opened by `scripts/popup.js` a moment after load — so without
- *          JavaScript it never covers the page — and a visitor who closes it
- *          does not see it again until the set of popup calls changes.
+ *          JavaScript it never covers the page — on every arrival at the site
+ *          from outside, closed before or not; not when coming back to the home
+ *          page from another page of the site.
  *
  *          The design has no popup of its own. This one is drawn lighter than
  *          the /apply cards, in the brand's parts: ink type on white, a hairline
@@ -32,9 +33,6 @@ interface Props {
 
 const today = todayIn();
 const calls = popupCalls(Astro.props.calls, today);
-// What "already seen" is remembered against: a new call, or a changed deadline,
-// shows the popup again to someone who closed the previous one.
-const signature = calls.map((call) => `${call.title}|${call.deadline ?? ''}`).join('\n');
 // Calls in view at once on a wide screen; a phone shows one (popup.css).
 const visible = Math.min(calls.length, 3);
 
@@ -47,7 +45,7 @@ const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank',
 ---
 
 {calls.length > 0 && (
-  <div class="cp" id="callPopup" role="dialog" aria-modal="true" aria-labelledby="callPopupTitle" data-signature={signature} hidden>
+  <div class="cp" id="callPopup" role="dialog" aria-modal="true" aria-labelledby="callPopupTitle" hidden>
     <div class="cp-backdrop" data-cp-close></div>
     <div class="cp-panel" tabindex="-1" style={`--v: ${visible}`}>
       <header class="cp-head">
