@@ -6,8 +6,11 @@
 #   :8083  site          (this file)
 #   :5432  PostgreSQL    (loopback only)
 #
+# Production release (preferred):
+#   sudo ./deploy/deploy.sh
+# Manual:
 #   docker compose up -d --build
-#   docker compose run --rm backend alembic upgrade head    # release step
+#   docker compose run --rm backend alembic upgrade head
 services:
   db:
     image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
@@ -31,8 +34,9 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    # Single repo-root `.env` (see `.env.example`). `environment:` wins over it.
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       ENVIRONMENT: production
       DOCS_ENABLED: "false"
@@ -54,8 +58,10 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      # Server-side only. The browser never sees this.
+      # Docker network hostname; overrides local API_BASE_URL from `.env`.
       API_BASE_URL: http://backend:8000
       # Empty: the form posts to the site's own origin and nginx forwards /api.
       PUBLIC_API_BASE_URL: ""

@@ -5,6 +5,9 @@
 .env
 .env.*
 !.env.example
+deploy/ssl/*.pem
+deploy/ssl/*.key
+deploy/ssl/*.crt
 
 # python
 __pycache__/

@@ -1,229 +1,225 @@
 # Deployment
 
-How the site is published, and how to publish it again. Audience: whoever
-operates the server.
+How the site is published on the VPS. DNS for `girisimcilikvakfi.org` lives in
+**Cloudflare** (Proxied). Host nginx terminates origin TLS; Docker Compose runs
+PostgreSQL, the API, and the Astro SSR site. One script does the rest after DNS
+points here.
 
-Layout on the host — unchanged from the previous deployment, so the nginx site
-file is the only thing that has to be replaced:
+## Layout
 
 | Port | Serves |
 |---|---|
-| **80 / 443** | host nginx, the public entry point |
+| **80 / 443** | host nginx (public; Cloudflare → this host) |
 | 127.0.0.1:**8082** | backend API (container) |
 | 127.0.0.1:**8083** | site, Astro SSR (container) |
 | 127.0.0.1:**5432** | PostgreSQL (container, loopback only) |
 
 nginx owns routing: `/` to the site, `/api/…` to the backend with the `/api`
-prefix stripped, `/media/…` to the backend with immutable caching. **The site does
-not proxy anything itself** — without nginx (or `npm run dev`), `/api` and
-`/media` are 404. That is deliberate: one place decides routing.
+prefix stripped, `/media/…` to the backend. **The site does not proxy anything
+itself** — without nginx, `/api` and `/media` are 404.
 
-## Migrating from the previous deployment
+## What you do once (Cloudflare + secrets)
 
-The server already runs the old site with nginx, DNS and certbot configured, and
-the port layout above is unchanged — so **DNS and the certificate need nothing**.
+### 1. DNS
 
-The mandatory change is one character. The old API served its routes under
-`/api/...`, so nginx passed the path through:
+In Cloudflare DNS for `girisimcilikvakfi.org`:
 
-```nginx
-location /api/ { proxy_pass http://127.0.0.1:8082; }     # old: path kept
-location /api/ { proxy_pass http://127.0.0.1:8082/; }    # new: /api stripped
-```
+| Type | Name | Content | Proxy |
+|---|---|---|---|
+| A (or AAAA) | `@` | VPS public IP | **Proxied** (orange) |
+| A / CNAME | `www` | same IP or apex | **Proxied** |
 
-The new API serves `/v1/...`, so without that trailing slash every API call
-becomes a 404 and the newsletter form stops working. `/media/` and `/` are
-unchanged.
+### 2. SSL/TLS mode
 
-Two ways to apply it:
+Cloudflare dashboard → **SSL/TLS** → encryption mode **Full (strict)**.
 
-- **Minimal (keeps certbot's work).** Edit the live file
-  `/etc/nginx/sites-available/girvak`, add the trailing slash, and drop the three
-  `add_header` security lines — the app sends those itself now, and nginx would
-  send each one twice. Then `sudo nginx -t && sudo systemctl reload nginx`.
-- **Replace the file.** Copy `deploy/nginx-site.conf` over it, then re-run
-  `sudo certbot --nginx -d girisimcilikvakfi.org -d www.girisimcilikvakfi.org`,
-  because the copy removes the TLS blocks certbot had written.
+Do **not** use Flexible. Edge certificates (visitor ↔ Cloudflare) are automatic;
+the origin still needs a certificate Cloudflare trusts (Origin CA).
 
-Also on the server, once:
+### 3. Origin certificate
 
-- `frontend/dist` is no longer mounted anywhere: the site is a Node process now,
-  not a static bundle behind an nginx container. `deploy/frontend-container.conf`
-  and `deploy/frontend.env.production` from the old repo are obsolete.
-- The published ports now bind to `127.0.0.1` instead of every interface, so
-  `:8082` and `:8083` are no longer reachable from outside the host.
-- `docker compose up -d --build` recreates the `backend` and `frontend` services
-  in place and adds `db`.
-- Import the legacy subscriber file (below) before announcing the form.
+Create a **Cloudflare Origin CA** certificate and place it on the server.
+Steps and paths: [deploy/ssl/README.md](../../deploy/ssl/README.md).
 
-## Environments
-
-- **local** — `uv run uvicorn …` + `npm run dev`. `CONTENT__SOURCE=seed` works
-  with no Airtable access at all.
-- **production** — the three containers plus host nginx, on the VPS.
-
-There is no staging today. When one appears it is this file plus a second nginx
-site; nothing in the images changes, because no environment value is baked in.
-
-## Build
+Short version — on the VPS, from the repo:
 
 ```bash
-docker compose build          # backend + site images
+install -d -m 700 deploy/ssl
+# write Origin CA PEM + key as:
+#   deploy/ssl/origin.pem
+#   deploy/ssl/origin.key
+chmod 600 deploy/ssl/origin.key
 ```
 
-Both images are digest-pinned. Upgrading a base image is an edit to the
-`Dockerfile`, visible in the diff — never a silent pull.
+### 4. Env file on the server
 
-The site image bakes **no** configuration: `src/lib/env.ts` reads the environment
-at request time, so one image serves any environment and changing a value is a
-restart, not a rebuild.
+One file for compose, API, and site:
 
-## Configuration
-
-Names only; values live in `backend/.env` on the server and in the compose file's
-environment blocks.
+```bash
+cp .env.example .env
+# fill POSTGRES_PASSWORD, ADMIN_API_KEY, AIRTABLE__*, CONTENT__SOURCE=airtable, …
+```
 
 | Where | Required names |
 |---|---|
-| `backend/.env` | `ADMIN_API_KEY`, `AIRTABLE__API_KEY`, `AIRTABLE__BASE_ID`, `CONTENT__SOURCE=airtable` |
-| beside `docker-compose.yml` (`.env`) | `POSTGRES_PASSWORD` |
-| compose `backend` | `ENVIRONMENT`, `DATABASE__DSN`, `TRUSTED_HOSTS`, `CORS_ORIGINS`, `MEDIA__DIR_PATH` |
-| compose `frontend` | `API_BASE_URL`, `PUBLIC_API_BASE_URL` (empty), `PUBLIC_SITE_URL` |
+| `.env` (repo root) | `POSTGRES_PASSWORD`, `ADMIN_API_KEY`, `AIRTABLE__API_KEY`, `AIRTABLE__BASE_ID`, `CONTENT__SOURCE=airtable` |
+| compose `environment:` (overrides `.env`) | production `ENVIRONMENT`, `DATABASE__DSN` → `db`, `TRUSTED_HOSTS`, `CORS_ORIGINS`, `MEDIA__DIR_PATH`, frontend `API_BASE_URL=http://backend:8000` |
 
-MUST NOT: a secret value in `docker-compose.yml`, in this file, or in any file
-under `docs/`. `.env` is git-ignored; `.env.example` carries the names.
+MUST NOT: a secret in `docker-compose.yml`, in this file, or under `docs/`.
 
-## Deploy
+Also once: import `backend/legacy-subscribers.db` into PostgreSQL if you still
+have the old SQLite newsletter list (see Database below).
+
+## Deploy (every release)
+
+From the repo root on the VPS:
+
+```bash
+sudo ./deploy/deploy.sh
+```
+
+That script, in order:
+
+1. Checks Docker, nginx, curl, openssl, env files, and origin cert material
+2. Installs certs to `/etc/ssl/girvak/` if needed
+3. Writes Cloudflare Real IP ranges to `/etc/nginx/conf.d/cloudflare-realip.conf`
+4. Installs `deploy/nginx-site.conf` and reloads nginx
+5. `git pull` (ff-only), `docker compose build`, `alembic upgrade head`, `up -d`
+6. Waits for `:8082/health` and `:8083`, then smoke-tests local TLS and the public URL
+
+Useful flags:
+
+```bash
+./deploy/deploy.sh --check-only    # prerequisites only, no changes
+./deploy/deploy.sh --skip-pull     # do not git pull
+./deploy/deploy.sh --skip-build    # reuse existing images
+./deploy/deploy.sh --skip-public   # skip the public HTTPS smoke check
+```
+
+Manual equivalent (if you prefer not to use the script):
 
 ```bash
 git pull
 docker compose build
-docker compose run --rm backend alembic upgrade head    # see Database, below
+docker compose run --rm backend alembic upgrade head
 docker compose up -d
 sudo cp deploy/nginx-site.conf /etc/nginx/sites-available/girvak
 sudo ln -sf /etc/nginx/sites-available/girvak /etc/nginx/sites-enabled/
+# certs already at /etc/ssl/girvak/origin.{pem,key}
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Order matters: migrate before the new containers serve traffic; reload nginx last,
-once both upstreams answer.
+There is **no certbot step**. TLS paths are fixed in `deploy/nginx-site.conf`.
+Re-copying the site file does not wipe certificates.
 
-TLS: `sudo certbot --nginx -d girisimcilikvakfi.org -d www.girisimcilikvakfi.org`
-rewrites this site file to listen on 443 and redirect 80. Re-copying the file
-overwrites that, so run certbot again (it is idempotent) after replacing it.
+## Environments
+
+- **local** — `uv run uvicorn …` + `npm run dev`. `CONTENT__SOURCE=seed` works
+  with no Airtable access.
+- **production** — three containers + host nginx on the VPS, Cloudflare in front.
+
+There is no staging today.
+
+## Build notes
+
+```bash
+docker compose build
+```
+
+Images are digest-pinned. The site image bakes **no** configuration:
+`src/lib/env.ts` reads the environment at request time — changing a value is a
+restart, not a rebuild.
 
 ## Database migration
 
-Migrations are a **release step**, never a container entrypoint: two starting
-replicas would race each other.
+Migrations are a **release step**, never a container entrypoint:
 
 ```bash
 docker compose run --rm backend alembic upgrade head
 ```
 
-The chain is backward compatible by rule (`coding-playbook/python-fastapi-backend/07-migrations.md`),
-so the old code keeps working against the new schema during a rolling restart.
+(`deploy.sh` runs this for you.)
 
-The previous site kept subscribers in a SQLite file. That file is preserved
-locally at `backend/legacy-subscribers.db` (git-ignored, because it holds real
-addresses). Import it into PostgreSQL once, before or just after the first
-release — one `INSERT ... ON CONFLICT DO NOTHING` per row is enough, and the
-unique constraint makes a re-run harmless.
-
-Only `newsletter_subscribers` lives in PostgreSQL. Content is Airtable's, and the
-`/media` mirror is a cache — losing either costs a re-read, not data.
+The previous site kept subscribers in SQLite at `backend/legacy-subscribers.db`
+(git-ignored). Import into PostgreSQL once — `INSERT … ON CONFLICT DO NOTHING`
+is enough. Only `newsletter_subscribers` lives in PostgreSQL; content is
+Airtable's; `/media` is a cache.
 
 ## Content, after deploy
 
-Content does not ship with a release. An editor changes Airtable and the next page
-load shows it, within `CONTENT__TTL_SECONDS` (default 600). To publish immediately:
+Editors change Airtable; the next page load shows it within
+`CONTENT__TTL_SECONDS` (default 600). To publish immediately:
 
 ```bash
-curl -X POST -H "X-Admin-Token: $ADMIN_API_KEY" https://girisimcilikvakfi.org/api/v1/content/refresh
+curl -X POST -H "X-Admin-Token: $ADMIN_API_KEY" \
+  https://girisimcilikvakfi.org/api/v1/content/refresh
 ```
-
-Each API container holds its own snapshot, so with more than one backend replica
-the call must reach each of them — or wait out the TTL.
 
 ## Start-up
 
-When the API starts with `CONTENT__SOURCE=airtable` it fills every content
-snapshot in the background (`content_warmed` in the log, with the seconds it
-took — about 13 on the current base). It answers health checks meanwhile, so a
-deploy never waits on it. A page requested during those seconds waits on the
-same read, and the site gives up on the API after 5 seconds, so a visitor who
-arrives in the first few seconds of a fresh start can still get an error page;
-the next request works. Ordinary TTL expiry no longer does this.
-
-`content_warm_failed` means one page could not be built (the others still
-filled); `content_rebuild_failed` means a rebuild after expiry failed and the
-last copy is still being served, with a retry in 30 seconds.
-
-A cold `/media` mirror does not slow a deploy: the first render hands out
-Airtable's own URLs and the files download in the background (measured: a full
-mirror is ~650 files / ~140 MB and fills in about twenty seconds).
+On API start with `CONTENT__SOURCE=airtable`, snapshots warm in the background
+(`content_warmed` in the log). Health checks answer immediately. A visitor in
+the first few seconds can still see an error page; the next request works.
 
 ## Rollback
 
 ```bash
 git checkout <previous tag or commit>
-docker compose build && docker compose up -d
+./deploy/deploy.sh --skip-pull
 ```
 
-Rolling the schema back is a **new revision**, not `alembic downgrade` against
-production data. `downgrade()` exists for local work.
-
-The `backend_media` volume survives both directions; nothing has to be restored.
+Schema rollback is a **new revision**, not `alembic downgrade` on production.
+The `backend_media` volume survives both directions.
 
 ## Release process
 
 1. Merge to `main`, tag it.
-2. Deploy as above.
+2. On the VPS: `sudo ./deploy/deploy.sh`
 3. Run the checks below.
-4. Record what shipped in `CHANGELOG.md` (user-visible changes only).
+4. Record user-visible changes in `CHANGELOG.md` when that file exists.
 
 ## CI/CD
 
-Not wired yet. When it is, it runs what a developer runs locally, in this order:
-`uv sync --frozen` → `ruff check` → `mypy` → `pytest` → dependency audit, and for
-the site `npm ci` → `astro check` → `npm run build`.
-
-MUST NOT: a pipeline that migrates production without a human step.
+Not wired yet. MUST NOT: a pipeline that migrates production without a human step.
 
 ## Checks after deploy
 
 ```bash
-curl -fsS https://girisimcilikvakfi.org/api/health                       # {"status":"ok"}
+curl -fsS https://girisimcilikvakfi.org/api/health
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/about
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/fellow-program
 curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/board-of-trustees
-curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/apply
-curl -fsS -o /dev/null -w '%{http_code}\n' https://girisimcilikvakfi.org/programs
 curl -fsS https://girisimcilikvakfi.org/api/v1/content/home | head -c 200
 ```
 
-Then look at one page in a browser: images must come from `/media/…` (not from
-`airtableusercontent.com` — that would mean the mirror cannot write its volume),
-and the newsletter form must answer with a message rather than a network error.
+Browser: images from `/media/…` (not `airtableusercontent.com`); newsletter form
+returns a message, not a network error.
 
-Logs: `docker compose logs -f backend` — one JSON object per line, with
-`request_id`. A page that fails to render logs `content_source_unavailable` with
-what it served instead (`stale` or `seed`).
+Logs: `docker compose logs -f backend` — JSON lines with `request_id`.
+
+## Migrating from the pre-Cloudflare / certbot setup
+
+Port layout is unchanged. Replace the live nginx site with
+`deploy/nginx-site.conf` (includes TLS). Install Origin CA under
+`/etc/ssl/girvak/`. Set Cloudflare to **Full (strict)** and Proxied DNS. Remove
+any certbot renewal hooks that rewrote the old site file.
+
+Critical proxy detail (still required): `/api/` must strip the prefix —
+
+```nginx
+location /api/ { proxy_pass http://127.0.0.1:8082/; }   # trailing slash
+```
+
+`deploy/nginx-site.conf` already does this.
 
 ## Portraits as WebP (one-time notes)
 
-Mirrored portraits are converted to WebP by the backend (Pillow, installed from
-`uv.lock` in the image — a normal `docker compose build`). On the first content
-request after this ships, every `*_large.png` already in the media volume is
-converted **from the file on disk**, not from Airtable, in a few seconds.
-
-The old PNGs are left in place on purpose: a page cached in a browser can still
-point at one. Once a day or more has passed they are dead weight (about 115 MB)
-and can be removed from the media volume:
+Mirrored portraits are converted to WebP by the backend on first content after
+ship. Old `*_large.png` files can be deleted from the media volume after a day:
 
 ```bash
 find <media dir> -name '*_large.png' -delete
 ```
 
-Only `*_large.png` — logos are `*_orig.png` and are still served as they are.
+Only `*_large.png` — logos are `*_orig.png` and stay.
