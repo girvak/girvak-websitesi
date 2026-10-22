@@ -1,0 +1,5 @@
+# Origin CA material — never commit
+*.pem
+*.key
+*.crt
+!.gitignore

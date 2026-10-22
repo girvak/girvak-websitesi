@@ -39,14 +39,16 @@ Details: [docs/architecture/overview.md](docs/architecture/overview.md) ·
 Full instructions: [docs/development/setup.md](docs/development/setup.md).
 
 ```bash
+cp .env.example .env   # one file for API + site + compose; fill ADMIN_API_KEY, etc.
+
 # backend
-cd backend && uv sync && cp .env.example .env   # fill ADMIN_API_KEY, DATABASE__DSN
+cd backend && uv sync
 uv run alembic upgrade head
 uv run uvicorn girvak.main:create_app --factory --app-dir src --port 8000
 
 # frontend
-cd frontend && npm install && cp .env.example .env
-npm run dev            # http://localhost:4321
+cd frontend && npm install
+npm run dev            # http://localhost:4321 — reads ../.env
 ```
 
 ## How to run the tests
@@ -70,9 +72,16 @@ coding-playbook/  the rules; read AGENTS.md if you are an AI coding agent
 
 ## Deploy
 
-Host nginx in front of two containers plus PostgreSQL; nginx forwards `/api` and
-`/media` to the backend. Steps, configuration names, rollback and post-deploy
-checks: [docs/operations/deployment.md](docs/operations/deployment.md).
+DNS is Cloudflare (Proxied). On the VPS, one script installs origin TLS, nginx,
+and Docker Compose (db + API + site):
+
+```bash
+# once: Origin CA → deploy/ssl/origin.{pem,key}, fill repo-root .env
+sudo ./deploy/deploy.sh
+```
+
+Details: [docs/operations/deployment.md](docs/operations/deployment.md) ·
+[deploy/ssl/README.md](deploy/ssl/README.md).
 
 ## The previous implementation
 

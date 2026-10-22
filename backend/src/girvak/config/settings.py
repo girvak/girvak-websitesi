@@ -22,8 +22,11 @@ from typing import Annotated, Literal, Self
 from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-# girvak/config/settings.py -> girvak -> src -> backend/
+# girvak/config/settings.py -> girvak -> src -> backend/ -> repo root
 BACKEND_DIR = Path(__file__).resolve().parents[3]
+REPO_ROOT = BACKEND_DIR.parent
+# One `.env` at the repo root for backend, frontend, and docker compose.
+_ENV_FILE = REPO_ROOT / ".env"
 
 
 class DatabaseSettings(BaseModel):
@@ -109,10 +112,13 @@ class Settings(BaseSettings):
     """Every environment value this process reads, validated at startup."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_ENV_FILE,
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
-        extra="forbid",
+        # Shared repo-root `.env` also holds compose + frontend names
+        # (POSTGRES_PASSWORD, API_BASE_URL, …). Ignore those; mistyped
+        # *backend* keys still fail type/required validation at boot.
+        extra="ignore",
         frozen=True,
     )
 

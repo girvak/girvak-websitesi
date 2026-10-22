@@ -11,26 +11,33 @@ reads Airtable (or the committed seed).
 - PostgreSQL **13+** — `gen_random_uuid()` is used as a column default
 - Airtable personal access token with `data.records:read` on the content base
 
-## Backend
+## Env (repo root)
+
+One `.env` for the API, the site, and docker compose:
 
 ```bash
-cd backend
-uv sync                 # installs from the committed uv.lock
 cp .env.example .env
 ```
-
-Fill in `.env`:
 
 | Name | What it is |
 |---|---|
 | `ENVIRONMENT` | `local` |
 | `ADMIN_API_KEY` | any long random string; required, no default |
 | `DATABASE__DSN` | `postgresql+asyncpg://girvak:girvak@127.0.0.1:5432/girvak` |
+| `POSTGRES_PASSWORD` | used by compose; local Docker Postgres often `girvak` |
 | `CONTENT__SOURCE` | `seed` to work offline, `airtable` for live content |
 | `AIRTABLE__API_KEY` / `AIRTABLE__BASE_ID` | required when the source is `airtable` |
+| `API_BASE_URL` | site → API (`http://127.0.0.1:8000` locally) |
 
-Every name is listed in `backend/.env.example`. Unknown names fail the boot on
-purpose (`extra="forbid"`), so a typo in a deploy variable cannot go unnoticed.
+Every name is listed in `.env.example`. Frontend-only keys are ignored by the
+API; required backend fields still fail validation if missing or mistyped.
+
+## Backend
+
+```bash
+cd backend
+uv sync                 # installs from the committed uv.lock
+```
 
 Database:
 
@@ -56,16 +63,14 @@ Set `DOCS_ENABLED=true` locally for `/docs`.
 ```bash
 cd frontend
 npm install
-cp .env.example .env      # API_BASE_URL=http://127.0.0.1:8000
-npm run dev               # http://localhost:4321
+npm run dev               # http://localhost:4321 — loads ../.env
 ```
 
 The dev server proxies `/api` and `/media` to the API, which is how production
 serves them too — so the browser never learns the API's hostname.
 
-If the API is not on port 8000, start the site with `API_BASE_URL` set on the
-command line (`API_BASE_URL=http://127.0.0.1:8001 npm run dev`): the proxy reads
-it before Astro loads `.env`, so the `.env` entry does not reach it. See
+If the API is not on port 8000, set `API_BASE_URL` in the root `.env` or on the
+command line (`API_BASE_URL=http://127.0.0.1:8001 npm run dev`). See
 [showcase-pages.md](showcase-pages.md#running-it-locally).
 
 Production-style check:
@@ -94,4 +99,4 @@ Airtable access. The newsletter form needs PostgreSQL; nothing else does.
 | CMS images 404 in `npm start` | `/media` is served by the API through the proxy, not by the site |
 | Images do not optimise | `sharp` needs its native binary; allow its install script |
 
-MUST NOT: put secret values in this file. `.env.example` holds names only.
+MUST NOT: put secret values in this file. The repo-root `.env.example` holds names only.

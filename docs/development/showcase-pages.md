@@ -159,10 +159,9 @@ test yet; it needs a DOM (`jsdom`) as a dev dependency.
 
 ## Running it locally
 
-`astro.config.mjs` reads `API_BASE_URL` from `process.env` when the config loads,
-which is **before** Astro reads `.env`. So a `.env` entry does not reach the
-`/api` and `/media` proxy. If the API is not on port 8000, start the site with
-the variable set:
+`astro.config.mjs` loads the repo-root `.env` (via Vite `loadEnv`) before reading
+`API_BASE_URL` for the `/api` and `/media` proxy. Set the URL there, or override
+on the command line:
 
 ```bash
 API_BASE_URL=http://127.0.0.1:8001 npm run dev
