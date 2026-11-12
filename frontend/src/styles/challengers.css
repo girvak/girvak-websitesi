@@ -17,12 +17,6 @@
    is the challenger yellow. */
 .fa.ca { --fellow: var(--chal); }
 
-/* Selected text takes the page's full yellow. White on that yellow would not read,
-   so the text is GİRVAK grey. Solid, so overlapping lines never stack into darker
-   bands. */
-.ca ::selection { background: var(--chal); color: #373d42; }
-.ca ::-moz-selection { background: var(--chal); color: #373d42; }
-
 /* Yellow text does not read on white: the button stays ink and its arrow turns yellow. */
 .ca .lm-btn:hover, .ca .lm-btn:focus-visible { color: #373d42; }
 .ca .lm-btn:hover .cta-arrow, .ca .lm-btn:focus-visible .cta-arrow { background-color: var(--chal); }

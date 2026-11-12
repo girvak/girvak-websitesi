@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 import type { Footer } from '../lib/types';
 interface Props { footer: Footer; apiBase: string; }
 const { footer, apiBase } = Astro.props;
@@ -40,7 +41,7 @@ const href = (link: string): string => (/^#.+/.test(link) ? `/${link}` : link);
     <div class="ft-col">
       <h4>Explore</h4>
       <div class="ft-contact">
-        {footer.explore_links.map((l) => (<a href={href(l.href)}>{l.label}</a>))}
+        {footer.explore_links.map((l) => (<a href={href(l.href)} {...newTab(l.href)}>{l.label}</a>))}
       </div>
     </div>
     <div class="ft-col">

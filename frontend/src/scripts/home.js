@@ -1,6 +1,10 @@
 // ============================================================
 // GİRVAK homepage — interactions (vanilla, bundled by Astro)
 // ============================================================
+import { realignHashOnLoad } from './scroll-to.js';
+import './selection.js';
+import { wireFlipDirection } from './card-direction.js';
+
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- NAV scroll state ----------
@@ -9,6 +13,18 @@ const nav = document.querySelector('.hm-nav');
 function onScroll() { if (nav && !nav.classList.contains('ab-nav')) nav.classList.toggle('scrolled', window.scrollY > 40); }
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
+
+// ---------- Nav height → CSS ----------
+// `html { scroll-padding-top }` reads --nav-h, so a link to #section (menu,
+// footer, another page) lands the heading just under the fixed nav instead of
+// behind it. Measured, not assumed: the nav's padding and icon are clamp()ed.
+if (nav) {
+  const setNavH = () => document.documentElement.style.setProperty('--nav-h', `${Math.round(nav.getBoundingClientRect().height)}px`);
+  setNavH();
+  if ('ResizeObserver' in window) new ResizeObserver(setNavH).observe(nav);
+  else window.addEventListener('resize', setNavH);
+}
+realignHashOnLoad();
 
 // ---------- What-we-do flip cards: tap to flip on touch ----------
 const canHover = window.matchMedia('(hover: hover)').matches;
@@ -151,6 +167,8 @@ function initFellowsBelt() {
 
 initFellowsBelt();
 initAllFellowsBelts();
+// The belt duplicates its cards for the loop, so wire after that has happened.
+document.querySelectorAll('.fellows-track').forEach((track) => wireFlipDirection(track.querySelectorAll('.fcard'), { axes: 'y' }));
 window.addEventListener('load', initAllFellowsBelts, { passive: true });
 window.addEventListener('resize', () => {
   requestAnimationFrame(initAllFellowsBelts);

@@ -14,13 +14,6 @@
    ink of the text around them, so neither would show. */
 .bt .fa-hero-title i { color: var(--turquoise); }
 .bt .fa-hero-title .ch:hover { color: var(--turquoise); }
-.al ::selection { background: var(--alumni); color: #fff; }
-.al ::-moz-selection { background: var(--alumni); color: #fff; }
-/* Selected text (Ctrl+A, dragging) takes the page's full colour, as on alumni:
-   the fellows' red with white text. Solid, not translucent, so overlapping lines
-   never stack into darker bands. */
-.fl ::selection { background: var(--fellow); color: #fff; }
-.fl ::-moz-selection { background: var(--fellow); color: #fff; }
 
 /* ---------- hero ---------- */
 .fa-hero { padding-top: clamp(140px,15vw,190px); padding-bottom: clamp(20px,2.4vw,32px); }

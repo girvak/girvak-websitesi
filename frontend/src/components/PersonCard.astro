@@ -1,0 +1,57 @@
+---
+/**
+ * Module: src/components/PersonCard.astro
+ * Layer: Component
+ * Purpose: The one person card. Front: photo, year, name. Back: up to two lines
+ *          about them and an optional footer. It is a link to their LinkedIn (or
+ *          whatever `href` says) that opens in a new tab, or a plain figure when
+ *          there is nowhere to go. The flip direction follows the pointer
+ *          (`scripts/card-direction.js`); the markup carries no motion itself.
+ *          Fellows, alumni, challengers, trustees and founders all use this.
+ *
+ * Called by: components/PeopleDirectory.astro, pages/founders-ventures.astro
+ * Calls: src/lib/links.ts
+ */
+import { newTab } from '../lib/links';
+
+interface Props {
+  name: string;
+  year?: string;
+  photo?: string;
+  /** Where the card goes. Empty: the card is not a link. */
+  href?: string;
+  ariaLabel?: string;
+  /** Back of the card: first and second line (school and department, company and role, venture…). */
+  primary?: string;
+  secondary?: string;
+  /** Back of the card: a line at the foot (the programs). */
+  footer?: string;
+  /** Extra attributes: `data-*` the page's filters read. */
+  attrs?: Record<string, string | undefined>;
+  hidden?: boolean;
+}
+
+const { name, year, photo, href, ariaLabel, primary, secondary, footer, attrs = {}, hidden = false } = Astro.props;
+// `Tag` is capitalised so Astro treats it as the element.
+const Tag = href ? 'a' : 'figure';
+const link = href ? { href, ...newTab(href), ...(ariaLabel ? { 'aria-label': ariaLabel } : {}) } : { tabindex: '0' };
+---
+
+<Tag class:list={['fv-card', !photo && 'no-photo']} hidden={hidden || undefined} {...link} {...attrs}>
+  <div class="fv-inner">
+    <div class="fv-front">
+      {year && <div class="fv-year">{year}</div>}
+      {photo && <img class="fv-photo" src={photo} alt={name} loading="lazy" decoding="async" />}
+      <div class="fv-band"><span class="fv-frontname">{name}</span></div>
+    </div>
+    <div class="fv-back">
+      {year && <div class="fv-year">{year}</div>}
+      <div class="fv-back-mid">
+        <div class="fv-name">{name}</div>
+        {primary && <div class="fv-uni">{primary}</div>}
+        {secondary && <div class="fv-dept">{secondary}</div>}
+      </div>
+      {footer && <div class="fv-prog">{footer}</div>}
+    </div>
+  </div>
+</Tag>

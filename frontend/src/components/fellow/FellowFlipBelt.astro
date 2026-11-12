@@ -64,7 +64,7 @@ function linkedInHref(raw?: string): string | undefined {
                   {(p.university || p.company) ? (
                     <span class="fcard-uni">{p.university || p.company}</span>
                   ) : null}
-                  {p.department ? <span class="fcard-dept">{p.department}</span> : null}
+                  {(p.department || p.position) ? <span class="fcard-dept">{p.department || p.position}</span> : null}
                 </div>
               </div>
             </div>

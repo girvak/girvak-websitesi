@@ -1,0 +1,54 @@
+---
+/**
+ * Module: src/components/TrusteeBelt.astro
+ * Layer: Component
+ * Purpose: The home page's board-of-trustees marquee, drawn as the design draws
+ *          it: the About page's `.bcard` (a cut-out portrait on a brand colour;
+ *          on hover the name band rolls up and the company appears) on the
+ *          fellows' scrolling belt. The colours run in a strict teal → ink →
+ *          coral cycle, so no two neighbours share one and the cycle still
+ *          lines up when the belt duplicates itself for the loop (the count is
+ *          trimmed to a multiple of three). A trustee with a LinkedIn profile is
+ *          a link to it, in a new tab.
+ *
+ * Called by: src/pages/index.astro
+ * Calls: src/lib/links.ts
+ */
+import type { Person } from '../lib/types';
+import { newTab } from '../lib/links';
+
+interface Props { people: Person[]; ariaLabel: string; }
+const { people, ariaLabel } = Astro.props;
+
+const CYCLE = ['#19BAD1', '#373D42', '#F76C53'] as const; // teal, ink, coral
+const whole = people.slice(0, people.length - (people.length % 3) || people.length);
+const nameOf = (p: Person) => `${p.first} ${p.last ?? ''}`.trim();
+const linkedIn = (raw?: string) => {
+  const first = (raw ?? '').trim().split(/\s+/)[0] ?? '';
+  return /linkedin\.com\/in\//i.test(first) ? first : undefined;
+};
+---
+<div class="fellows-belt" aria-label={ariaLabel}>
+  <div class="fellows-track" id="tbelt">
+    {whole.map((p, i) => {
+      const name = nameOf(p);
+      const href = linkedIn(p.linkedin);
+      const Tag = href ? 'a' : 'div';
+      return (
+        <Tag
+          class="bcard tcard"
+          style={`--bc: ${CYCLE[i % 3]}`}
+          {...(href ? { href, ...newTab(href), 'aria-label': `${name} — LinkedIn` } : { tabindex: '0' })}
+        >
+          {p.photo
+            ? <img class="bcard-photo" src={p.photo} alt={name} width={512} height={548} loading="lazy" decoding="async" />
+            : <span class="bcard-initials">{name.charAt(0)}</span>}
+          <div class="bcard-band">
+            <span class="bcard-name">{name}</span>
+            {(p.company || p.position) && <span class="bcard-company">{p.company || p.position}</span>}
+          </div>
+        </Tag>
+      );
+    })}
+  </div>
+</div>

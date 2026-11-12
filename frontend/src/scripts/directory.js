@@ -12,6 +12,7 @@
 // that is `hidden` never fetches its photo. Filters and search run over the
 // whole list, not the revealed part.
 // ============================================================
+import { wireFlipDirection } from './card-direction.js';
 import { fold, hits, pruneOptions, wire, wireSearch } from './filters-multi.js';
 import { PAGE_SIZE, initLoadMore, paginate } from './load-more.js';
 import { buildSearch, parseFilters, visibleCount } from './pager.js';
@@ -27,7 +28,7 @@ if (grid) {
 
   // Search runs over the card's own text, folded so "ayse" finds "Ayşe". Built
   // once — the cards never change.
-  cards.forEach((c) => { c.dataset.q = fold(c.textContent); });
+  cards.forEach((c) => { c.dataset.q = fold(c.dataset.search || c.textContent); });
 
   // The three dropdown dimensions. Each card carries exactly one value per
   // dimension, so nothing is split.
@@ -108,26 +109,8 @@ if (grid) {
     });
   }
 
-  // ---------- flip motion: staggered, random axis ----------
-  const AXES = [
-    ['rotateY(180deg)', 'rotateY(180deg)'],
-    ['rotateY(-180deg)', 'rotateY(-180deg)'],
-    ['rotateX(180deg)', 'rotateX(180deg)'],
-    ['rotateX(-180deg)', 'rotateX(-180deg)'],
-  ];
-  function roll(c) {
-    const a = AXES[Math.floor(Math.random() * AXES.length)];
-    c.style.setProperty('--rot', a[0]);
-    c.style.setProperty('--brot', a[1]);
-    c.style.setProperty('--fd', `${Math.round(Math.random() * 130)}ms`);
-  }
-  // Rolled once up front and again as the pointer arrives — never on focus.
-  // Clicking a card focuses it, and re-rolling then changed the axis halfway
-  // through the flip, which read as a glitch rather than a flourish.
-  cards.forEach((c) => {
-    roll(c);
-    c.addEventListener('mouseenter', () => roll(c));
-  });
+  // ---------- flip motion: the card turns from the side the pointer came in ----------
+  wireFlipDirection(cards);
 
   // ---------- a shared link opens the view it was copied from ----------
   const initial = parseFilters(location.search, DIMS);

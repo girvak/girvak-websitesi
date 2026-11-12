@@ -300,6 +300,13 @@
 @media (hover: none) {
   .wss-overlay { opacity: 1; }
 }
+/* Phones and narrow screens: the strip is as tall as its text needs. A fixed
+   150px cut the last strip's description off (168px of text) and left the first
+   one's touching the bottom edge. The overlay goes in flow, so it sets the height. */
+@media (hover: none), (max-width: 768px) {
+  .wss-strip { height: auto; min-height: clamp(150px, 17vw, 210px); display: flex; }
+  .wss-overlay { position: relative; inset: auto; flex: 1; }
+}
 /* uppercase label — always visible, pinned top-left above photo and overlay */
 .wss-label {
   position: absolute;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { URGENT_DAYS, arrange, daysLeft, formatDeadline, popupCalls, rate, todayIn } from '../src/scripts/open-calls.js';
+import { URGENT_DAYS, arrange, isFellowCall, daysLeft, formatDeadline, popupCalls, rate, todayIn } from '../src/scripts/open-calls.js';
 
 const call = (title, deadline = null, popup = false) => ({ title, text: '', href: '#', deadline, popup });
 
@@ -65,4 +65,16 @@ test('the popup shows ticked calls that are still open, in page order', () => {
   ).map((c) => c.title);
 
   assert.deepEqual(shown, ['ticked fellow', 'ticked, deadline today', 'ticked, later']);
+});
+
+test('the Fellow call heads the page even with a deadline, or after it closed', () => {
+  const call = (title, deadline) => ({ title, text: '', href: '#', deadline, popup: false });
+  const today = '2026-11-12';
+  const order = arrange(
+    [call('Open Call A', null), call('Soon', '2026-11-14'), call('GİRVAK Fellow Program', '2026-10-01')],
+    today,
+  ).map((c) => c.title);
+  assert.deepEqual(order, ['GİRVAK Fellow Program', 'Open Call A', 'Soon']);
+  assert.equal(isFellowCall(call('Fellowship 2027', null)), true);
+  assert.equal(isFellowCall(call('Founder One', null)), false);
 });

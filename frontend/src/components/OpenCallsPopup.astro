@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 /**
  * Module: src/components/OpenCallsPopup.astro
  * Layer: Component
@@ -41,7 +42,7 @@ const when = (call: RatedCall): string => {
   if (call.days === 0) return 'closes today';
   return `${call.state === 'urgent' ? 'closes' : 'until'} ${formatDeadline(call.deadline!, today)}`;
 };
-const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank', rel: 'noopener' } : {});
+const external = (href: string) => newTab(href);
 ---
 
 {calls.length > 0 && (
@@ -69,7 +70,7 @@ const external = (href: string) => (/^https?:/i.test(href) ? { target: '_blank',
               {call.text && <p class="cp-call-text">{call.text}</p>}
               <span class="cp-call-foot">
                 <span class="cp-when">{when(call)}</span>
-                <span class="cp-go">apply<span class="cp-arrow" aria-hidden="true"></span></span>
+                <span class="cp-go">interest form<span class="cp-arrow" aria-hidden="true"></span></span>
               </span>
             </a>
           </li>

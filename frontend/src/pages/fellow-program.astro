@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
@@ -110,8 +111,8 @@ const fwyd = fp.what_youll_do.map((i) => ({
           <div class="fhero-state fhero-1 on">
             <h1 class="fhero-h1" set:html={fp.hero_headline_html || fp.hero_headline} />
             <div class="fhero-links">
-              <a class="fhero-link" href={fp.hero_cta_primary.href}><span class="fhero-link-label">{fp.hero_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
-              <a class="fhero-link" href={fp.hero_cta_secondary.href}><span class="fhero-link-label">{fp.hero_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
+              <a class="fhero-link" href={fp.hero_cta_primary.href} {...newTab(fp.hero_cta_primary.href)}><span class="fhero-link-label">{fp.hero_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
+              <a class="fhero-link" href={fp.hero_cta_secondary.href} {...newTab(fp.hero_cta_secondary.href)}><span class="fhero-link-label">{fp.hero_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
             </div>
           </div>
 
@@ -166,7 +167,7 @@ const fwyd = fp.what_youll_do.map((i) => ({
     <section class="fellows ffellows" id="fellows">
       <div class="fellows-head">
         <h2 class="ffellows-h2">{fp.fellows_headline}</h2>
-        <a href={fp.fellows_cta.href} class="h3btn ffellows-seeall"><span class="h3btn-label">{fp.fellows_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
+        <a href={fp.fellows_cta.href} {...newTab(fp.fellows_cta.href)} class="h3btn ffellows-seeall"><span class="h3btn-label">{fp.fellows_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
       </div>
 
       {
@@ -198,7 +199,7 @@ const fwyd = fp.what_youll_do.map((i) => ({
           <section class="fellows ffellows falum-belt">
             <div class="fellows-head">
               <h2 class="ffellows-h2">{fp.alumni_cta.label}</h2>
-              <a href={fp.alumni_cta.href} class="h3btn ffellows-seeall falum-seeall"><span class="h3btn-label">see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
+              <a href={fp.alumni_cta.href} {...newTab(fp.alumni_cta.href)} class="h3btn ffellows-seeall falum-seeall"><span class="h3btn-label">see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
             </div>
             <FellowFlipBelt
               trackId="abelt"
@@ -209,20 +210,20 @@ const fwyd = fp.what_youll_do.map((i) => ({
           </section>
         ) : (
           <div class="falum-foot">
-            <a href={fp.alumni_cta.href} class="fhero-link falum-cta"><span class="fhero-link-label">{fp.alumni_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
+            <a href={fp.alumni_cta.href} {...newTab(fp.alumni_cta.href)} class="fhero-link falum-cta"><span class="fhero-link-label">{fp.alumni_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
           </div>
         )
       }
     </section>
 
     <!-- IMPACT / BECAUSE -->
-    <section class="fbecause">
+    <section class="fbecause" id="giveback">
       <div class="fbecause-inner">
         <h2 class="fbecause-h2" set:html={fp.giveback_headline_html || fp.giveback_headline} />
         <div class="fbecause-copy">
           <p class="fbecause-lead">{fp.giveback_lead}</p>
           <p>{fp.giveback_body}</p>
-          <a class="fbecause-report" href={fp.giveback_cta.href}><span class="fbecause-report-label">{fp.giveback_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
+          <a class="fbecause-report" href={fp.giveback_cta.href} {...newTab(fp.giveback_cta.href)}><span class="fbecause-report-label">{fp.giveback_cta.label}</span><span class="arr" aria-hidden="true"></span></a>
         </div>
       </div>
     </section>
@@ -247,8 +248,8 @@ const fwyd = fp.what_youll_do.map((i) => ({
             ))}
           </div>
           <div class="fchal-links">
-            <a class="fhero-link fchal-link" href={fp.challenger_cta_primary.href}><span class="fhero-link-label">{fp.challenger_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
-            <a class="fhero-link fchal-link" href={fp.challenger_cta_secondary.href}><span class="fhero-link-label">{fp.challenger_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
+            <a class="fhero-link fchal-link" href={fp.challenger_cta_primary.href} {...newTab(fp.challenger_cta_primary.href)}><span class="fhero-link-label">{fp.challenger_cta_primary.label}</span><span class="arr" aria-hidden="true"></span></a>
+            <a class="fhero-link fchal-link" href={fp.challenger_cta_secondary.href} {...newTab(fp.challenger_cta_secondary.href)}><span class="fhero-link-label">{fp.challenger_cta_secondary.label}</span><span class="arr" aria-hidden="true"></span></a>
           </div>
         </div>
       </div>
@@ -297,7 +298,7 @@ const fwyd = fp.what_youll_do.map((i) => ({
     <section class="fchallengers ffellows" id="challengers">
       <div class="fellows-head">
         <h2 class="ffellows-h2">{fp.challengers_headline}</h2>
-        <a href={fp.challengers_cta.href} class="h3btn ffellows-seeall fchal-seeall"><span class="h3btn-label">{fp.challengers_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
+        <a href={fp.challengers_cta.href} {...newTab(fp.challengers_cta.href)} class="h3btn ffellows-seeall fchal-seeall"><span class="h3btn-label">{fp.challengers_cta.label}</span><span class="cta-arrow" aria-hidden="true"></span></a>
       </div>
       {
         challengerPeople.length > 0 ? (

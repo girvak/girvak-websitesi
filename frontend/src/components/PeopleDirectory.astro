@@ -23,6 +23,7 @@
  */
 import type { Person } from '../lib/types';
 import { shuffled } from '../lib/shuffle';
+import PersonCard from './PersonCard.astro';
 
 interface Props {
   /** Hero headline. Trusted markup written in the page, never editor content. */
@@ -134,8 +135,8 @@ const filters = [
             class="ca-input"
             id="faSearch"
             type="text"
-            placeholder="type a name"
-            aria-label="Search by name"
+            placeholder="name, school, company…"
+            aria-label="Search people"
           />
         </div>
       </div>
@@ -145,43 +146,23 @@ const filters = [
     <div class="fv-grid" id="faGrid">
       {cohort.map((p) => {
         const name = nameOf(p);
-        // A card goes to the person's LinkedIn. With none on file it stays a
-        // plain figure rather than pretending to be clickable. `Tag` is
-        // capitalised so Astro treats it as the element.
-        const Tag = p.linkedin ? 'a' : 'figure';
+        // The back says where they study, or — on the board — where they work.
         return (
-          <Tag
-            class:list={['fv-card', !p.photo && 'no-photo']}
-            {...(p.linkedin
-              ? { href: p.linkedin, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `${name} — LinkedIn` }
-              : { tabindex: '0' })}
-            data-university={p.university ?? ''}
-            data-department={p.department ?? ''}
-            data-year={yearKey(p.year)}
-          >
-            <div class="fv-inner">
-              <div class="fv-front">
-                {p.year && <div class="fv-year">{p.year}</div>}
-                {p.photo && (
-                  <img class="fv-photo" src={p.photo} alt={name} loading="lazy" decoding="async" />
-                )}
-                <div class="fv-band"><span class="fv-frontname">{name}</span></div>
-              </div>
-              <div class="fv-back">
-                {p.year && <div class="fv-year">{p.year}</div>}
-                <div class="fv-back-mid">
-                  <div class="fv-name">{name}</div>
-                  {/* Where they study, or — on the board — where they work. */}
-                  {(board ? p.company : p.university) && (
-                    <div class="fv-uni">{board ? p.company : p.university}</div>
-                  )}
-                  {(board ? p.position : p.department) && (
-                    <div class="fv-dept">{board ? p.position : p.department}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Tag>
+          <PersonCard
+            name={name}
+            year={p.year}
+            photo={p.photo}
+            href={p.linkedin}
+            ariaLabel={`${name} — LinkedIn`}
+            primary={board ? p.company : p.university}
+            secondary={board ? p.position : p.department}
+            attrs={{
+              'data-university': p.university ?? '',
+              'data-department': p.department ?? '',
+              'data-year': yearKey(p.year),
+              'data-search': [name, p.year, p.university, p.department, p.company, p.position, ...(p.roles ?? [])].filter(Boolean).join(' '),
+            }}
+          />
         );
       })}
 

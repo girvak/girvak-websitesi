@@ -16,7 +16,8 @@
  *          The words of the page — the headline and each tile's one-line lede —
  *          are the design's, written here; a tile's description is Airtable's.
  *          A dropdown is drawn only when it has two or more choices, since one
- *          choice filters nothing. `/programs#<category-slug>` opens that tile.
+ *          choice filters nothing. `/programs#<category-slug>` (or `?category=talent`) opens that tile. A card opens the
+ *          program's own page, `/programs/<slug>`.
  *
  * Called by: visitors at /programs, "programs" in the menu
  * Calls: src/lib/api.ts, src/scripts/programs.js
@@ -48,25 +49,33 @@ const collator = new Intl.Collator('tr');
 const distinct = (values: string[]) => [...new Set(values)].sort(collator.compare);
 
 interface Dim {
-  key: 'sectors' | 'targets' | 'stages' | 'status';
+  key: 'programs' | 'sectors' | 'targets' | 'stages' | 'status';
   label: string;
   all: string;
   options: string[];
 }
 
-/** The dropdowns a category's programs can actually be filtered by. */
-function dimsOf(programs: ProgramCard[]): Dim[] {
+/** The dropdowns the programs can actually be filtered by. `programs` is the category. */
+function dimsOf(programs: ProgramCard[], categoryNames: string[]): Dim[] {
   const status = distinct(programs.map((p) => (p.current ? 'current' : 'past'))).reverse();
   const dims: Dim[] = [
+    { key: 'programs', label: 'programs', all: 'all programs', options: categoryNames },
     { key: 'sectors', label: 'sector', all: 'all sectors', options: distinct(programs.flatMap((p) => p.sectors)) },
     { key: 'targets', label: 'target group', all: 'all groups', options: distinct(programs.flatMap((p) => p.targets)) },
     { key: 'stages', label: 'stage', all: 'all stages', options: distinct(programs.flatMap((p) => p.stages)) },
-    { key: 'status', label: 'status', all: 'all programs', options: status },
+    { key: 'status', label: 'status', all: 'all', options: status },
   ];
   return dims.filter((d) => d.options.length > 1);
 }
 
 const categories = data.categories;
+// One list for the whole page: every program, tagged with its category. A tile
+// (or `?category=`) only sets the `programs` filter on it.
+const everyProgram = categories.flatMap((c) => c.programs.map((p) => ({ program: p, category: c })));
+const dims = dimsOf(
+  everyProgram.map((e) => e.program),
+  categories.filter((c) => c.programs.length > 0).map((c) => c.name),
+);
 ---
 
 <BaseLayout
@@ -85,7 +94,7 @@ const categories = data.categories;
     {categories.length > 0 && (
       <section class="pp-cats" aria-label="Program categories">
         {categories.map((c) => (
-          <button class="pp-cat" type="button" id={`tile-${c.slug}`} data-slug={c.slug} aria-expanded="false" aria-controls={`panel-${c.slug}`}>
+          <button class="pp-cat" type="button" id={`tile-${c.slug}`} data-slug={c.slug} data-name={c.name} aria-expanded="false" aria-controls="panel-all">
             {c.photo && <img src={c.photo} alt="" loading="eager" decoding="async" />}
             <span class="pp-cat-copy">
               {ledeOf(c) && <span class="pp-cat-lede">{ledeOf(c)}</span>}
@@ -97,10 +106,8 @@ const categories = data.categories;
       </section>
     )}
 
-    {categories.map((c) => {
-      const dims = dimsOf(c.programs);
-      return (
-        <section class="pp-panel" id={`panel-${c.slug}`} data-pp-panel aria-label={c.name} hidden>
+    {everyProgram.length > 0 && (
+        <section class="pp-panel" id="panel-all" data-pp-panel aria-label="All programs" hidden>
           <div class="pp-body">
             <div class="fv-filters">
               {dims.map((d) => (
@@ -128,21 +135,18 @@ const categories = data.categories;
                   <span class="fv-caret" aria-hidden="true"></span>
                 </button>
                 <div class="fv-menu ca-searchmenu">
-                  <input class="ca-input" type="text" placeholder="type a program" aria-label={`Search ${c.name}`} data-pp-search />
+                  <input class="ca-input" type="text" placeholder="type a program" aria-label="Search programs" data-pp-search />
                 </div>
               </div>
             </div>
 
             <div class="pp-grid" data-pp-grid>
-              {c.programs.map((p) => {
-                const Tag = p.href ? 'a' : 'div';
-                const link = p.href
-                  ? { href: p.href, ...(/^https?:/i.test(p.href) ? { target: '_blank', rel: 'noopener' } : {}) }
-                  : {};
+              {everyProgram.map(({ program: p, category: c }) => {
                 return (
-                  <Tag
+                  <a
                     class:list={['pp-card', !p.current && 'is-closed']}
-                    {...link}
+                    href={`/programs/${p.slug}`}
+                    data-programs={c.name}
                     data-sectors={p.sectors.join(';')}
                     data-targets={p.targets.join(';')}
                     data-stages={p.stages.join(';')}
@@ -162,17 +166,16 @@ const categories = data.categories;
                           </ul>
                         )}
                       </div>
-                      {p.href && <span class="pp-more"><span class="cta-arrow" aria-hidden="true"></span></span>}
+                      <span class="pp-more"><span class="cta-arrow" aria-hidden="true"></span></span>
                     </div>
-                  </Tag>
+                  </a>
                 );
               })}
               <p class="pp-empty" hidden>nothing matches these filters yet.</p>
             </div>
           </div>
         </section>
-      );
-    })}
+    )}
   </main>
 
   <Footer footer={content.footer} apiBase={apiBase} />

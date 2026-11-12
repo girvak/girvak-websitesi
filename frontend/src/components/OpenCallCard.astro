@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 /**
  * Module: src/components/OpenCallCard.astro
  * Layer: Component
@@ -19,7 +20,7 @@ interface Props {
 }
 
 const { call, today } = Astro.props;
-const external = /^https?:/i.test(call.href) ? { target: '_blank', rel: 'noopener' } : {};
+const external = newTab(call.href);
 const classes = ['ap-card', call.state === 'always' && 'is-pinned', call.state === 'urgent' && 'is-urgent'];
 ---
 
@@ -42,7 +43,7 @@ const classes = ['ap-card', call.state === 'always' && 'is-pinned', call.state =
       ) : (
         <time class="ap-date" datetime={call.deadline!}>{formatDeadline(call.deadline!, today)}</time>
       )}
-      <span class="ap-apply"><span class="ap-arrow" aria-hidden="true"></span>apply</span>
+      <span class="ap-apply"><span class="ap-arrow" aria-hidden="true"></span>interest form</span>
     </div>
   </a>
 )}

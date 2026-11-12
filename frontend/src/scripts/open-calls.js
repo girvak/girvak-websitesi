@@ -53,19 +53,31 @@ export function rate(call, today) {
 }
 
 /**
- * The page's order: always-open calls first, then open ones by the nearest
- * deadline, then closed ones, most recently closed first. Ties keep the
- * Airtable order.
+ * The Fellow programme's call. The client's rule: it always heads the page,
+ * open or not, so it is pinned by name rather than by having no deadline.
+ * @param {OpenCall} call
+ * @returns {boolean}
+ */
+export function isFellowCall(call) {
+  return /\bfellow/i.test(call.title);
+}
+
+/**
+ * The page's order: the Fellow call first, then always-open calls, then open
+ * ones by the nearest deadline, then closed ones, most recently closed first.
+ * Ties keep the Airtable order.
  * @param {OpenCall[]} calls
  * @param {string} today
  * @returns {RatedCall[]}
  */
 export function arrange(calls, today) {
-  const rank = (/** @type {RatedCall} */ c) => (c.state === 'always' ? 0 : c.state === 'closed' ? 2 : 1);
+  const rank = (/** @type {RatedCall} */ c) =>
+    isFellowCall(c) ? -1 : c.state === 'always' ? 0 : c.state === 'closed' ? 2 : 1;
   return calls
     .map((call) => rate(call, today))
     .sort((a, b) => {
       if (rank(a) !== rank(b)) return rank(a) - rank(b);
+      if (rank(a) === -1) return 0;
       if (a.state === 'always') return 0;
       return a.state === 'closed' ? b.days - a.days : a.days - b.days;
     });

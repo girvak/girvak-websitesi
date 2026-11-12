@@ -15,66 +15,84 @@
 // - A card's hover fill alternates coral and turquoise, as in the design.
 // ============================================================
 import { fold, hits, pruneOptions, wire, wireSearch } from './filters-multi.js';
+import { scrollToTop } from './scroll-to.js';
 
-const DIMS = ['sectors', 'targets', 'stages', 'status'];
+const DIMS = ['programs', 'sectors', 'targets', 'stages', 'status'];
 const HOVERS = ['#F76C53', '#19BAD1'];
-// Below the fixed header, so the filter bar is not tucked under it.
-const SCROLL_OFFSET = 120;
 
 const tiles = [...document.querySelectorAll('.pp-cat[aria-controls]')];
-const panelOf = (tile) => document.getElementById(tile.getAttribute('aria-controls'));
-const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-function close(tile) {
-  const panel = panelOf(tile);
-  tile.setAttribute('aria-expanded', 'false');
-  tile.classList.remove('is-open');
+// The page has one panel with every program; a tile only sets its `programs`
+// filter. The panel's setup (below) fills this in.
+let panelApi = { setCategory(_name) {} };
+const panel = document.getElementById('panel-all');
+
+function closeAll() {
+  tiles.forEach((t) => { t.setAttribute('aria-expanded', 'false'); t.classList.remove('is-open'); });
   if (panel) { panel.classList.remove('is-open'); panel.hidden = true; }
+  panelApi.setCategory(null);
 }
 
 function open(tile, { scroll = true } = {}) {
-  tiles.forEach((other) => { if (other !== tile) close(other); });
-  const panel = panelOf(tile);
   if (!panel) return;
-  tile.setAttribute('aria-expanded', 'true');
-  tile.classList.add('is-open');
+  tiles.forEach((t) => {
+    const on = t === tile;
+    t.setAttribute('aria-expanded', on ? 'true' : 'false');
+    t.classList.toggle('is-open', on);
+  });
   panel.hidden = false;
   void panel.offsetHeight; // let the panel lay out before it fades in
   panel.classList.add('is-open');
+  panelApi.setCategory(tile.dataset.name || null);
   if (!scroll) return;
-  requestAnimationFrame(() => {
-    const anchor = panel.querySelector('.fv-filters') || panel;
-    const y = anchor.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
-    window.scrollTo({ top: y, behavior: calm.matches ? 'auto' : 'smooth' });
-  });
+  // The panel's top (its filter bar) under the nav; scrollToTop re-checks once
+  // the panel has finished sliding in from -8px.
+  requestAnimationFrame(() => scrollToTop(panel));
 }
 
 tiles.forEach((tile) => {
   tile.addEventListener('click', () => {
-    if (tile.getAttribute('aria-expanded') === 'true') close(tile);
-    else open(tile);
+    if (tile.getAttribute('aria-expanded') === 'true') closeAll();
+    else {
+      open(tile);
+      // Keep the address bar in sync so a shared link reopens this category.
+      const slug = tile.dataset.slug;
+      if (slug) {
+        const next = `#${slug}`;
+        if (location.hash !== next) history.replaceState(null, '', next);
+      }
+    }
   });
 });
 
 /**
- * Open the tile the address names, if any. The tile's id is `tile-<slug>`, not
+ * The tile a name points at: its exact slug, or a short alias the links use
+ * (`talent`, `development`, `entrepreneur`), matched on the start of the slug.
+ * @param {string} name
+ */
+function tileFor(name) {
+  const want = name.toLowerCase();
+  if (!want) return undefined;
+  return tiles.find((t) => t.dataset.slug === want) || tiles.find((t) => (t.dataset.slug || '').startsWith(want));
+}
+
+/**
+ * Open the tile the address names — `/programs#talent-programs`,
+ * `/programs?category=talent` — if any. The tile's id is `tile-<slug>`, not
  * the slug, so the browser does not jump to and focus it on its own.
  */
 function fromHash() {
-  const slug = decodeURIComponent(location.hash.slice(1));
-  const tile = slug && tiles.find((t) => t.dataset.slug === slug);
+  const named = decodeURIComponent(location.hash.slice(1)) || new URLSearchParams(location.search).get('category') || '';
+  const tile = tileFor(named);
   if (tile) open(tile);
 }
-fromHash();
-window.addEventListener('hashchange', fromHash);
-
 // ---------- one panel's filters ----------
 document.querySelectorAll('[data-pp-panel]').forEach((panel) => {
   const scope = `#${CSS.escape(panel.id)}`;
   const cards = [...panel.querySelectorAll('.pp-card')];
   const empty = panel.querySelector('.pp-empty');
   const reset = panel.querySelector('[data-pp-reset]');
-  const state = { q: '', sectors: [], targets: [], stages: [], status: [] };
+  const state = { q: '', programs: [], sectors: [], targets: [], stages: [], status: [] };
 
   cards.forEach((card, i) => {
     card.dataset.q = fold(card.textContent);
@@ -122,5 +140,17 @@ document.querySelectorAll('[data-pp-panel]').forEach((panel) => {
     apply();
   });
 
+  // A tile sets (or clears) the `programs` filter, then the list repaints.
+  panelApi = {
+    setCategory(name) {
+      filters.set('programs', name ? [name] : []);
+      apply();
+    },
+  };
+
   apply();
 });
+
+// Last, so the panel's filters exist when a link names a category.
+fromHash();
+window.addEventListener('hashchange', fromHash);
