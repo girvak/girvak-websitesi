@@ -104,7 +104,7 @@ def safe_href(url: str, fallback: str = "#") -> str:
     """Reject a link an editor should not be able to inject.
 
     A fragment's link lands in an href, so `javascript:` and `data:` are dropped
-    rather than rendered.
+    rather than rendered. A value holding several addresses keeps the first.
 
     Args:
         url: Raw value from Airtable.
@@ -113,7 +113,10 @@ def safe_href(url: str, fallback: str = "#") -> str:
     Returns:
         A safe href.
     """
-    candidate = (url or "").strip()
+    # An editor sometimes pastes several addresses into one cell ("a.com   b.com").
+    # A link has one target: the first, so the others cannot break the href.
+    parts = (url or "").split()
+    candidate = parts[0].rstrip(",;") if parts else ""
     if not candidate:
         return fallback
     if candidate.startswith(("#", "/")):

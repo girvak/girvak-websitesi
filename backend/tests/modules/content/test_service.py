@@ -15,6 +15,7 @@ Calls: girvak/modules/content/service.py
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import pytest
 from tests.modules.content.builders import record
@@ -22,6 +23,7 @@ from tests.modules.content.builders import record
 from girvak.config import Settings
 from girvak.infra.airtable.client import AirtableRecord
 from girvak.infra.cache.snapshot import SnapshotCache
+from girvak.infra.storage.content_backup import ContentBackup
 from girvak.infra.storage.media_mirror import MediaMirror
 from girvak.modules.content import seeds
 from girvak.modules.content.service import (
@@ -411,3 +413,88 @@ async def test_warm_up_skips_a_page_that_fails_and_fills_the_rest(
 
     assert app_settings.airtable.table_home in source.calls
     assert app_settings.airtable.table_ventures in source.calls
+
+
+# ---------------------------------------------------------------------------
+# The on-disk backup: the last good snapshot survives a restart.
+# ---------------------------------------------------------------------------
+
+
+def _program_rows(settings: Settings) -> dict[str, list[AirtableRecord]]:
+    airtable = settings.airtable
+    return {
+        airtable.table_program_categories: [
+            AirtableRecord(id="recC", fields={"Name": "Talent Programs"})
+        ],
+        airtable.table_programs: [
+            AirtableRecord(
+                id="recP",
+                fields={"name (en)": "Backed Up Program", "programs": ["recC"], "onay": True},
+            )
+        ],
+    }
+
+
+async def test_a_good_build_is_written_to_the_backup(
+    app_settings: Settings, cache: SnapshotCache, media: MediaMirror, tmp_path: Path
+) -> None:
+    backup = ContentBackup(tmp_path)
+    service = ContentService(
+        app_settings, cache, media, FakeSource(_program_rows(app_settings)), backup
+    )
+
+    await service.programs()
+
+    saved = backup.load("programs")
+    assert saved is not None
+    assert b"Backed Up Program" in saved
+
+
+async def test_after_a_restart_a_dead_source_serves_the_backup_not_the_seed(
+    app_settings: Settings, media: MediaMirror, tmp_path: Path
+) -> None:
+    backup = ContentBackup(tmp_path)
+    first = ContentService(
+        app_settings,
+        SnapshotCache(app_settings.content.ttl_seconds),
+        media,
+        FakeSource(_program_rows(app_settings)),
+        backup,
+    )
+    await first.programs()
+
+    # A fresh process: empty memory, Airtable unreachable.
+    dead = FakeSource()
+    dead.fail = True
+    restarted = ContentService(
+        app_settings, SnapshotCache(app_settings.content.ttl_seconds), media, dead, backup
+    )
+    content = await restarted.programs()
+    await restarted.programs()
+
+    assert [p.name for c in content.categories for p in c.programs] == ["Backed Up Program"]
+    # The second visitor is answered from memory: the dead source was tried once.
+    assert len(dead.calls) == 1
+
+
+async def test_a_backup_from_an_older_schema_is_ignored(
+    app_settings: Settings, cache: SnapshotCache, media: MediaMirror, tmp_path: Path
+) -> None:
+    backup = ContentBackup(tmp_path)
+    backup.save("programs", b'{"categories": "not a list"}')
+    dead = FakeSource()
+    dead.fail = True
+
+    content = await ContentService(app_settings, cache, media, dead, backup).programs()
+
+    assert content.categories == []
+
+
+async def test_without_a_source_nothing_is_backed_up(
+    app_settings: Settings, cache: SnapshotCache, media: MediaMirror, tmp_path: Path
+) -> None:
+    backup = ContentBackup(tmp_path)
+
+    await ContentService(app_settings, cache, media, None, backup).home()
+
+    assert backup.load("home") is None

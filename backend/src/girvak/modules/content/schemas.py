@@ -363,6 +363,12 @@ class FounderCard(_Frozen):
     # Where clicking the card goes — their venture's site. Empty means the card
     # is not a link.
     website: str = ""
+    # What else the `people` row says about them. Not printed on the card; the
+    # page's search reads them, so it covers the person's whole row.
+    company: str = ""
+    position: str = ""
+    university: str = ""
+    department: str = ""
     sectors: list[str] = []
     sector_slugs: list[str] = []
     programs: list[str] = []
@@ -480,22 +486,45 @@ class ApplyContent(_Frozen):
     calls: list[OpenCall] = []
 
 
-class ProgramCard(_Frozen):
-    """One program on /programs: a `programs_detailed` row.
+class ProgramStat(_Frozen):
+    """One tile of a program page's "at a glance" row: a counted number and its words."""
 
-    `href` is the program's own site ("discover more"), empty when it has none —
-    the card is then not a link. The three lists are what the filter bar reads.
+    value: float
+    decimals: int = 0
+    # Written with thousands separators ("1,076"), so it is printed the same way.
+    grouped: bool = False
+    prefix: str = ""
+    suffix: str = ""
+    label: str = ""
+    text: str = ""
+
+
+class ProgramCard(_Frozen):
+    """One program: a `programs_detailed` row, for /programs and its own page.
+
+    `href` is the program's own site ("discover more"), empty when it has none.
+    The three lists are what the filter bar reads. The rest is the program
+    page: Airtable's value where the row has one, the committed copy
+    (`data/program_details.json`) where it does not, nothing where neither does.
+    `body_html` is the overview with `**x**` already turned into highlight spans;
+    `partners` are the organisations the row links to, with logo and site.
     """
 
     slug: str
     name: str
     text: str = ""
     photo: str = ""
+    hero: str = ""
     href: str = ""
     sectors: list[str] = []
     targets: list[str] = []
     stages: list[str] = []
     current: bool = True
+    body_html: list[str] = []
+    stats: list[ProgramStat] = []
+    for_who: list[str] = []
+    what_happens: list[str] = []
+    partners: list[Partner] = []
 
 
 class ProgramCategory(_Frozen):

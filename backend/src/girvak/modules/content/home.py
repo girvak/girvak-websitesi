@@ -126,7 +126,7 @@ def _hero_ctas(seed: Hero, home: Fragments) -> list[CTA]:
             CTA(label=secondary_label, href=link_of(home.row("index_hero_cta_secondary"), fallback))
         )
     if primary_label:
-        fallback = seed.ctas[1].href if len(seed.ctas) > 1 else "#wwd"
+        fallback = seed.ctas[1].href if len(seed.ctas) > 1 else "/apply"
         ctas.append(
             CTA(label=primary_label, href=link_of(home.row("index_hero_cta_primary"), fallback))
         )
@@ -163,7 +163,14 @@ def _impact_image(seed: str, home: Fragments) -> str:
 
 def _what_we_do(seed: list[WhatWeDoCard], home: Fragments) -> list[WhatWeDoCard]:
     cards: list[WhatWeDoCard] = []
-    for index, row in enumerate(home.family("index_whatwedo_")):
+    rows = home.family("index_whatwedo_")
+    # Airtable leaves an unticked box out of the row entirely, so "no tick" and
+    # "no such column" look the same. The tick is the gate only once somebody has
+    # started using it: until a row is ticked, every row shows, as before.
+    gated = any(_approved(row) for row in rows)
+    for index, row in enumerate(rows):
+        if gated and not _approved(row):
+            continue
         copy = text(field(row, "text"))
         if not copy:
             continue

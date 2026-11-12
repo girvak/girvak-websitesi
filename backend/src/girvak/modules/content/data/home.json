@@ -10,8 +10,8 @@
     "subhead_highlight": "a way of looking at the world.",
     "subhead_post": " Since 2014, we have been bringing this perspective to young people, entrepreneurs, and the ecosystem.",
     "ctas": [
-      { "label": "let's build together", "href": "#" },
-      { "label": "see what's open", "href": "#wwd" }
+      { "label": "let's build together", "href": "/#partners" },
+      { "label": "see what's open", "href": "/apply" }
     ],
     "images": [
       "/images/hero-1.jpg",
@@ -38,11 +38,11 @@
   "impact_image": "/images/impact-photo.jpg",
   "what_we_do": [
     { "href": "/fellow-program", "image": "/images/wd-fellow.png", "lead": "We back potential.", "sub": "That's the Fellow Program.", "eyebrow": "Fellow Program", "text": "A two-year journey selecting 40 young people a year for potential, not pedigree.", "color": "teal" },
-    { "href": "#", "image": "/images/wd-talent.jpg", "lead": "We build what's next.", "sub": "That's Talent Programs.", "eyebrow": "Talent Programs", "text": "Training the next generation in AI, data, gaming and applied technology.", "color": "coral" },
-    { "href": "#", "image": "/images/wd-entrepreneur.jpg", "lead": "We put founders first.", "sub": "That's Entrepreneur Support.", "eyebrow": "Entrepreneur Support", "text": "Founder First — one-to-one matching that carries ventures from idea to growth.", "color": "ink" },
-    { "href": "#", "image": "/images/wd-development.jpg", "lead": "We grow capacity.", "sub": "That's Development Programs.", "eyebrow": "Development Programs", "text": "Long-horizon partnerships with corporates and institutions to grow capacity.", "color": "teal" },
-    { "href": "#", "image": "/images/wd-giveback.jpg", "lead": "We give back by design.", "sub": "That's Giveback.", "eyebrow": "Giveback", "text": "Creating the foundation for an interconnected ecosystem that naturally gives back and grows together.", "color": "coral" },
-    { "href": "#", "image": "/images/wd-commonground.jpg", "lead": "We bring worlds together.", "sub": "That's Common Ground.", "eyebrow": "Common Ground", "text": "Creating a common ground that brings diverse stakeholders together for a shared purpose.", "color": "ink" }
+    { "href": "/programs#talent-programs", "image": "/images/wd-talent.jpg", "lead": "We build what's next.", "sub": "That's Talent Programs.", "eyebrow": "Talent Programs", "text": "Training the next generation in AI, data, gaming and applied technology.", "color": "coral" },
+    { "href": "/programs#entrepreneurship-support-programs", "image": "/images/wd-entrepreneur.jpg", "lead": "We put founders first.", "sub": "That's Entrepreneur Support.", "eyebrow": "Entrepreneur Support", "text": "Founder First — one-to-one matching that carries ventures from idea to growth.", "color": "ink" },
+    { "href": "/programs#development-programs", "image": "/images/wd-development.jpg", "lead": "We grow capacity.", "sub": "That's Development Programs.", "eyebrow": "Development Programs", "text": "Long-horizon partnerships with corporates and institutions to grow capacity.", "color": "teal" },
+    { "href": "/fellow-program#giveback", "image": "/images/wd-giveback.jpg", "lead": "We give back by design.", "sub": "That's Giveback.", "eyebrow": "Giveback", "text": "Creating the foundation for an interconnected ecosystem that naturally gives back and grows together.", "color": "coral" },
+    { "href": "/#partners", "image": "/images/wd-commonground.jpg", "lead": "We bring worlds together.", "sub": "That's Common Ground.", "eyebrow": "Common Ground", "text": "Creating a common ground that brings diverse stakeholders together for a shared purpose.", "color": "ink" }
   ],
   "fellows": [
     { "year": "‘21", "name": "Deniz Hale Durakbaşı", "university": "Boğaziçi Üniversitesi", "department": "Mühendislik", "image": "/images/fellow-cutout.png", "color": "teal" },
@@ -57,8 +57,8 @@
     "headline_highlight": "common ground.",
     "sub": "GİRVAK creates a common ground where ideas, people, and opportunities meet to strengthen Türkiye's entrepreneurship ecosystem. Together with our partners, we shape the future.",
     "ctas": [
-      { "label": "let's build together", "href": "#" },
-      { "label": "discover our ecosystem", "href": "#wwd" }
+      { "label": "let's build together", "href": "/#partners" },
+      { "label": "discover our ecosystem", "href": "/programs" }
     ],
     "featured": { "name": "Türkiye İş Bankası", "logo": "/images/partners/isbank.png" },
     "logos": [
@@ -83,9 +83,9 @@
     "explore_links": [
       { "label": "About GİRVAK", "href": "/about" },
       { "label": "Fellow Program", "href": "/fellow-program" },
-      { "label": "Programs & Projects", "href": "#wwd" },
-      { "label": "Giveback", "href": "#" },
-      { "label": "Get Involved", "href": "#partners" }
+      { "label": "Programs & Projects", "href": "/programs" },
+      { "label": "Giveback", "href": "/fellow-program#giveback" },
+      { "label": "Get Involved", "href": "/#partners" }
     ],
     "contact": {
       "address": "Esentepe, Ferko Signature, Büyükdere Cd. No:175, 34340 Beşiktaş/İstanbul",
