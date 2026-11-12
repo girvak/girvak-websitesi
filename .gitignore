@@ -27,10 +27,10 @@ dist/
 # local data
 *.db
 backend/media/
+backend/content-backup/
 
 # os / editor
 .DS_Store
 
-# A separate repository (github.com/Arslanex/coding-playbook) cloned beside the
-# app, as its README prescribes. Clone it, or add it as a submodule.
-coding-playbook/
+# personal Claude Code permissions
+.claude/settings.local.json

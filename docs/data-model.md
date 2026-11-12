@@ -83,6 +83,35 @@ link). The filter bar reads `sectors` (link to `sectors`), `target group` and
 `stage` (multi-selects) and `current/past`; a dropdown with fewer than two
 choices is left off. Current programs come before past ones, which are dimmed.
 
+**A program's own page** (`/programs/<slug>`, the slug being the name lowercased
+with dashes) is made from the same row, from the design's "TSKB Co-Venture"
+page. Each block takes the row's value when it has one, the committed copy in
+`backend/src/girvak/modules/content/data/program_details.json` (keyed by slug)
+when it does not, and is left out when neither has anything:
+
+| Block | Airtable column | Without it |
+|---|---|---|
+| Card on /programs | `text` — the short promotional line | — |
+| Headline, photo band | `name (en)`, `photo` (shown full size) | — |
+| Text over the photo | `program overview` — one paragraph per line, `**x**` highlights | committed copy, else no text over the photo |
+| Four counted boxes | `data1`…`data4` (see below) | committed copy, else no band |
+| "for who" | `for who` — one item per line | committed copy, else the row's `target group`, `stage` and sectors |
+| "what happens" | `what happens` — one item per line | committed copy, else no row |
+| "partners with purpose" | `partner` — link(s) to the `partner` table; logo and site come from there | committed partner name looked up in the partner table, else no row |
+| Arrow links | founders and ventures: `/founders-ventures?program=<slug>`; "discover more": `discover more`, else `/apply` for an open program | — |
+
+A `dataN` cell is two parts: the **first line** is the figure and its words,
+every line after it is the sentence that opens when the box is hovered. The
+figure is read as written — `27 ventures`, `1,076 total applicants` (printed
+with its comma), `100% employment rate`, `50+ events`, `12–85 age range`,
+`20,000 TL monthly scholarship`, `Since 2016` — and counts up from zero when it
+scrolls into view. A box needs a number in its first line; one without is
+skipped. The second line may be left out (`15 young talents a year`). Boxes are
+coloured teal, coral, ink, teal in order.
+
+`current/past` = past gives the closed look (a "past program" kicker, a grey
+photo and no `/apply` link). Only `tskb-co-venture` has committed copy today.
+
 ### `applications` — the open calls on `/apply`
 
 Also a record table: one row is one call (programme, event, award).
