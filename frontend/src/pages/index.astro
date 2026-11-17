@@ -8,12 +8,14 @@ import Hero from '../components/Hero.astro';
 import ImpactMosaic from '../components/ImpactMosaic.astro';
 import WhatWeDo from '../components/WhatWeDo.astro';
 import FellowFlipBelt from '../components/fellow/FellowFlipBelt.astro';
+import TrusteeBelt from '../components/TrusteeBelt.astro';
 import Partners from '../components/Partners.astro';
 import Footer from '../components/Footer.astro';
 import OpenCallsPopup from '../components/OpenCallsPopup.astro';
 import { getApply, getHomeContent, getPeople } from '../lib/api';
 import type { OpenCall } from '../lib/types';
 import { publicApiBase } from '../lib/env';
+import { shuffled } from '../lib/shuffle';
 
 // Rendered per request: an Airtable edit shows up on the next reload, with no
 // build step. Both calls hit the API's snapshot, so this is one round trip each
@@ -25,14 +27,12 @@ const popupSource: OpenCall[] = await getApply().then((apply) => apply.calls, ()
 const { seo, hero, impact, impact_image, what_we_do, fellows_headline, fellows_cta, partners, footer } = content;
 const apiBase = publicApiBase;
 
-const fellowSpotlight = peopleApi.fellows.filter((p) => p.photo).slice(0, 8);
+// Shuffle + teal/coral/ink rotate — the belt should feel fresh on every load.
+const fellowSpotlight = shuffled(peopleApi.fellows.filter((p) => p.photo)).slice(0, 8);
+// MH — Mütevelli Heyeti, the board of trustees (people tagged `mh`) — shuffled like every list.
+const trusteeSpotlight = shuffled(peopleApi.trustees.filter((p) => p.photo)).slice(0, 12);
+Astro.response.headers.set('Cache-Control', 'no-store');
 
-/** Emphasise "fellow(s)" in the homepage belt heading with the program red. */
-function fellowsHeadlineHtml(text: string): string {
-  const m = text.match(/^(.*?)(\bfellows?\b)(.*)$/i);
-  if (!m) return text;
-  return `${m[1]}<span class="fellows-hl">${m[2]}</span>${m[3]}`;
-}
 ---
 
 <BaseLayout title={seo.title} description={seo.description}>
@@ -41,10 +41,23 @@ function fellowsHeadlineHtml(text: string): string {
   <Hero hero={hero} />
   <ImpactMosaic impact={impact} impactImage={impact_image ?? '/images/impact-photo.jpg'} />
   <WhatWeDo cards={what_we_do} />
+  {
+    trusteeSpotlight.length > 0 ? (
+      <section class="fellows trustees" id="trustees">
+        <div class="fellows-head rv" style="font-weight: 600">
+          <div>
+            <h2 class="h2 fellows-title">our board of trustees</h2>
+          </div>
+          <a href="/board-of-trustees" class="h3btn"><span class="h3btn-label">see all</span><span class="cta-arrow" aria-hidden="true"></span></a>
+        </div>
+        <TrusteeBelt people={trusteeSpotlight} ariaLabel="Our board of trustees" />
+      </section>
+    ) : null
+  }
   <section class="fellows" id="fellows">
     <div class="fellows-head rv" style="font-weight: 600">
       <div>
-        <h2 class="h2 fellows-title" set:html={fellowsHeadlineHtml(fellows_headline ?? 'meet our fellows')} />
+        <h2 class="h2 fellows-title">{fellows_headline ?? 'meet our fellows'}</h2>
       </div>
       <a href={fellows_cta?.href ?? '/fellows'} class="h3btn"><span class="h3btn-label">{fellows_cta?.label ?? 'see all fellows'}</span><span class="cta-arrow" aria-hidden="true"></span></a>
     </div>
@@ -53,9 +66,10 @@ function fellowsHeadlineHtml(text: string): string {
         <FellowFlipBelt
           trackId="belt"
           people={fellowSpotlight}
-          cardClass="fc-fellow"
+          cardClass="fc-teal"
           ariaLabel="Meet our fellows"
           spotlightFetch
+          colorRotate
           programBack
         />
       ) : null

@@ -17,6 +17,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
 import NavMenu from '../components/NavMenu.astro';
+import PersonCard from '../components/PersonCard.astro';
 import Footer from '../components/Footer.astro';
 import { getHomeContent, getVentures } from '../lib/api';
 import { publicApiBase } from '../lib/env';
@@ -30,16 +31,12 @@ const apiBase = publicApiBase;
 const yearKey = (year: string): string => (year.match(/\d/g) ?? []).join('').slice(-2);
 
 /**
- * The blurb, with its subject.
- *
- * Editors write these as predicates — "is a consultancy…", "creates delicious…"
- * — so a description that opens lowercase needs the venture's name in front of
- * it to be a sentence. The few that are already noun phrases are left alone.
+ * The blurb, exactly as the Airtable `description (en)` cell holds it: no name in
+ * front, no other column in its place (an empty cell shows nothing, so the gap
+ * is visible to whoever edits it).
  */
 function blurb(v: Venture): string {
-  const text = v.description || v.description_tr;
-  if (!text) return '';
-  return /^[a-zçğıioöşü]/.test(text) ? `${v.name} ${text}` : text;
+  return v.description;
 }
 
 /**
@@ -56,13 +53,11 @@ function shuffled<T>(list: T[]): T[] {
   return out;
 }
 
-// The founders grid is reshuffled on every render, so no one is permanently
-// stuck on the last row behind an alphabet. It happens here rather than in the
-// API on purpose: the payload stays byte-identical across requests, so its ETag
-// still earns a 304 and paging through it stays consistent. Only this page's
-// own ordering moves. Ventures keep their Turkish A–Z — they are a catalogue
-// people look things up in, not a cohort.
+// Founders and ventures are reshuffled on every render so nobody is permanently
+// stuck on the last row. It happens here rather than in the API on purpose: the
+// payload stays byte-identical across requests, so its ETag still earns a 304.
 const founders = shuffled(fv.founders);
+const ventures = shuffled(fv.items);
 
 // A response whose whole point is to differ each time must not be reused from a
 // cache, or the first 30 seconds of reloads would all show one shuffle. This
@@ -143,46 +138,27 @@ const filters = [
           </p>
         </noscript>
 
-        {founders.map((founder) => {
+        {founders.map((founder) => (
           // A founder card goes to the person first — their LinkedIn — and to
-          // their venture's site when they have no profile on file. With
-          // neither it stays a plain figure rather than pretending to be
-          // clickable. `Tag` is capitalised so Astro treats it as the element.
-          const href = founder.linkedin || founder.website;
-          const Tag = href ? 'a' : 'figure';
-          return (
-          <Tag
-            class:list={['fv-card', !founder.photo && 'no-photo']}
-            {...(href
-              ? { href, target: '_blank', rel: 'noopener noreferrer' }
-              : { tabindex: '0' })}
-            data-kind="founders"
-            data-sector={founder.sector_slugs.join(';')}
-            data-program={founder.program_slugs.join(';')}
-            data-year={yearKey(founder.year)}
-          >
-            <div class="fv-inner">
-              <div class="fv-front">
-                {founder.year && <div class="fv-year">{founder.year}</div>}
-                {founder.photo && (
-                  <img class="fv-photo" src={founder.photo} alt={founder.name} loading="lazy" decoding="async" />
-                )}
-                <div class="fv-band"><span class="fv-frontname">{founder.name}</span></div>
-              </div>
-              <div class="fv-back">
-                {founder.year && <div class="fv-year">{founder.year}</div>}
-                <div class="fv-back-mid">
-                  <div class="fv-name">{founder.name}</div>
-                  {founder.venture && <div class="fv-venture">{founder.venture}</div>}
-                </div>
-                {founder.programs.length > 0 && <div class="fv-prog">{founder.programs[0]}</div>}
-              </div>
-            </div>
-          </Tag>
-          );
-        })}
+          // their venture's site when they have no profile on file.
+          <PersonCard
+            name={founder.name}
+            year={founder.year}
+            photo={founder.photo}
+            href={founder.linkedin || founder.website}
+            primary={founder.venture}
+            footer={founder.programs.join(' · ')}
+            attrs={{
+              'data-kind': 'founders',
+              'data-sector': founder.sector_slugs.join(';'),
+              'data-program': founder.program_slugs.join(';'),
+              'data-year': yearKey(founder.year),
+              'data-search': [founder.name, founder.year, founder.venture, founder.company, founder.position, founder.university, founder.department, ...founder.sectors, ...founder.programs].filter(Boolean).join(' '),
+            }}
+          />
+        ))}
 
-        {fv.items.map((venture) => {
+        {ventures.map((venture) => {
           const Tag = venture.website ? 'a' : 'figure';
           return (
           <Tag
@@ -195,6 +171,7 @@ const filters = [
             data-sector={venture.sector_slugs.join(';')}
             data-program={venture.program_slugs.join(';')}
             data-year={yearKey(venture.year)}
+            data-search={[venture.name, venture.year, venture.description, venture.description_tr, ...venture.sectors, ...venture.programs, ...venture.founders.flatMap((f) => [f.name, f.title])].filter(Boolean).join(' ')}
           >
             <div class="fv-inner">
               <div class="fv-front">
@@ -223,6 +200,9 @@ const filters = [
                     <>{index > 0 && <br />}{sector}</>
                   ))}
                 </div>
+                {venture.programs.length > 0 && (
+                  <div class="fv-vprograms">{venture.programs.join(' · ')}</div>
+                )}
               </div>
             </div>
           </Tag>

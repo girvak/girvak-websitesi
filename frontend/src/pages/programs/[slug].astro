@@ -1,0 +1,163 @@
+---
+/**
+ * Module: src/pages/programs/[slug].astro
+ * Layer: Page
+ * Purpose: One program's own page, drawn from the design's "TSKB Co-Venture"
+ *          page and made for every program: a big headline, a full-bleed photo
+ *          with the overview over it, four counted "at a glance" tiles, "for
+ *          who" and "what happens" rows, the partner's logo, and three arrow
+ *          links (founders, ventures, discover more).
+ *
+ *          Every block comes from the program's Airtable row; where the row has
+ *          nothing the backend falls back to the committed copy, and where that
+ *          has nothing either the block is simply not drawn (nothing is made
+ *          up). A past program (`current/past` = past) keeps the same page with
+ *          a "past program" kicker, a greyed photo and no call to apply.
+ *
+ *          The partners are the `partner` rows the program links to; each logo
+ *          opens that partner's site in a new tab. Founders and ventures open
+ *          /founders-ventures already filtered to this program.
+ *
+ * Called by: a program card on /programs
+ * Calls: src/lib/api.ts, src/lib/links.ts, src/scripts/program-detail.js
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Nav from '../../components/Nav.astro';
+import NavMenu from '../../components/NavMenu.astro';
+import Footer from '../../components/Footer.astro';
+import { getHomeContent, getPrograms } from '../../lib/api';
+import type { ProgramStat } from '../../lib/types';
+import { publicApiBase } from '../../lib/env';
+import { newTab } from '../../lib/links';
+import { formatCount } from '../../scripts/count-up.js';
+import '../../styles/pp.css';
+import '../../styles/program-detail.css';
+
+const { slug } = Astro.params;
+const [content, data] = await Promise.all([getHomeContent(), getPrograms()]);
+
+let program = undefined;
+let category = undefined;
+for (const c of data.categories) {
+  const hit = c.programs.find((p) => p.slug === slug);
+  if (hit) { program = hit; category = c; break; }
+}
+if (!program || !category) return Astro.rewrite('/404');
+
+const open = program.current;
+const image = program.hero || program.photo;
+const TILE_TONES = ['teal', 'coral', 'ink'] as const;
+
+const filtered = (tab: 'founders' | 'ventures') => `/founders-ventures?program=${encodeURIComponent(program!.slug)}#${tab}`;
+// "discover more" is the program's own site; with none, an open program points to /apply.
+const discover = program.href || (open ? '/apply' : '');
+const rows = [
+  { label: 'for who', items: program.for_who },
+  { label: 'what happens', items: program.what_happens },
+].filter((row) => row.items.length > 0);
+// The figure as printed, and a size class for the long ones ("1,340,000", "Since
+// 2016") so they stay inside a tile instead of running out of it.
+const shownStat = (stat: ProgramStat) => formatCount(stat.value, stat.decimals, stat.prefix, stat.suffix, stat.grouped);
+const sizeOf = (shown: string) => (shown.length <= 6 ? '' : shown.length <= 9 ? 'pd-num--m' : 'pd-num--l');
+---
+
+<BaseLayout
+  title={`${program.name} · GİRVAK`}
+  description={program.text.split('\n')[0].slice(0, 160) || `${program.name}, a GİRVAK program.`}
+  bodyClass={`hm ap pd${open ? '' : ' pd-closed'}`}
+  image={image || undefined}
+>
+  <Nav logoHref="/" scrolled />
+  <NavMenu pathPrefix="/" />
+
+  <main>
+    <section class="pd-hero rv">
+      {!open && <p class="pd-kicker"><span>past program</span></p>}
+      <h1 class="pd-h1 pd-hero-title">{program.name}</h1>
+    </section>
+
+    {(program.body_html.length > 0 || image) && (
+      <section class="pd-photo rv">
+        {image && <img class="pd-photo-img" src={image} alt="" decoding="async" />}
+        {program.body_html.length > 0 && (
+          <div class="pd-photo-in">
+            {program.body_html.map((paragraph) => <p set:html={paragraph} />)}
+          </div>
+        )}
+      </section>
+    )}
+
+    {program.stats.length > 0 && (
+      <section class="pd-outs rv">
+        <div class="pd-outs-head"><h2>at a glance</h2></div>
+        <div class="pd-grid">
+          {program.stats.map((stat, i) => (
+            <div class={`pd-tile pd-t-${TILE_TONES[i % TILE_TONES.length]}`}>
+              <div class:list={['pd-num', sizeOf(shownStat(stat))]}>
+                <span data-count={stat.value} data-decimals={stat.decimals || undefined} data-pre={stat.prefix || undefined} data-suf={stat.suffix || undefined} data-group={stat.grouped ? '1' : undefined}>{shownStat(stat)}</span>
+              </div>
+              {stat.label && <div class="pd-tlabel">{stat.label}</div>}
+              {stat.text && <div class="pd-tdesc">{stat.text}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {rows.length > 0 && (
+      <div class="pd-rows">
+        {rows.map((row) => (
+          <>
+            <hr class="pd-rule" />
+            <section class="pd-row rv">
+              <p class="pd-row-label">{row.label}</p>
+              <ul class="pd-list">
+                {row.items.map((item) => <li>{item}</li>)}
+              </ul>
+            </section>
+          </>
+        ))}
+      </div>
+    )}
+
+    {program.partners.length > 0 && (
+      <>
+        <hr class="pd-rule" />
+        <section class="pd-partner rv">
+          <h2>partners with purpose</h2>
+          <div>
+            <div class="pd-partner-row">
+              {program.partners.map((partner) => {
+                const site = partner.href && partner.href !== '#' ? partner.href : undefined;
+                return partner.logo ? (
+                  <a class="pd-partner-link" href={site} {...newTab(site)} aria-label={partner.name}>
+                    <img src={partner.logo} alt={partner.name} />
+                  </a>
+                ) : (
+                  <a class="pd-partner-name" href={site} {...newTab(site)}>{partner.name}</a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </>
+    )}
+
+    <hr class="pd-rule" />
+
+    <section class="pd-foot rv">
+      <a class="pd-link" href={filtered('founders')}>founders<span class="cta-arrow" aria-hidden="true"></span></a>
+      <a class="pd-link" href={filtered('ventures')}>ventures<span class="cta-arrow" aria-hidden="true"></span></a>
+      {discover && (
+        <a class="pd-link" href={discover} {...newTab(discover)}>discover more<span class="cta-arrow" aria-hidden="true"></span></a>
+      )}
+    </section>
+  </main>
+  <hr class="pd-rule" />
+
+  <Footer footer={content.footer} apiBase={publicApiBase} />
+</BaseLayout>
+
+<script>
+  import '../../scripts/program-detail.js';
+</script>

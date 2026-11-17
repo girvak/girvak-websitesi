@@ -1,12 +1,12 @@
 // ============================================================
 // GİRVAK showcase pages — hero headline, per-letter hover invert.
 //
-// Runs on import. Splits the `.fa-hero-title` (`.ap-hero-title` on /apply) into one span per letter so each
+// Runs on import. Splits the `.fa-hero-title` (`.fv-hero-title` on /founders-ventures, `.ap-hero-title` on /apply) into one span per letter so each
 // can change colour under the pointer; the italic clause inverts the other way.
-// Shared by the fellows, alumni, challengers and apply pages.
+// Shared by the fellows, alumni, challengers, founders & ventures and apply pages.
 // ============================================================
 
-const title = document.querySelector('.fa-hero-title, .ap-hero-title');
+const title = document.querySelector('.fa-hero-title, .fv-hero-title, .ap-hero-title, .pd-hero-title');
 if (title) {
   [...title.childNodes].forEach((node) => {
     if (node.nodeType === 1 && node.tagName === 'I') {

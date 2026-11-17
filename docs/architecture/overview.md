@@ -1,7 +1,7 @@
 # Architecture overview
 
 GİRVAK's public website. Content lives in Airtable; the site shows it without a
-rebuild. Rules the code follows: `coding-playbook/`.
+rebuild. Rules the code follows: `.claude/rules/`.
 
 Related: [../data-model.md](../data-model.md).
 
@@ -81,6 +81,15 @@ Three layers, each with one job:
 3. **Page HTML** (frontend, in process) — rendered HTML held for a short TTL, so
    a burst of visitors costs one API call.
 
+**Disk backup.** Every successful rebuild also writes that page's snapshot to
+`CONTENT__BACKUP_DIR_PATH` (one JSON file per page; a named volume in
+production). The memory copy does not survive a restart, so when Airtable cannot
+be reached and memory is empty, the backup is served — the content as the site
+last showed it — before the repo's seed (home, about, fellow) and before an
+empty page (people, apply, programs, ventures). A backup written by an older
+schema fails validation and is ignored. Nothing is backed up when the source is
+the seed. A refresh does not delete it.
+
 Invalidation: TTL expiry, or `POST /v1/content/refresh` for "publish now".
 Both are safe because no response is visitor-specific. They differ in one way
 that matters: after TTL expiry a visitor may see the previous copy for the
@@ -127,9 +136,8 @@ Nothing else. No Redis, no queue, no object storage, no third-party analytics.
 - **SSR instead of browser-side content fetching.** The requirement was "changes
   appear on reload, no rebuild". SSR satisfies it while keeping first paint and
   SEO intact; a browser fetch would trade both away for the same freshness.
-- **Astro stays.** The design transfers one-to-one and ships almost no JS. The
-  playbook's frontend rules are Next.js-specific, so an `astro-frontend` stack
-  folder is added to the playbook rather than bending the Next.js rules.
+- **Astro stays.** The design transfers one-to-one and ships almost no JS. Its
+  rules are written for Astro directly (`.claude/rules/frontend.md`).
 - **PostgreSQL for subscribers**, replacing the previous SQLite file: one
   process writes it today, but a container filesystem is not a durable store.
 

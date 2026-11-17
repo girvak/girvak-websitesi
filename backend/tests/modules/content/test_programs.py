@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from girvak.infra.airtable.client import AirtableRecord
 from girvak.modules.content import programs
 
@@ -35,6 +37,12 @@ CATEGORIES = [
     category(TALENT, "Talent Programs"),
 ]
 SECTORS = [AirtableRecord(id="recAi", fields={"sectors": "ai"})]
+PARTNERS = [
+    AirtableRecord(
+        id="recTskb", fields={"name": "TSKB Bank", "link": "https://tskb.com.tr", "onay": True}
+    ),
+    AirtableRecord(id="recOther", fields={"name": "Another bank"}),
+]
 
 
 def test_tiles_follow_the_design_order_not_airtable_order() -> None:
@@ -97,3 +105,155 @@ def test_a_program_without_a_site_is_not_a_link_and_unsafe_links_are_dropped() -
     cards = programs.build(CATEGORIES, rows, SECTORS, {}).categories[0].programs
 
     assert [c.href for c in cards] == ["", ""]
+
+
+def test_a_program_page_uses_the_committed_copy_where_the_row_has_nothing() -> None:
+    content = programs.build(CATEGORIES, [program("TSKB Co-Venture", ES)], SECTORS, {}, PARTNERS)
+
+    card = content.categories[0].programs[0]
+    assert card.slug == "tskb-co-venture"
+    assert len(card.stats) == 4
+    assert (card.stats[0].value, card.stats[0].label) == (12, "month journey")
+    assert card.stats[2].prefix == "%"
+    assert len(card.for_who) == 3
+    assert len(card.what_happens) == 4
+    assert [(p.name, p.href) for p in card.partners] == [("TSKB Bank", "https://tskb.com.tr")]
+    assert '<span class="hl">TSKB Co-Venture</span>' in card.body_html[0]
+
+
+def test_what_the_row_says_wins_over_the_committed_copy() -> None:
+    content = programs.build(
+        CATEGORIES,
+        [
+            program(
+                "TSKB Co-Venture",
+                ES,
+                text="Short card line.",
+                **{"program overview": "A **new** overview.\nSecond paragraph."},
+                **{
+                    "for who": "• Founders\n- Teams\n\nStudents",
+                    "what happens": "Workshops",
+                    "partner": ["recOther"],
+                    "data1": "20 months\nLonger now.\n",
+                },
+            )
+        ],
+        SECTORS,
+        {},
+        PARTNERS,
+    )
+
+    card = content.categories[0].programs[0]
+    assert card.body_html == ['A <span class="hl">new</span> overview.', "Second paragraph."]
+    assert card.for_who == ["Founders", "Teams", "Students"]
+    assert card.what_happens == ["Workshops"]
+    assert [p.name for p in card.partners] == ["Another bank"]
+    assert [(s.value, s.label, s.text) for s in card.stats] == [(20, "months", "Longer now.")]
+
+
+def test_a_program_with_no_committed_copy_shows_only_what_the_row_holds() -> None:
+    content = programs.build(
+        CATEGORIES,
+        [
+            program(
+                "Brand New Program",
+                DEV,
+                text="Short card line.",
+                **{
+                    "program overview": "Plain overview.",
+                    "target group": ["Women"],
+                    "stage": ["Early"],
+                },
+            )
+        ],
+        SECTORS,
+        {},
+    )
+
+    card = next(c for c in content.categories if c.slug == "development-programs").programs[0]
+    assert card.body_html == ["Plain overview."]
+    assert card.stats == []
+    assert card.what_happens == []
+    assert card.partners == []
+    assert card.for_who == ["Women", "Stage: Early"]
+
+
+def test_the_card_text_and_the_page_overview_are_different_columns() -> None:
+    content = programs.build(
+        CATEGORIES,
+        [
+            program(
+                "Brand New Program",
+                DEV,
+                text="Short card line.",
+                **{"program overview": "The long text over the photo."},
+            )
+        ],
+        SECTORS,
+        {},
+    )
+
+    card = next(c for c in content.categories if c.slug == "development-programs").programs[0]
+    assert card.text == "Short card line."
+    assert card.body_html == ["The long text over the photo."]
+
+
+@pytest.mark.parametrize(
+    ("cell", "expected"),
+    [
+        # The shapes editors have actually written.
+        (
+            "27 ventures\nteams supported from idea to scale.\n",
+            (27, "", "", "ventures", "teams supported from idea to scale.", False),
+        ),
+        ("12–85 age range\nno age limit.\n", (12, "", "–85", "age range", "no age limit.", False)),
+        (
+            "1,076 total applicants\nfrom 53 cities.\n",
+            (1076, "", "", "total applicants", "from 53 cities.", True),
+        ),
+        ("100% employment rate\n", (100, "", "%", "employment rate", "", False)),
+        ("50+ events\n", (50, "", "+", "events", "", False)),
+        ("20,000 TL monthly scholarship\n", (20000, "", "", "TL monthly scholarship", "", True)),
+        ("Since 2016\nfive cohorts.\n", (2016, "Since ", "", "", "five cohorts.", False)),
+        (
+            "3,143 total products\n\nbuilt across the Ideathon.\n",
+            (3143, "", "", "total products", "built across the Ideathon.", True),
+        ),
+    ],
+)
+def test_a_data_box_is_read_the_way_it_is_written(
+    cell: str, expected: tuple[float, str, str, str, str, bool]
+) -> None:
+    box = programs.parse_data_box(cell)
+
+    assert box is not None
+    assert (box.value, box.prefix, box.suffix, box.label, box.text, box.grouped) == expected
+
+
+@pytest.mark.parametrize("cell", ["", "\n\n", "No figure here\nat all."])
+def test_a_cell_without_a_figure_is_not_a_box(cell: str) -> None:
+    assert programs.parse_data_box(cell) is None
+
+
+def test_the_four_boxes_come_from_data1_to_data4_in_order() -> None:
+    content = programs.build(
+        CATEGORIES,
+        [
+            program(
+                "Counted",
+                DEV,
+                data1="27 ventures\nthe first.",
+                data2="",
+                **{"data3": "5 years\nthe third.", "data 4": "9 cities"},
+            )
+        ],
+        SECTORS,
+        {},
+    )
+
+    card = next(c for c in content.categories if c.slug == "development-programs").programs[0]
+    assert [(b.value, b.label) for b in card.stats] == [
+        (27, "ventures"),
+        (5, "years"),
+        (9, "cities"),
+    ]

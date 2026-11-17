@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Nav from '../components/Nav.astro';
@@ -104,7 +105,7 @@ const missionHeadlineHtml = (() => {
           const local = strip.image && !isRemote(strip.image) ? resolveImage(strip.image) : undefined;
           const remote = strip.image && isRemote(strip.image) ? strip.image : undefined;
           return (
-            <a class="wss-strip" style={`--ov:${strip.overlay_color}`} href={strip.href || '#'}>
+            <a class="wss-strip" style={`--ov:${strip.overlay_color}`} href={strip.href || '#'} {...newTab(strip.href)}>
               {local ? (
                 <Image class="wss-photo" src={local} alt="" widths={[800, 1400]} sizes="100vw" />
               ) : remote ? (
@@ -158,7 +159,7 @@ const missionHeadlineHtml = (() => {
           <h2>{about.reports.headline}</h2>
           <p>{about.reports.text}</p>
         </div>
-        <a class="h3btn" href={about.reports.cta_href}>
+        <a class="h3btn" href={about.reports.cta_href} {...newTab(about.reports.cta_href)}>
           <span class="h3btn-label">{about.reports.cta_label}</span><span class="cta-arrow" aria-hidden="true"></span>
         </a>
       </div>
@@ -170,7 +171,7 @@ const missionHeadlineHtml = (() => {
           <h2>{about.work_with_us.headline}</h2>
           <p>{about.work_with_us.text}</p>
         </div>
-        <a class="h3btn" href={about.work_with_us.cta_href}>
+        <a class="h3btn" href={about.work_with_us.cta_href} {...newTab(about.work_with_us.cta_href)}>
           <span class="h3btn-label">{about.work_with_us.cta_label}</span><span class="cta-arrow" aria-hidden="true"></span>
         </a>
       </div>

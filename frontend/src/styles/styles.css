@@ -6,7 +6,12 @@
 
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html {
+  scroll-behavior: smooth; -webkit-text-size-adjust: 100%;
+  /* Hash links land under the fixed nav, not behind it. --nav-h is measured by
+     scripts/home.js; the fallback is the desktop nav (52 + 60 + 22). */
+  scroll-padding-top: calc(var(--nav-h, 134px) + 16px);
+}
 body { margin: 0; }
 img, picture, svg, video { display: block; max-width: 100%; }
 button, input, textarea, select { font: inherit; color: inherit; }
@@ -30,7 +35,7 @@ a { color: inherit; text-decoration: none; }
 
   /* ---- Secondary accent palette (borders, highlights, micro-interactions) ---- */
   --teal:   #057F8F;
-  --coral:  #F76B52;
+  --coral:  #F76C53;
   --yellow: #F4A81F;
   --mint:   #12C29C;
   --navy:   #275B7C;
@@ -196,5 +201,38 @@ html, body {
 
 /* ---------- Misc ---------- */
 .divider { height: 1px; background: var(--border); border: 0; }
-::selection { background: var(--turquoise-200); color: var(--ink); }
+/* Colour comes from scripts/selection.js, which advances it with every new
+   selection; the fallback is the first colour of the default palette. */
+::selection { background: var(--sel-bg, var(--coral)); color: var(--sel-fg, #fff); }
+::-moz-selection { background: var(--sel-bg, var(--coral)); color: var(--sel-fg, #fff); }
 :focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(25,186,209,.4); border-radius: var(--r-xs); }
+
+/* ---------- Page-to-page transitions ----------
+   The browser's own cross-document view transition: no script, every page still
+   loads normally, and a browser without it (Firefox today) simply navigates.
+   Only offered to visitors who have not asked for reduced motion.
+   The old page stays put, fully opaque, while the new one rises into place over
+   it (the same fade-and-rise as the scroll reveals, on the same easing), so two
+   pages of different colours — a red one, then a yellow one — never dip through
+   white. The fixed nav is its own layer and does not move: only the page under
+   it changes. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+
+  .hm-nav { view-transition-name: site-nav; }
+
+  ::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+  ::view-transition-new(root) {
+    animation: pt-rise .62s var(--ease-soft) both;
+    mix-blend-mode: normal;
+  }
+  /* The nav is the same on both pages bar its colour, so it is not cross-faded:
+     the new page's nav is simply there from the first frame. */
+  ::view-transition-group(site-nav) { animation: none; }
+  ::view-transition-old(site-nav) { display: none; }
+  ::view-transition-new(site-nav) { animation: none; mix-blend-mode: normal; }
+}
+@keyframes pt-rise {
+  from { opacity: 0; transform: translateY(calc(18px * var(--motion))); }
+  to   { opacity: 1; transform: none; }
+}

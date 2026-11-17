@@ -134,6 +134,9 @@ class VenturesData:
     copy: VenturesCopy
     items: tuple[Venture, ...]
     founders: tuple[FounderCard, ...]
+    # Every published programme as (slug, label), used or not, so a link from a
+    # programme's page can be a filter even when nobody has been through it yet.
+    programs: tuple[tuple[str, str], ...] = ()
 
 
 def build(
@@ -212,7 +215,17 @@ def build(
 
     items.sort(key=lambda venture: sort_key(venture.name))
     founders = _founder_cards(people, people_media, program_labels, published, used_slugs)
-    return VenturesData(copy=copy, items=tuple(items), founders=tuple(founders))
+    published_programs = tuple(
+        (slugify(label), label)
+        for record in programs
+        if _approved(record.fields) and (label := text(field(record.fields, *_PROGRAM_NAME_FIELDS)))
+    )
+    return VenturesData(
+        copy=copy,
+        items=tuple(items),
+        founders=tuple(founders),
+        programs=published_programs,
+    )
 
 
 def select(
@@ -302,8 +315,9 @@ def select(
         sectors=_facets(
             keep(both, "sector"), lambda c: zip(c.sector_slugs, c.sectors, strict=True)
         ),
-        programs=_facets(
-            keep(both, "program"), lambda c: zip(c.program_slugs, c.programs, strict=True)
+        programs=_with_unused(
+            _facets(keep(both, "program"), lambda c: zip(c.program_slugs, c.programs, strict=True)),
+            data.programs,
         ),
         years=_year_facets(keep(both, "year")),
         selected=VenturesQuery(
@@ -341,9 +355,7 @@ def media_refs(
         credited.update(_linked_ids(record.fields, _PEOPLE_LINK_FIELDS))
 
     for record in people:
-        shown = record.id in credited or (
-            _is_founder(record.fields) and _approved(record.fields)
-        )
+        shown = record.id in credited or (_is_founder(record.fields) and _approved(record.fields))
         if shown:
             for name in _PHOTO_FIELDS:
                 refs.extend(_refs_of(record.fields, name, LARGE))
@@ -424,6 +436,10 @@ def _founder_cards(
                 venture=(venture.name if venture else "") or company,
                 venture_slug=venture.slug if venture else "",
                 website=venture.website if venture else "",
+                company=company,
+                position=text(field(fields, "title", "position")),
+                university=text(field(fields, "university")),
+                department=text(field(fields, "department")),
                 sectors=list(venture.sectors) if venture else [],
                 sector_slugs=list(venture.sector_slugs) if venture else [],
                 programs=programs,
@@ -542,6 +558,23 @@ def _facets(
         Facet(value=slug, label=labels[slug], count=count)
         for slug, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     ]
+
+
+def _with_unused(facets: list[Facet], published: Sequence[tuple[str, str]]) -> list[Facet]:
+    """Add the published programmes nobody is linked to, after those in use, with a count of 0.
+
+    A programme's own page links here with `?program=<slug>`. Without its option
+    the page would drop the filter and show everyone; with it the filter stays
+    on and the list is honestly empty. The dropdown prunes zero-count choices, so
+    a visitor browsing never sees them.
+    """
+    seen = {facet.value for facet in facets}
+    extra = [
+        Facet(value=slug, label=label, count=0)
+        for slug, label in dict(sorted(published, key=lambda pair: pair[1].casefold())).items()
+        if slug and slug not in seen
+    ]
+    return [*facets, *extra]
 
 
 def _year_facets(pool: Sequence[_Card]) -> list[Facet]:

@@ -11,6 +11,8 @@
 // ============================================================
 import { fold, hits, pruneOptions, wire, wireSearch } from './filters-multi.js';
 import { parseFilters } from './pager.js';
+import { scrollToTop } from './scroll-to.js';
+import { wireFlipDirection } from './card-direction.js';
 import './hero-letters.js';
 
 const grid = document.getElementById('fvGrid');
@@ -23,7 +25,7 @@ if (grid) {
 
   // Search runs over the card's own text, folded so "ayse" finds "Ayşe". Built
   // once — the cards never change.
-  cards.forEach((c) => { c.dataset.q = fold(c.textContent); });
+  cards.forEach((c) => { c.dataset.q = fold(c.dataset.search || c.textContent); });
 
   // The three dropdown dimensions. A card can sit in several sectors or
   // programmes at once — those arrive `;`-joined — while a cohort is one value.
@@ -76,11 +78,16 @@ if (grid) {
 
   // ---------- tabs ----------
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const FADE_MS = 170;
+  const FADE_MS = 110;
   // Past this many cards the stagger stops growing, so the ventures tab and a
   // several-hundred-card founders tab settle in the same beat instead of one
   // taking four seconds.
-  const STAGGER_CAP = 20;
+  const STAGGER_CAP = 12;
+
+  /** After a switch, the tab row (the section's heading) sits at the top, under the nav. */
+  function alignToHeading() {
+    scrollToTop(document.querySelector('.fv-tabs') || document.getElementById('fvFilters'));
+  }
 
   /** Number the visible cards so CSS can stagger them, then restart the run. */
   function enter() {
@@ -126,10 +133,17 @@ if (grid) {
       o.classList.toggle('is-on', on);
       o.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    const kind = tab.dataset.tab;
+    // Keep the URL in sync so a shared link opens the same tab.
+    if (kind === 'founders' || kind === 'ventures') {
+      const next = `#${kind}`;
+      if (location.hash !== next) history.replaceState(null, '', next);
+    }
     if (animate) {
-      swapTo(tab.dataset.tab);
+      swapTo(kind);
+      window.setTimeout(alignToHeading, FADE_MS + 40);
     } else {
-      state.kind = tab.dataset.tab;
+      state.kind = kind;
       apply();
     }
   }
@@ -160,28 +174,19 @@ if (grid) {
     });
   }
 
-  // ---------- flip motion: staggered, random axis, alternating back ----------
+  // ---------- flip motion: from the side the pointer came in; the back alternates colour ----------
   const BACKS = ['#19BAD1', '#F76C53'];
-  const AXES = [
-    ['rotateY(180deg)', 'rotateY(180deg)'],
-    ['rotateY(-180deg)', 'rotateY(-180deg)'],
-    ['rotateX(180deg)', 'rotateX(180deg)'],
-    ['rotateX(-180deg)', 'rotateX(-180deg)'],
-  ];
   let backIdx = 0;
-  function roll(c) {
-    const a = AXES[Math.floor(Math.random() * AXES.length)];
-    c.style.setProperty('--rot', a[0]);
-    c.style.setProperty('--brot', a[1]);
-    c.style.setProperty('--fd', `${Math.round(Math.random() * 130)}ms`);
-    c.style.setProperty('--bcol', BACKS[backIdx++ % 2]);
-  }
-  // Rolled once up front and again as the pointer arrives — never on focus.
-  // Clicking a card focuses it, and re-rolling then changed the axis halfway
-  // through the flip, which read as a glitch rather than a flourish.
+  const recolour = (c) => c.style.setProperty('--bcol', BACKS[backIdx++ % 2]);
+  wireFlipDirection(cards);
   cards.forEach((c) => {
-    roll(c);
-    c.addEventListener('mouseenter', () => roll(c));
+    recolour(c);
+    // A new colour once the pointer has left, never mid-flip.
+    c.addEventListener('mouseleave', () => {
+      window.setTimeout(() => {
+        if (!c.matches(':hover')) recolour(c);
+      }, 700);
+    });
   });
 
   // ---------- a link can open the directory already filtered ----------

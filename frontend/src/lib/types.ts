@@ -267,6 +267,11 @@ export interface FounderCard {
   venture_slug: string;
   /** Their venture's site. Empty means the card is not a link. */
   website: string;
+  /** The rest of their `people` row; not printed, but searched. */
+  company?: string;
+  position?: string;
+  university?: string;
+  department?: string;
   sectors: string[];
   sector_slugs: string[];
   programs: string[];
@@ -340,16 +345,38 @@ export interface ApplyContent {
 }
 
 /** One program card on /programs. `href` is empty when it has no site of its own. */
+/** One tile of a program page's "at a glance" row. */
+export interface ProgramStat {
+  value: number;
+  decimals: number;
+  /** Written with thousands separators, so printed with them. */
+  grouped: boolean;
+  prefix: string;
+  suffix: string;
+  label: string;
+  text: string;
+}
+
 export interface ProgramCard {
   slug: string;
   name: string;
   text: string;
+  /** The small variant, for cards. */
   photo: string;
+  /** The full-size variant, for the program's own page. */
+  hero: string;
   href: string;
   sectors: string[];
   targets: string[];
   stages: string[];
   current: boolean;
+  /** Overview paragraphs as HTML, `**x**` already turned into highlight spans. */
+  body_html: string[];
+  stats: ProgramStat[];
+  for_who: string[];
+  what_happens: string[];
+  /** The organisations the program links to, with logo and site. */
+  partners: Partner[];
 }
 
 /** One tile on /programs and its programs. */

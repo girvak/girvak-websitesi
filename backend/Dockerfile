@@ -35,8 +35,8 @@ COPY alembic.ini ./alembic.ini
 
 # The attachment mirror writes here, so the app user must own it.
 RUN useradd --create-home --uid 10001 girvak \
-    && mkdir -p /app/media \
-    && chown -R girvak:girvak /app/media
+    && mkdir -p /app/media /app/content-backup \
+    && chown -R girvak:girvak /app/media /app/content-backup
 USER girvak
 
 EXPOSE 8000

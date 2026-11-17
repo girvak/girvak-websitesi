@@ -46,11 +46,15 @@ services:
       # cross-origin request is expected in production.
       CORS_ORIGINS: https://girisimcilikvakfi.org,https://www.girisimcilikvakfi.org
       MEDIA__DIR_PATH: /app/media
+      CONTENT__BACKUP_DIR_PATH: /app/content-backup
     ports:
       - "127.0.0.1:8082:8000"
     volumes:
       # The attachment mirror. Losing it costs one background re-download, not data.
       - backend_media:/app/media
+      # The last good copy of every page's content: a restart during an Airtable
+      # outage serves this instead of the repo's old seed.
+      - backend_content:/app/content-backup
     depends_on:
       db:
         condition: service_healthy
@@ -76,3 +80,4 @@ services:
 volumes:
   db_data:
   backend_media:
+  backend_content:

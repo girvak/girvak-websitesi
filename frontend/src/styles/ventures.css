@@ -117,14 +117,22 @@ a.fv-card { cursor: pointer; }
 a.fv-card:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; border-radius: 6px; }
 .fv-card[hidden] { display: none; }
 .fv-inner { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
-  transition: transform .68s cubic-bezier(0.4,0,0.2,1); transition-delay: var(--fd, 0ms); border-radius: 5px; }
-.fv-card:hover .fv-inner, .fv-card:focus-visible .fv-inner { transform: var(--rot, rotateY(180deg)); }
+  transition: transform .55s cubic-bezier(0.4,0,0.2,1); transition-delay: var(--fd, 0ms); border-radius: 5px; }
+/* Hover / keyboard only — avoid sticky focus flip after a click navigates away. */
+@media (hover: hover) and (pointer: fine) {
+  .fv-card:hover .fv-inner { transform: var(--rot, rotateY(180deg)); }
+}
+.fv-card:focus-visible .fv-inner { transform: var(--rot, rotateY(180deg)); }
 .fv-front, .fv-back { position: absolute; inset: 0; border-radius: 5px; overflow: hidden;
   -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .fv-back { visibility: hidden; }
-.fv-front, .fv-back { transition: visibility 0s linear calc(var(--fd, 0ms) + .34s); }
-.fv-card:hover .fv-front, .fv-card:focus-visible .fv-front { visibility: hidden; }
-.fv-card:hover .fv-back, .fv-card:focus-visible .fv-back { visibility: visible; }
+.fv-front, .fv-back { transition: visibility 0s linear calc(var(--fd, 0ms) + .28s); }
+@media (hover: hover) and (pointer: fine) {
+  .fv-card:hover .fv-front { visibility: hidden; }
+  .fv-card:hover .fv-back { visibility: visible; }
+}
+.fv-card:focus-visible .fv-front { visibility: hidden; }
+.fv-card:focus-visible .fv-back { visibility: visible; }
 .fv-front { background: var(--ink-800); display: flex; align-items: flex-end; justify-content: center; }
 .fv-back { background: var(--bcol, var(--turquoise)); transform: var(--brot, rotateY(180deg)); color: #fff;
   display: flex; flex-direction: column; padding: clamp(16px,1.7vw,24px); }
@@ -162,6 +170,7 @@ a.fv-card:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3
 .fv-vhead .fv-vname { font-size: clamp(17px,1.5vw,22px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .fv-vhead .fv-vyear { position: absolute; top: 13px; right: 17px; z-index: 3; font-weight: 300; font-size: clamp(26px,2.3vw,38px); line-height: 1; letter-spacing: -0.01em; }
 .fv-vdesc { margin: 20% 0 0; font-size: clamp(12px,1.05vw,14px); font-weight: 400; line-height: 1.45; text-wrap: pretty; }
+.fv-vprograms { margin-top: 12px; font-size: clamp(11.5px,1vw,13.5px); font-weight: 500; font-style: italic; line-height: 1.35; opacity: .95; }
 .fv-vsector { margin-top: auto; font-size: clamp(11.5px,1vw,13.5px); font-weight: 500; line-height: 1.35; opacity: .95; }
 
 /* ---------- tab swap ----------
@@ -170,13 +179,14 @@ a.fv-card:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3
    tab finish in about the same beat. */
 .fv-grid { transition: opacity .17s var(--ease-out); }
 .fv-grid.is-swapping { opacity: 0; }
+/* Animate opacity only — a transform on .fv-card fought the 3D hover flip. */
 .fv-grid.is-entering .fv-card:not([hidden]) {
-  animation: fvIn .46s var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 24ms);
+  animation: fvIn .36s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 16ms);
 }
 @keyframes fvIn {
-  from { opacity: 0; transform: translateY(16px) scale(.965); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .fv-empty { grid-column: 1 / -1; padding: clamp(30px,4vw,60px) 0; font-size: 16px; font-weight: 500; color: var(--ink-500, #6b7278); }
@@ -190,4 +200,17 @@ a.fv-card:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3
   .fv-inner { transition: none; }
   .fv-grid { transition: none; }
   .fv-grid.is-entering .fv-card:not([hidden]) { animation: none; }
+}
+
+/* Very wide screens: one more column, so cards keep a sensible size instead of stretching. */
+@media (min-width: 1600px) {
+  .fv-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Phones: a dropdown is as wide as the filter bar, so it cannot run off the
+   screen's right edge (the department and program menus did, by 1–29px). */
+@media (max-width: 768px) {
+  .fv-filters { position: relative; }
+  .fv-filter { position: static; }
+  .fv-menu, .fv-searchbox .fv-menu, .ca-searchmenu { left: 0; right: 0; min-width: 0; width: auto; }
 }

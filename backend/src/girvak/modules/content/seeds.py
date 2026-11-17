@@ -16,10 +16,13 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from girvak.modules.content.schemas import (
     AboutContent,
     FellowContent,
     HomeContent,
+    ProgramStat,
     VenturesCopy,
 )
 
@@ -68,6 +71,28 @@ def ventures() -> VenturesCopy:
         Seed copy, parsed once per process.
     """
     return VenturesCopy.model_validate(_read("ventures.json"))
+
+
+class ProgramDetailSeed(BaseModel):
+    """The committed copy of one program's page, keyed by the program's slug."""
+
+    body: list[str] = []
+    stats: list[ProgramStat] = []
+    for_who: list[str] = []
+    what_happens: list[str] = []
+    partner: str = ""
+
+
+@lru_cache(maxsize=1)
+def program_details() -> dict[str, ProgramDetailSeed]:
+    """The shipped program pages; a program not listed here has no committed copy.
+
+    Returns:
+        Seeds by program slug, parsed once per process.
+    """
+    raw = _read("program_details.json")
+    assert isinstance(raw, dict)
+    return {slug: ProgramDetailSeed.model_validate(value) for slug, value in raw.items()}
 
 
 def _read(name: str) -> object:

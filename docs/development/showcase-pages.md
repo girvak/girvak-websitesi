@@ -76,8 +76,7 @@ identical, so its ETag still earns a 304. A page that shuffles says
 `Cache-Control: no-store`, or a browser would reuse one shuffle for the next 30
 seconds of reloads; the API response behind it is still cached, so this costs a
 render, not a round trip. The dropdowns are not shuffled: years newest first, the
-rest A–Z. The board, the home page and the ventures list keep their order (the
-founders tab on `/founders-ventures` has its own shuffle).
+rest A–Z. The board and the home page keep their order. Both tabs on `/founders-ventures` (founders and ventures) are shuffled on every request.
 
 ## Filters
 
@@ -169,3 +168,11 @@ API_BASE_URL=http://127.0.0.1:8001 npm run dev
 
 Left unset, the proxy falls back to 8000 — and if something else is listening
 there, every portrait 404s while the pages themselves still render.
+
+## Search
+
+Each card carries a `data-search` string (name, year, school or company, role,
+sectors, programmes; for a venture also its description and founders). The
+script folds it once and matches the typed text against it, so search reaches
+fields the card does not print. Cards without `data-search` fall back to their
+visible text.

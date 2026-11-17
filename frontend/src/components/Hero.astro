@@ -1,4 +1,5 @@
 ---
+import { newTab } from '../lib/links';
 import { Image } from 'astro:assets';
 import type { Hero } from '../lib/types';
 import { resolveImage } from '../lib/images';
@@ -47,7 +48,7 @@ const { hero } = Astro.props;
     </p>
     <div class="hero3-actions rv">
       {hero.ctas.map((cta) => (
-        <a href={cta.href} class="h3btn" style="letter-spacing: -0.6px">
+        <a href={cta.href} {...newTab(cta.href)} class="h3btn" style="letter-spacing: -0.6px">
           <span class="h3btn-label">{cta.label}</span><span class="cta-arrow" aria-hidden="true"></span>
         </a>
       ))}

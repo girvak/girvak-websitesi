@@ -93,3 +93,8 @@
 @media (prefers-reduced-motion: reduce) {
   .ap-card, .ap-arrow, .ap-more, .ap-shead-h { transition: none; }
 }
+
+/* Very wide screens: one more column. */
+@media (min-width: 1600px) {
+  .ap-grid { grid-template-columns: repeat(5, 1fr); }
+}

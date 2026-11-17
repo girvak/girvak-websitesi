@@ -24,8 +24,7 @@ Details: [docs/architecture/overview.md](docs/architecture/overview.md) ·
 
 - **backend/** — Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 + Alembic, PostgreSQL
 - **frontend/** — Astro 5 SSR (`@astrojs/node`), TypeScript strict, no UI framework
-- **coding-playbook/** — the architecture and coding rules both of the above follow
-  (a separate repository, cloned beside the app)
+- **.claude/rules/** — the architecture, backend, frontend and design rules the code follows
 
 ## Requirements
 
@@ -67,7 +66,7 @@ More: [docs/development/testing.md](docs/development/testing.md) once it exists.
 backend/     FastAPI: content API, newsletter, Airtable adapter, media mirror
 frontend/    Astro SSR: ten pages, layouts, styles, browser behaviour
 docs/        architecture, data model, setup, API
-coding-playbook/  the rules; read AGENTS.md if you are an AI coding agent
+.claude/    rules/ (coding + design rules), agents/ (frontend-designer)
 ```
 
 ## Deploy

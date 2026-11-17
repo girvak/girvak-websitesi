@@ -1,0 +1,44 @@
+{
+  "tskb-co-venture": {
+    "body": [
+      "**TSKB Co-Venture** is an end-to-end venture building program powered by Türkiye Sınai Kalkınma Bankası **(TSKB)** and Türkiye Girişimcilik Vakfı **(GİRVAK)**. It guides technology-based startups from the ideation stage to product-market fit, scaling, and investment readiness.",
+      "Across a **_12-month tailored journey_**, startups gain hands-on strategic guidance, expert mentorship, corporate network access, and investor connections. Special priority is given to teams with **_female co-founders/executives_** and entrepreneurs impacted by the February 6 Kahramanmaraş earthquakes."
+    ],
+    "stats": [
+      {
+        "value": 12,
+        "label": "month journey",
+        "text": "One tailored track per startup — from ideation to investment readiness."
+      },
+      {
+        "value": 4,
+        "label": "focus areas",
+        "text": "Climate, education, disaster resilience and health technologies."
+      },
+      {
+        "value": 45,
+        "prefix": "%",
+        "label": "women founders",
+        "text": "Women-led teams and founders from earthquake-affected regions are prioritised."
+      },
+      {
+        "value": 8,
+        "suffix": " yrs",
+        "label": "with TSKB",
+        "text": "An eight-year partnership, not a campaign — Co-Venture is its next chapter."
+      }
+    ],
+    "for_who": [
+      "Tech-based, scalable startups working in disaster, health, education and climate",
+      "Early-stage teams validating business models and developing MVPs",
+      "Growth-stage startups ready to scale, access corporate networks and secure investment"
+    ],
+    "what_happens": [
+      "Modular trainings and hands on workshops",
+      "1-on-1 mentorship with industry experts and corporate partners",
+      "Product-market validation, go-to-market strategy and scaling support",
+      "Corporate pilots, investor showcases and dedicated venture funds upon Demo Day"
+    ],
+    "partner": "TSKB"
+  }
+}

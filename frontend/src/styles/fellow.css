@@ -588,9 +588,3 @@
 }
 /* ---------- TEXT SELECTION HIGHLIGHT ---------- */
 /* Solid (opaque) tints so overlapping line boxes never stack into darker bands */
-/* Fellow sections: soft red tint, dark readable text */
-.fp ::selection { background: #e9b5b5; color: #373d42; }
-.fp ::-moz-selection { background: #e9b5b5; color: #373d42; }
-/* Challenger sections: soft amber tint, dark readable text */
-.fp .fchal ::selection, .fp .fchow ::selection, .fp .fwyd ::selection, .fp .fchallengers ::selection { background: #fae7a3; color: #373d42; }
-.fp .fchal ::-moz-selection, .fp .fchow ::-moz-selection, .fp .fwyd ::-moz-selection, .fp .fchallengers ::-moz-selection { background: #fae7a3; color: #373d42; }

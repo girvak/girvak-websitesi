@@ -36,6 +36,15 @@ const apiBase = publicApiBase;
 
 const today = todayIn();
 const calls = arrange(apply.calls, today);
+
+// Optional external interest form (Typeform / Google Form / Airtable). Set
+// PUBLIC_INTEREST_FORM_URL in the repo-root `.env`. Falls back to the footer
+// newsletter when empty.
+const interestFormHref =
+  (typeof process !== 'undefined' ? process.env?.PUBLIC_INTEREST_FORM_URL : undefined)?.trim() ||
+  import.meta.env.PUBLIC_INTEREST_FORM_URL?.trim() ||
+  '#footer';
+const interestExternal = /^https?:\/\//i.test(interestFormHref);
 ---
 
 <BaseLayout
@@ -77,8 +86,13 @@ const calls = arrange(apply.calls, today);
           <h2 class="ap-shead-h" id="apNoMatch">no open match right now?</h2>
         </div>
         <p class="ap-shead-sub">
-          Don't see a program for you right now? Fill out <a class="ap-inline-link" href="#footer">our interest form</a> so
-          we can invite you first to upcoming opportunities, events, and calls.
+          Don't see a program for you right now? Fill out{' '}
+          <a
+            class="ap-inline-link"
+            href={interestFormHref}
+            {...(interestExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >our interest form</a>{' '}
+          so we can invite you first to upcoming opportunities, events, and calls.
         </p>
       </div>
     </section>

@@ -80,6 +80,15 @@ class ContentSettings(BaseModel):
     # so a refresh call is visible without waiting out an edge cache.
     http_max_age_seconds: int = 60
     http_stale_while_revalidate_seconds: int = 300
+    # The last good snapshot of every page is also kept on disk, so a restart or
+    # an Airtable outage serves the latest content instead of the repo's seed.
+    backup: bool = True
+    backup_dir_path: str = "content-backup"
+
+    @property
+    def backup_directory(self) -> Path:
+        path = Path(self.backup_dir_path)
+        return path if path.is_absolute() else BACKEND_DIR / path
 
 
 class MediaSettings(BaseModel):

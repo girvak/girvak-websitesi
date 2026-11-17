@@ -54,7 +54,19 @@ warn() { printf '    WARN %s\n' "$*" >&2; }
 die()  { printf '    FAIL %s\n' "$*" >&2; exit 1; }
 
 need_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "missing command: $1"
+  if ! command -v "$1" >/dev/null 2>&1; then
+    case "$1" in
+      nginx)
+        die "missing command: nginx — install with: sudo apt-get update && sudo apt-get install -y nginx"
+        ;;
+      docker)
+        die "missing command: docker — install Docker Engine, then: sudo usermod -aG docker \$USER"
+        ;;
+      *)
+        die "missing command: $1"
+        ;;
+    esac
+  fi
 }
 
 run_sudo() {

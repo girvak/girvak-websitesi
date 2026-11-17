@@ -29,12 +29,16 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Protocol, TypeVar, cast
+from functools import cache as memoize
+from typing import Any, Protocol, TypeVar, cast
+
+from pydantic import TypeAdapter, ValidationError
 
 from girvak.config import Settings
 from girvak.infra.airtable.client import AirtableRecord
 from girvak.infra.airtable.client import client as airtable_client
 from girvak.infra.cache.snapshot import SnapshotCache, cache
+from girvak.infra.storage.content_backup import ContentBackup, build_backup
 from girvak.infra.storage.media_mirror import AttachmentRef, MediaMirror, mirror
 from girvak.modules.content import about as about_page
 from girvak.modules.content import apply as apply_page
@@ -75,6 +79,13 @@ PROGRAMS_KEY = "programs"
 
 ValueT = TypeVar("ValueT")
 
+
+@memoize
+def _adapter(model: type) -> TypeAdapter[Any]:
+    """The (de)serialiser for one snapshot type; building it is not free."""
+    return TypeAdapter(model)
+
+
 # After a rebuild fails, the last good copy stays the answer for this long before
 # Airtable is tried again — so an outage costs one attempt per interval, not one
 # per visitor.
@@ -111,11 +122,13 @@ class ContentService:
         cache: SnapshotCache,
         mirror: MediaMirror,
         client: RecordSource | None,
+        backup: ContentBackup | None = None,
     ) -> None:
         self._settings = settings
         self._cache = cache
         self._mirror = mirror
         self._client = client
+        self._backup = backup
 
     async def home(self) -> HomeContent:
         """The home page.
@@ -126,7 +139,7 @@ class ContentService:
         Returns:
             Home content — from Airtable, the last good snapshot, or the seed.
         """
-        return await self._snapshot(HOME_KEY, self._build_home, seeds.home)
+        return await self._snapshot(HOME_KEY, self._build_home, seeds.home, HomeContent)
 
     async def about(self) -> AboutContent:
         """The about page.
@@ -134,7 +147,7 @@ class ContentService:
         Returns:
             About content — from Airtable, the last good snapshot, or the seed.
         """
-        return await self._snapshot(ABOUT_KEY, self._build_about, seeds.about)
+        return await self._snapshot(ABOUT_KEY, self._build_about, seeds.about, AboutContent)
 
     async def fellow_program(self) -> FellowContent:
         """The fellow-program page.
@@ -142,7 +155,7 @@ class ContentService:
         Returns:
             Fellow content — from Airtable, the last good snapshot, or the seed.
         """
-        return await self._snapshot(FELLOW_KEY, self._build_fellow, seeds.fellow)
+        return await self._snapshot(FELLOW_KEY, self._build_fellow, seeds.fellow, FellowContent)
 
     async def people(self) -> PeopleContent:
         """Trustees, directors, team, fellows, alumni, challengers.
@@ -152,7 +165,7 @@ class ContentService:
             previous snapshot returns empty groups and the page renders its
             empty state rather than inventing names.
         """
-        return await self._snapshot(PEOPLE_KEY, self._build_people, _empty_people)
+        return await self._snapshot(PEOPLE_KEY, self._build_people, _empty_people, PeopleContent)
 
     async def apply(self) -> ApplyContent:
         """The open calls on /apply.
@@ -162,7 +175,7 @@ class ContentService:
             in the repo would go stale, so an outage with no previous snapshot
             shows no cards rather than invented ones.
         """
-        return await self._snapshot(APPLY_KEY, self._build_apply, ApplyContent)
+        return await self._snapshot(APPLY_KEY, self._build_apply, ApplyContent, ApplyContent)
 
     async def programs(self) -> ProgramsContent:
         """The /programs page: the category tiles and their programs.
@@ -171,7 +184,9 @@ class ContentService:
             Programs content. No seed: an outage with no previous snapshot shows
             no tiles rather than invented programs.
         """
-        return await self._snapshot(PROGRAMS_KEY, self._build_programs, ProgramsContent)
+        return await self._snapshot(
+            PROGRAMS_KEY, self._build_programs, ProgramsContent, ProgramsContent
+        )
 
     async def ventures(
         self,
@@ -202,7 +217,9 @@ class ContentService:
         Returns:
             The page payload, with facet counts and the echoed filter.
         """
-        data = await self._snapshot(VENTURES_KEY, self._build_ventures, _empty_ventures)
+        data = await self._snapshot(
+            VENTURES_KEY, self._build_ventures, _empty_ventures, VenturesData
+        )
         return ventures_page.select(
             data,
             kind=kind,
@@ -228,6 +245,7 @@ class ContentService:
         key: str,
         build: Callable[[], Awaitable[ValueT]],
         fallback: Callable[[], ValueT],
+        model: type,
     ) -> ValueT:
         cached = cast(ValueT | None, self._cache.get(key))
         if cached is not None:
@@ -238,7 +256,7 @@ class ContentService:
         # one an operator just asked for) has nothing to hand over and waits.
         stale = cast(ValueT | None, self._cache.get_stale(key))
         if stale is not None:
-            task = asyncio.create_task(self._rebuild_behind(key, build))
+            task = asyncio.create_task(self._rebuild_behind(key, build, model))
             _background.add(task)
             task.add_done_callback(_background.discard)
             return stale
@@ -253,17 +271,34 @@ class ContentService:
                 value = await build()
             except ServiceUnavailableError as exc:
                 stale = cast(ValueT | None, self._cache.get_fallback(key))
+                served = "stale"
+                if stale is None:
+                    # A restart lost the in-memory copy: the one on disk is the
+                    # latest the site showed, newer than the repo's seed.
+                    stale = await self._load_backup(key, model)
+                    served = "backup"
+                    if stale is not None:
+                        self._cache.set_fallback(key, stale)
+                        # One attempt per interval, not one per visitor.
+                        self._cache.set(key, stale, ttl=_RETRY_AFTER_FAILURE_SECONDS)
                 _logger.warning(
                     "content_source_unavailable",
-                    extra={"page": key, "served": "stale" if stale else "seed", "reason": str(exc)},
+                    extra={
+                        "page": key,
+                        "served": served if stale is not None else "seed",
+                        "reason": str(exc),
+                    },
                 )
                 return stale if stale is not None else fallback()
 
             self._cache.set(key, value)
             self._cache.set_fallback(key, value)
+            await self._save_backup(key, model, value)
             return value
 
-    async def _rebuild_behind(self, key: str, build: Callable[[], Awaitable[ValueT]]) -> None:
+    async def _rebuild_behind(
+        self, key: str, build: Callable[[], Awaitable[ValueT]], model: type
+    ) -> None:
         """Rebuild one snapshot after its TTL ran out, with nobody waiting.
 
         Under the key's lock and re-checked inside it, so a burst of requests
@@ -288,6 +323,31 @@ class ContentService:
                 return
             self._cache.set(key, value)
             self._cache.set_fallback(key, value)
+            await self._save_backup(key, model, value)
+
+    async def _save_backup(self, key: str, model: type, value: object) -> None:
+        """Write the snapshot to disk. Never raises: a full disk must not cost a page."""
+        if self._backup is None or self._client is None:
+            return  # nothing to back up: the seed is already in the repo
+        try:
+            data = _adapter(model).dump_json(value)
+            await asyncio.to_thread(self._backup.save, key, data)
+        except Exception as exc:
+            _logger.warning("content_backup_failed", extra={"page": key, "reason": str(exc)})
+
+    async def _load_backup(self, key: str, model: type) -> Any | None:
+        """The snapshot last written to disk, or None when absent or no longer valid."""
+        if self._backup is None:
+            return None
+        data = await asyncio.to_thread(self._backup.load, key)
+        if data is None:
+            return None
+        try:
+            return _adapter(model).validate_json(data)
+        except ValidationError as exc:
+            # Written by an older version of the schema: as good as no backup.
+            _logger.warning("content_backup_invalid", extra={"page": key, "reason": str(exc)[:200]})
+            return None
 
     def _media_urls(self, refs: list[AttachmentRef]) -> dict[str, str]:
         """URLs for a set of attachments, without waiting on any download.
@@ -354,8 +414,9 @@ class ContentService:
         categories = await self._client.list_records(tables.table_program_categories)
         programs = await self._client.list_records(tables.table_programs)
         sectors = await self._client.list_records(tables.table_sectors)
-        media = self._media_urls(programs_page.media_refs(categories, programs))
-        return programs_page.build(categories, programs, sectors, media)
+        partners = await self._client.list_records(tables.table_partner)
+        media = self._media_urls(programs_page.media_refs(categories, programs, partners))
+        return programs_page.build(categories, programs, sectors, media, partners)
 
     async def _build_ventures(self) -> VenturesData:
         copy = seeds.ventures()
@@ -412,7 +473,7 @@ class ContentService:
 
 def build_service(settings: Settings) -> ContentService:
     """The service, wired to the process's cache, media mirror and Airtable client."""
-    return ContentService(settings, cache(), mirror(), airtable_client())
+    return ContentService(settings, cache(), mirror(), airtable_client(), build_backup(settings))
 
 
 async def warm_up(service: ContentService) -> None:

@@ -255,9 +255,7 @@ def test_the_last_page_holds_the_remainder() -> None:
 def test_pages_do_not_overlap_or_skip() -> None:
     data = directory(34)
 
-    seen = [
-        item.slug for page in (1, 2, 3) for item in select(data, page=page, per_page=12).items
-    ]
+    seen = [item.slug for page in (1, 2, 3) for item in select(data, page=page, per_page=12).items]
 
     assert seen == [item.slug for item in data.items]
 
@@ -450,9 +448,7 @@ def person(record_id: str, name: str, **fields: Any) -> AirtableRecord:
 def with_people(
     *records: AirtableRecord, people_rows: list[AirtableRecord] | None = None
 ) -> VenturesData:
-    return build(
-        seeds.ventures(), list(records), sectors(), programs(), people_rows or [], {}
-    )
+    return build(seeds.ventures(), list(records), sectors(), programs(), people_rows or [], {})
 
 
 def test_a_founder_with_no_venture_still_appears() -> None:
@@ -749,3 +745,67 @@ def test_a_javascript_linkedin_never_reaches_an_href() -> None:
     data = with_people(people_rows=rows)
 
     assert data.founders[0].linkedin == ""
+
+
+def test_a_published_program_nobody_is_in_is_still_a_filter_option() -> None:
+    """A programme's own page links here with `?program=<slug>`. If its option
+    were missing the page would drop the filter and show everybody."""
+    rows = [
+        AirtableRecord(id="recA", fields={"name (en)": "Brand New Program", "onay": True}),
+        AirtableRecord(id="recB", fields={"name (en)": "Draft Program"}),
+    ]
+    data = build(seeds.ventures(), [], sectors(), rows, [], {})
+
+    assert data.programs == (("brand-new-program", "Brand New Program"),)
+
+    result = select(data, programs=["brand-new-program"])
+    assert {facet.value: facet.count for facet in result.programs} == {"brand-new-program": 0}
+    assert result.items == []
+    assert result.founders == []
+
+
+def test_programs_in_use_keep_their_counts_and_come_first() -> None:
+    data = build(
+        seeds.ventures(),
+        [venture("recV1", "Alpha", **{"program": [ZEMIN]})],
+        sectors(),
+        [
+            *programs(),
+            AirtableRecord(id="recN", fields={"name (en)": "Newcomer", "onay": True}),
+        ],
+        [],
+        {},
+    )
+
+    facets = [(f.value, f.count) for f in select(data).programs]
+    assert facets == [("zemin360", 1), ("newcomer", 0)]
+
+
+def test_a_website_cell_holding_several_addresses_keeps_the_first() -> None:
+    row = venture(
+        "recMulti", "Multi", **{"websitesi": "https://one.com.tr   https://two.com.tr  three.co,"}
+    )
+
+    assert mapped(row).items[0].website == "https://one.com.tr"
+
+
+def test_a_founder_card_carries_the_rest_of_the_people_row_for_search() -> None:
+    people_rows = [
+        AirtableRecord(
+            id="recF",
+            fields={
+                "name": "Deniz Kara",
+                "tag": ["founder"],
+                "onay": True,
+                "organisation": "Kara Labs",
+                "title": "CEO",
+                "university": "Bilkent Üniversitesi",
+                "department": "Endüstri Mühendisliği",
+            },
+        )
+    ]
+    data = with_people(people_rows=people_rows)
+
+    [card] = data.founders
+    assert (card.company, card.position) == ("Kara Labs", "CEO")
+    assert (card.university, card.department) == ("Bilkent Üniversitesi", "Endüstri Mühendisliği")

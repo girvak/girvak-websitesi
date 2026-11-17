@@ -180,3 +180,29 @@ def test_hero_ctas_render_secondary_first() -> None:
 
     assert [cta.label for cta in content.hero.ctas] == ["Keşfet", "Başvur"]
     assert content.hero.ctas[0].href == "/discover"
+
+
+def test_what_we_do_shows_every_row_until_the_tick_is_in_use() -> None:
+    content = home.build(
+        seeds.home(),
+        fragments(
+            record("index_whatwedo_1", text="Fellow. Our flagship"),
+            record("index_whatwedo_2", text="Talent. Skills"),
+        ),
+        fragments(),
+    )
+
+    assert [card.lead for card in content.what_we_do] == ["Fellow. Our flagship", "Talent. Skills"]
+
+
+def test_what_we_do_drops_unticked_rows_once_any_row_is_ticked() -> None:
+    content = home.build(
+        seeds.home(),
+        fragments(
+            record("index_whatwedo_1", text="Fellow. Our flagship", onay=True),
+            record("index_whatwedo_2", text="Talent. Skills"),
+        ),
+        fragments(),
+    )
+
+    assert [card.lead for card in content.what_we_do] == ["Fellow. Our flagship"]
