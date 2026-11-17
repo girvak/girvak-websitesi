@@ -31,16 +31,12 @@ const apiBase = publicApiBase;
 const yearKey = (year: string): string => (year.match(/\d/g) ?? []).join('').slice(-2);
 
 /**
- * The blurb, with its subject.
- *
- * Editors write these as predicates — "is a consultancy…", "creates delicious…"
- * — so a description that opens lowercase needs the venture's name in front of
- * it to be a sentence. The few that are already noun phrases are left alone.
+ * The blurb, exactly as the Airtable `description (en)` cell holds it: no name in
+ * front, no other column in its place (an empty cell shows nothing, so the gap
+ * is visible to whoever edits it).
  */
 function blurb(v: Venture): string {
-  const text = v.description || v.description_tr;
-  if (!text) return '';
-  return /^[a-zçğıioöşü]/.test(text) ? `${v.name} ${text}` : text;
+  return v.description;
 }
 
 /**

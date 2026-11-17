@@ -33,6 +33,27 @@ function closeAll() {
   panelApi.setCategory(null);
 }
 
+/**
+ * Choosing a tile scrolls the page and the filter repaints the cards, so a card
+ * can end up under a pointer that has not moved — and the browser then draws it
+ * hovered until the mouse stirs. Hover is held off until the pointer really
+ * moves (a synthetic move after the scroll has no movement), so the first card
+ * does not look stuck.
+ */
+let endSettle = null;
+function settleHover() {
+  if (!panel) return;
+  panel.classList.add('is-settling');
+  if (endSettle) window.removeEventListener('pointermove', endSettle);
+  endSettle = (e) => {
+    if (e.pointerType === 'mouse' && !e.movementX && !e.movementY) return;
+    panel.classList.remove('is-settling');
+    window.removeEventListener('pointermove', endSettle);
+    endSettle = null;
+  };
+  window.addEventListener('pointermove', endSettle);
+}
+
 function open(tile, { scroll = true } = {}) {
   if (!panel) return;
   tiles.forEach((t) => {
@@ -44,6 +65,7 @@ function open(tile, { scroll = true } = {}) {
   void panel.offsetHeight; // let the panel lay out before it fades in
   panel.classList.add('is-open');
   panelApi.setCategory(tile.dataset.name || null);
+  settleHover();
   if (!scroll) return;
   // The panel's top (its filter bar) under the nav; scrollToTop re-checks once
   // the panel has finished sliding in from -8px.
@@ -51,10 +73,16 @@ function open(tile, { scroll = true } = {}) {
 }
 
 tiles.forEach((tile) => {
+  // The design hushes a tile's text right after it is clicked, so the panel it
+  // opens is not read through the copy still glowing on the tile: the text comes
+  // back once the pointer has left the tile and returns.
+  tile.addEventListener('mouseleave', () => tile.classList.remove('is-quiet'));
   tile.addEventListener('click', () => {
+    tiles.forEach((t) => { if (t !== tile) t.classList.remove('is-quiet'); });
     if (tile.getAttribute('aria-expanded') === 'true') closeAll();
     else {
       open(tile);
+      tile.classList.add('is-quiet');
       // Keep the address bar in sync so a shared link reopens this category.
       const slug = tile.dataset.slug;
       if (slug) {

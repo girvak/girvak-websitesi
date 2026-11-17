@@ -28,16 +28,20 @@
 .pp-cat:hover::before, .pp-cat:focus-visible::before, .pp-cat.is-open::before { opacity: 1; }
 .pp-cat:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 3px; }
 .pp-cat-copy { position: absolute; z-index: 3; left: clamp(18px, 2vw, 30px); right: clamp(18px, 2vw, 30px); top: clamp(22px, 2.4vw, 34px); display: flex; flex-direction: column; gap: clamp(9px, 1vw, 14px); color: #fff; opacity: 0; transition: opacity .4s var(--ease-out); }
-.pp-cat:hover .pp-cat-copy, .pp-cat:focus-visible .pp-cat-copy, .pp-cat.is-open .pp-cat-copy { opacity: 1; }
+/* From the design: the text shows on hover; an open tile keeps its dark veil but
+   hides the text unless hovered, and is hushed (is-quiet) right after its click. */
+.pp-cat:hover .pp-cat-copy, .pp-cat:focus-visible .pp-cat-copy { opacity: 1; }
+.pp-cat.is-open:not(:hover) .pp-cat-copy, .pp-cat.is-quiet .pp-cat-copy { opacity: 0 !important; }
 .pp-cat-lede { margin: 0; font-style: italic; font-size: clamp(14px, 1.25vw, 18px); font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; text-wrap: balance; }
 .pp-cat-text { margin: 1em 0 0; font-size: clamp(12px, 1.02vw, 14.5px); font-weight: 400; line-height: 1.55; letter-spacing: -0.01em; text-wrap: pretty; }
 .pp-cat-name { position: absolute; z-index: 2; left: clamp(18px, 2vw, 30px); right: clamp(18px, 2vw, 30px); bottom: clamp(18px, 2vw, 28px); margin: 0; color: #fff; font-size: 15px; font-weight: 600; line-height: 1.16; letter-spacing: -0.02em; text-wrap: balance; display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; }
 .pp-cat-name .cta-arrow { flex: none; width: clamp(58px, 5vw, 79px); height: clamp(15px, 1.45vw, 22px); background-color: #fff; -webkit-mask: url(/images/cta-arrow.png) no-repeat center / contain; mask: url(/images/cta-arrow.png) no-repeat center / contain; opacity: 0; transform: translateX(-8px); transition: opacity .35s var(--ease-out), transform .45s cubic-bezier(0.34,1.2,0.64,1); }
-.pp-cat:hover .cta-arrow, .pp-cat:focus-visible .cta-arrow { opacity: 1; transform: translateX(4px); }
-/* Open tile: arrow turns down toward its panel (wins over hover translate). */
+.pp-cat:hover .cta-arrow, .pp-cat:focus-visible .cta-arrow { opacity: 1; transform: none; }
+/* Open tile: the arrow stays put, pointing right, whether or not it is hovered
+   (the design only lights it up; it does not turn or nudge). */
 .pp-cat.is-open .cta-arrow,
 .pp-cat.is-open:hover .cta-arrow,
-.pp-cat.is-open:focus-visible .cta-arrow { opacity: 1; transform: rotate(90deg); transform-origin: 100% 50%; }
+.pp-cat.is-open:focus-visible .cta-arrow { opacity: 1; transform: none; }
 @media (max-width: 900px) { .pp-cats { grid-template-columns: 1fr; } .pp-cat { height: clamp(240px, 40vh, 320px); } }
 
 /* ---------- a category's panel: filter bar + cards ---------- */
@@ -103,3 +107,11 @@
 /* The category name fills the first dropdown once a tile is picked, so the bar's
    usual wide gaps push "search" onto a second row; tighter gaps keep one row. */
 .pp-panel .fv-filters .fv-filter { margin-right: clamp(20px, 2.6vw, 44px); }
+
+/* While the pointer has not moved since the panel opened (programs.js), a card
+   under it is not drawn hovered: it would look stuck. */
+.pp-panel.is-settling .pp-card:hover { background: var(--ink-800); }
+.pp-panel.is-settling .pp-card:hover .pp-shot img { transform: none; }
+.pp-panel.is-settling .pp-card:hover .pp-swap:has(.pp-focus) .pp-desc { opacity: 1; transform: none; }
+.pp-panel.is-settling .pp-card:hover .pp-focus { opacity: 0; transform: translateY(7px); }
+.pp-panel.is-settling .pp-card:hover .pp-more .cta-arrow { opacity: 0; transform: none; }
